@@ -49,7 +49,12 @@ export const verifySession = (raw: string | undefined): SessionPayload | null =>
 
 export const sessionCookieOptions = {
   httpOnly: true,
-  sameSite: "lax" as const,
+  // In production the frontend and API run on different *.up.railway.app
+  // subdomains, which browsers treat as cross-site. A `Lax` cookie is not sent
+  // on those cross-site API calls, so the session must be `None` + `Secure`
+  // (None requires Secure). Dev stays `Lax` because plain-http localhost can't
+  // set Secure cookies.
+  sameSite: (env.nodeEnv === "production" ? "none" : "lax") as "none" | "lax",
   secure: env.nodeEnv === "production",
   path: "/",
   maxAge: 60 * 60 * 24 * 14 * 1000,
