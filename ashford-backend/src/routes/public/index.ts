@@ -1,0 +1,40 @@
+import { Router, type IRouter } from "express";
+import preview from "./preview";
+import previewScreenshot from "./previewScreenshot";
+import portalScreenshot from "./portalScreenshot";
+import blog from "./blog";
+import contactRequests from "./contactRequests";
+// 2026-05-21 — clientOnboarding route removed (Sprint 2 streamline).
+import changeRequests from "./changeRequests";
+import catalog from "./catalog";
+import podcast from "./podcast";
+import candidateQuiz from "./candidateQuiz";
+import checkout from "./checkout";
+import portals from "./portals";
+import domains from "./domains";
+import contactInfo from "./contactInfo";
+import selfServeReserve from "./selfServeReserve";
+import funnelEvents from "./funnelEvents";
+import editorial from "./editorial";
+import whatsappClicks from "./whatsappClicks";
+
+const router: IRouter = Router();
+router.use(preview);
+router.use(previewScreenshot);
+router.use(portalScreenshot);
+router.use(blog);
+router.use(contactRequests);
+router.use(changeRequests);
+router.use(catalog);
+router.use(podcast);
+router.use(candidateQuiz);
+router.use(checkout);
+router.use(portals);
+router.use(domains);
+router.use(contactInfo);
+router.use(selfServeReserve);
+router.use(funnelEvents);
+router.use(editorial);
+router.use(whatsappClicks);
+
+export default router;

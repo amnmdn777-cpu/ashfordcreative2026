@@ -1,0 +1,167 @@
+/* Font @imports were here previously — they're now in index.html as a
+   single async-loaded stylesheet (media="print" onload pattern). The
+   inline @import was render-blocking on mobile and Lighthouse was
+   flagging it as a 910ms savings opportunity. */
+@import "tailwindcss";
+@import "./styles/theme.css";
+@import "./styles/palette.css";
+@import "./styles/atrium.css";
+@import "./styles/polaroid.css";
+
+/* When the 988 crisis banner is rendered in its full (non-collapsed)
+ * form on mobile, it edge-anchors to the bottom of the viewport. Pad
+ * the body so page content (footer, last section) isn't hidden
+ * underneath. Phase 12 Commit 6. */
+@media (max-width: 767px) {
+  body.crisis-banner-visible {
+    padding-bottom: 80px;
+  }
+}
+
+:root {
+  /* Brand palette (Atelier). Tokens are kept under the original
+     cream/ink/sage/gold/paper names so existing pages re-flow without
+     per-page edits when the scheme changes. */
+  --ink: #2a221f;
+  --ink-deep: #1f1815;
+  --cream: #fdfbf7;
+  --cream-warm: #f0e8d5;
+  --sage: #6c7e63;
+  --sage-light: #5b6c52;
+  --gold: #c15c48;
+  --gold-deep: #a04937;
+  --paper: #f8f6f0;
+
+  --font-serif: 'Source Serif 4', Georgia, serif;
+  --font-display: 'Cormorant Garamond', 'DM Serif Display', Georgia, serif;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+
+  /* Default values for the per-template palette tokens. Each template
+     wrapper overrides these for its scheme; the defaults make standalone
+     demo modals (e.g. AiScribeDemo) render with sensible colors when
+     they happen to be opened outside a palette-aware ancestor. */
+  --p-primary: var(--ink);
+  --p-surface: var(--cream);
+  --p-ink: var(--ink);
+  --p-muted: #6b6463;
+  --p-accent: var(--gold);
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-ink-deep: var(--ink-deep);
+  --color-cream: var(--cream);
+  --color-cream-warm: var(--cream-warm);
+  --color-sage: var(--sage);
+  --color-sage-light: var(--sage-light);
+  --color-gold: var(--gold);
+  --color-paper: var(--paper);
+  --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
+}
+
+@layer base {
+  html, body, #root {
+    height: 100%;
+    margin: 0;
+  }
+  body {
+    background: var(--cream);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  ::selection {
+    background: var(--sage);
+    color: white;
+  }
+
+  /* Wrapped in @layer base so Tailwind's `text-*` utilities (which live
+     in @layer utilities, evaluated later in the cascade) can override
+     this on link-styled buttons. The previous unlayered rule silently
+     beat `text-white` on every <a> across the site. */
+  a { color: inherit; }
+}
+
+/* Subtle prose styles for blog */
+.prose-ashford { font-family: var(--font-serif); font-size: 19px; line-height: 1.75; color: var(--ink); }
+.prose-ashford h1 { font-family: var(--font-display); font-size: 2.25rem; margin-top: 2rem; margin-bottom: 1rem; line-height: 1.15; }
+.prose-ashford h2 { font-family: var(--font-display); font-size: 1.75rem; margin-top: 2rem; margin-bottom: 0.75rem; line-height: 1.2; }
+.prose-ashford h3 { font-family: var(--font-display); font-size: 1.4rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+.prose-ashford p { margin: 1rem 0; }
+.prose-ashford ul, .prose-ashford ol { margin: 1rem 0 1rem 1.5rem; }
+.prose-ashford li { margin: 0.4rem 0; }
+.prose-ashford blockquote { border-left: 3px solid var(--gold); padding-left: 1rem; font-style: italic; color: color-mix(in srgb, var(--ink) 85%, transparent); margin: 1.5rem 0; }
+.prose-ashford strong { font-weight: 600; }
+.prose-ashford a { color: var(--sage-light); text-decoration: underline; text-underline-offset: 3px; }
+.prose-ashford code { background: color-mix(in srgb, var(--ink) 6%, transparent); padding: 1px 6px; border-radius: 3px; font-family: var(--font-mono); font-size: 0.9em; }
+
+/* Toast that confirms a customize action in the prospect portal. Fades
+   in with a subtle pop so the prospect knows the click registered, even
+   if the panel above is in the middle of auto-collapsing. */
+@keyframes portal-toast-in {
+  0%   { opacity: 0; transform: translate(-50%, -8px) scale(0.94); }
+  60%  { opacity: 1; transform: translate(-50%, 0) scale(1.02); }
+  100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+.portal-pick-toast {
+  animation: portal-toast-in 240ms ease-out both;
+}
+
+/* ============================================================
+   WCAG 2.1 AA — visible focus ring for keyboard users.
+
+   Tailwind ships with `outline: none` by default on focused
+   inputs/buttons in some browsers, which silently breaks keyboard
+   navigation. The :focus-visible pseudo-class only triggers for
+   keyboard focus (not mouse clicks), so the visual indicator
+   shows up exactly when a keyboard user needs it, with no design
+   cost for pointer users.
+
+   Two-color outline (gold + dark) reads on both cream and ink
+   surfaces. Offset 2px to clear the element's own border.
+   ============================================================ */
+:focus-visible {
+  outline: 2px solid var(--gold, #C9A85B);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ink, #2A2D26) 12%, transparent);
+  border-radius: 2px;
+}
+
+/* Suppress the default browser focus on programmatically-focused
+   elements (`<div tabindex=-1>` used for skip-links and route
+   announcers). Keep :focus-visible for true keyboard nav. */
+:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Skip-link target. Hidden until a keyboard user tabs onto the
+   page, then snaps to the top-left with a clear visual treatment.
+   Screen readers can announce it without flipping the design. */
+.skip-to-content {
+  position: absolute;
+  left: -10000px;
+  top: 8px;
+  z-index: 9999;
+  background: var(--ink, #2A2D26);
+  color: var(--cream, #F8F4E9);
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+.skip-to-content:focus-visible {
+  left: 8px;
+}

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Garden template thumbnail">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F8F4E9"/>
+      <stop offset="1" stop-color="#FFFCF5"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#g)"/>
+  <g opacity="0.9" fill="#3F5641">
+    <path d="M120 470 q-30 -120 30 -200 q20 -30 60 -20 q-10 60 -40 100 q-30 50 -50 120 z"/>
+    <circle cx="640" cy="160" r="56"/>
+    <path d="M680 470 q30 -100 80 -120 q20 60 -10 130 z"/>
+  </g>
+  <circle cx="640" cy="160" r="32" fill="#F2EBDA"/>
+  <text x="60" y="120" font-family="Fraunces, Georgia, serif" font-size="38" fill="#2A2D26" font-style="italic">Joanna Reyes-Kim, LMFT</text>
+  <text x="60" y="158" font-family="Inter, system-ui, sans-serif" font-size="16" fill="#6B6F66" letter-spacing="3">PLANO · FAMILY THERAPY</text>
+  <text x="60" y="360" font-family="Fraunces, Georgia, serif" font-size="56" fill="#3F5641" font-style="italic">"Slow enough to actually hear."</text>
+  <rect x="60" y="510" width="80" height="2" fill="#C97B5A"/>
+  <text x="60" y="545" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#3F5641" letter-spacing="2">GARDEN · SAGE &amp; CREAM</text>
+  <text x="690" y="555" font-family="Fraunces, Georgia, serif" font-size="42" fill="#3F5641" text-anchor="middle">JR</text>
+</svg>

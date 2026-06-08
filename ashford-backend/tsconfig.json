@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "isolatedModules": true,
+    "lib": ["es2022"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "noEmitOnError": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": false,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "skipLibCheck": true,
+    "target": "es2022",
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@workspace/db": ["./packages/db/src/index.ts"],
+      "@workspace/db/schema": ["./packages/db/src/schema/index.ts"],
+      "@workspace/api-zod": ["./packages/api-zod/src/index.ts"]
+    }
+  },
+  "include": ["src", "packages"]
+}

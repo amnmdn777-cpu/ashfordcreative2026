@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Sunrise template thumbnail">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6B4F6B"/>
+      <stop offset="0.5" stop-color="#E8826B"/>
+      <stop offset="1" stop-color="#F4B895"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#sky)"/>
+  <circle cx="650" cy="180" r="64" fill="#FFF4ED" opacity="0.85"/>
+  <path d="M0 460 q200 -40 400 0 t400 0 v140 H0 z" fill="#FFE4D9" opacity="0.7"/>
+  <text x="60" y="120" font-family="Fraunces, Georgia, serif" font-size="36" fill="#FFF4ED" font-style="italic">Dr. Riya Mehta, LPC</text>
+  <text x="60" y="155" font-family="Inter, system-ui, sans-serif" font-size="15" fill="#FFE4D9" letter-spacing="3">DALLAS · PERINATAL MENTAL HEALTH</text>
+  <text x="60" y="370" font-family="Fraunces, Georgia, serif" font-size="48" fill="#FFF4ED" font-style="italic">"Hope, paced for a body</text>
+  <text x="60" y="420" font-family="Fraunces, Georgia, serif" font-size="48" fill="#FFF4ED" font-style="italic">still recovering."</text>
+  <text x="60" y="545" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#3A2E3A" letter-spacing="2">SUNRISE · PLUM &amp; PEACH</text>
+  <text x="690" y="555" font-family="Fraunces, Georgia, serif" font-size="42" fill="#3A2E3A" text-anchor="middle">RM</text>
+</svg>

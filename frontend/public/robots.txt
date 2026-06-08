@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /sales/
+Disallow: /api/
+Disallow: /p/
+
+Sitemap: https://ashfordcreative.org/sitemap.xml

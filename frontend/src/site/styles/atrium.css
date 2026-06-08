@@ -1,0 +1,25 @@
+/* Atrium template styles. Fonts (Cormorant Garamond, Inter) come from
+   the stylesheet link in index.html. */
+.font-serif-lux { font-family: 'Cormorant Garamond', serif; }
+.font-sans-lux { font-family: 'Inter', sans-serif; }
+
+.marble-texture {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.015' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+}
+
+/* Slate & Linen palette — replaces the previous brass/marble warm-cream
+   palette (founder feedback 2026-05: top-row palettes felt too similar,
+   shift Atrium to a calm slate-blue so it reads distinctly cooler than
+   Garden's sage and Polaroid's paper). Class names kept (`brass-*`) for
+   diff-stability; visual is now slate. */
+.brass-gradient {
+  background: linear-gradient(135deg, #52647d 0%, #aab8c9 50%, #52647d 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.brass-border {
+  border: 1px solid;
+  border-image-source: linear-gradient(135deg, rgba(82, 100, 125, 0.5) 0%, rgba(170, 184, 201, 0.1) 50%, rgba(82, 100, 125, 0.5) 100%);
+  border-image-slice: 1;
+}

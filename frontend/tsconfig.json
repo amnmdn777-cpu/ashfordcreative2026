@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "types": ["node", "vite/client"],
+    "baseUrl": ".",
+    "paths": {
+      "@site/*": ["src/site/*"],
+      "@admin/*": ["src/admin/*"],
+      "@rep/*": ["src/rep/*"],
+      "@shared/*": ["src/shared/*"],
+      "@workspace/api-zod": ["src/shared/api-zod/index.ts"],
+      "@assets/*": ["attached_assets/*"]
+    }
+  },
+  "include": ["src", "vite.config.ts"]
+}

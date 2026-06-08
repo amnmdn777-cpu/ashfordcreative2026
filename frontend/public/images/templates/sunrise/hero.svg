@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Sunrise hero — illustrated perinatal-warm therapy room (placeholder).
+  Phase 4 swaps for a photographic asset. Peach + coral + plum palette,
+  morning-light spill from a tall window, a soft chair with throw,
+  small side table with steam-curl over a mug, plant in a coral pot.
+  Scaled to 1600×1100 so the image-bg layout has full-bleed coverage
+  on wide displays without artefacts.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1100" preserveAspectRatio="xMidYMid slice" role="img" aria-label="A sunrise-lit room with a soft chair by a window">
+  <!-- Sunrise gradient background (peach → coral → plum) -->
+  <defs>
+    <linearGradient id="dawn" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFE4D9"/>
+      <stop offset="40%" stop-color="#F4B895"/>
+      <stop offset="100%" stop-color="#E8826B"/>
+    </linearGradient>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#C57E5C"/>
+      <stop offset="100%" stop-color="#8C5A48"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="50%" cy="0%" r="80%">
+      <stop offset="0%" stop-color="#FFF5DD" stop-opacity="0.95"/>
+      <stop offset="60%" stop-color="#FFD9B7" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#F4B895" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="0" y="0" width="1600" height="800" fill="url(#dawn)"/>
+  <rect x="0" y="800" width="1600" height="300" fill="url(#floor)"/>
+
+  <!-- Tall arched window with sunrise light -->
+  <g>
+    <path d="M620 100 Q 620 30 800 30 Q 980 30 980 100 L 980 720 L 620 720 Z" fill="#FFFCF5" opacity="0.95"/>
+    <line x1="800" y1="40" x2="800" y2="720" stroke="#E8826B" stroke-width="1.4" opacity="0.5"/>
+    <line x1="620" y1="380" x2="980" y2="380" stroke="#E8826B" stroke-width="1.4" opacity="0.5"/>
+    <!-- sun glow centered above window -->
+    <ellipse cx="800" cy="80" rx="320" ry="180" fill="url(#sun)"/>
+  </g>
+
+  <!-- Diagonal sunlight wash across the floor -->
+  <polygon points="620,720 980,720 1320,1100 360,1100" fill="#FFE4D9" opacity="0.4"/>
+  <polygon points="620,720 980,720 1140,1100 540,1100" fill="#FFD9B7" opacity="0.35"/>
+
+  <!-- Soft armchair, lower-left of the window -->
+  <g transform="translate(220 720)">
+    <!-- Cushion shadow -->
+    <ellipse cx="240" cy="320" rx="240" ry="22" fill="#5A3A30" opacity="0.35"/>
+    <!-- Back -->
+    <path d="M0 60 Q 0 0 60 0 L 420 0 Q 480 0 480 60 L 480 240 Q 480 280 440 280 L 40 280 Q 0 280 0 240 Z" fill="#FFE4D9"/>
+    <!-- Cushion -->
+    <rect x="40" y="180" width="400" height="120" rx="22" fill="#F4B895"/>
+    <!-- Throw -->
+    <path d="M120 200 Q 240 170 360 200 L 380 290 Q 240 280 100 290 Z" fill="#6B4F6B" opacity="0.85"/>
+    <!-- Legs -->
+    <rect x="50" y="280" width="14" height="40" fill="#5A3A30"/>
+    <rect x="416" y="280" width="14" height="40" fill="#5A3A30"/>
+  </g>
+
+  <!-- Side table with mug + steam -->
+  <g transform="translate(740 880)">
+    <rect x="0" y="80" width="180" height="14" fill="#5A3A30"/>
+    <rect x="20" y="94" width="6" height="120" fill="#5A3A30"/>
+    <rect x="154" y="94" width="6" height="120" fill="#5A3A30"/>
+    <!-- Mug -->
+    <rect x="60" y="40" width="72" height="56" rx="6" fill="#FFFCF5"/>
+    <path d="M132 50 Q 156 50 156 70 Q 156 90 132 90" fill="none" stroke="#FFFCF5" stroke-width="6"/>
+    <ellipse cx="96" cy="40" rx="36" ry="6" fill="#6B4F6B"/>
+    <!-- Steam curl -->
+    <g stroke="#FFFCF5" stroke-width="2.4" fill="none" opacity="0.85" stroke-linecap="round">
+      <path d="M86 30 Q 78 16 90 0 Q 102 -16 92 -32"/>
+      <path d="M104 30 Q 98 18 110 4 Q 122 -10 112 -26"/>
+    </g>
+  </g>
+
+  <!-- Plant on the right -->
+  <g transform="translate(1180 760)">
+    <ellipse cx="100" cy="320" rx="120" ry="14" fill="#5A3A30" opacity="0.3"/>
+    <path d="M40 220 L 160 220 L 150 320 L 50 320 Z" fill="#E8826B"/>
+    <path d="M40 220 L 160 220 L 156 234 L 44 234 Z" fill="#B85A47"/>
+    <!-- broad leaves -->
+    <g fill="#6B4F6B">
+      <path d="M100 220 Q 50 130 70 30 Q 110 60 110 200" />
+      <path d="M100 220 Q 150 130 130 30 Q 90 60 90 200" opacity="0.85"/>
+      <path d="M100 220 Q 60 170 30 100 Q 80 150 100 210" opacity="0.7"/>
+      <path d="M100 220 Q 140 170 170 100 Q 120 150 100 210" opacity="0.7"/>
+    </g>
+  </g>
+
+  <!-- Subtle sun-rays across the upper sky -->
+  <g stroke="#FFE4D9" stroke-width="2" opacity="0.45" fill="none">
+    <line x1="800" y1="80" x2="200" y2="240"/>
+    <line x1="800" y1="80" x2="100" y2="380"/>
+    <line x1="800" y1="80" x2="380" y2="40"/>
+    <line x1="800" y1="80" x2="1400" y2="240"/>
+    <line x1="800" y1="80" x2="1500" y2="380"/>
+    <line x1="800" y1="80" x2="1220" y2="40"/>
+  </g>
+</svg>

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Front Porch template thumbnail">
+  <rect width="800" height="600" fill="#F8F0E5"/>
+  <rect x="0" y="420" width="800" height="180" fill="#F2D67E" opacity="0.55"/>
+  <path d="M0 420 L400 220 L800 420 Z" fill="#6B4423"/>
+  <rect x="340" y="370" width="120" height="120" fill="#2F1F14"/>
+  <rect x="370" y="400" width="60" height="90" fill="#C97B5A"/>
+  <circle cx="418" cy="448" r="3" fill="#F2D67E"/>
+  <g stroke="#6B4423" stroke-width="2" opacity="0.6">
+    <line x1="80" y1="470" x2="80" y2="580"/>
+    <line x1="160" y1="470" x2="160" y2="580"/>
+    <line x1="640" y1="470" x2="640" y2="580"/>
+    <line x1="720" y1="470" x2="720" y2="580"/>
+  </g>
+  <text x="60" y="100" font-family="Fraunces, Georgia, serif" font-size="38" fill="#2F1F14" font-style="italic">Marcus Holloway, LMFT</text>
+  <text x="60" y="135" font-family="JetBrains Mono, monospace" font-size="13" fill="#6B4423" letter-spacing="3">SAN ANTONIO · COUPLES &amp; FAMILY</text>
+  <text x="60" y="200" font-family="Fraunces, Georgia, serif" font-size="44" fill="#6B4423" font-style="italic">"Stop having the</text>
+  <text x="60" y="245" font-family="Fraunces, Georgia, serif" font-size="44" fill="#6B4423" font-style="italic">same one twice."</text>
+  <text x="60" y="555" font-family="JetBrains Mono, monospace" font-size="12" fill="#2F1F14" letter-spacing="2">FRONT PORCH · CEDAR &amp; BUTTER</text>
+  <text x="720" y="555" font-family="Fraunces, Georgia, serif" font-size="40" fill="#2F1F14" text-anchor="middle">MH</text>
+</svg>

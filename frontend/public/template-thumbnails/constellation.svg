@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Constellation template thumbnail">
+  <rect width="800" height="600" fill="#0B1426"/>
+  <g fill="#F5F0E5" opacity="0.9">
+    <circle cx="120" cy="100" r="2"/>
+    <circle cx="200" cy="160" r="2.5"/>
+    <circle cx="280" cy="80" r="2"/>
+    <circle cx="360" cy="180" r="3"/>
+    <circle cx="440" cy="120" r="2"/>
+    <circle cx="540" cy="200" r="2.5"/>
+    <circle cx="640" cy="100" r="2"/>
+    <circle cx="720" cy="160" r="3"/>
+    <circle cx="80" cy="220" r="2"/>
+    <circle cx="380" cy="60" r="2"/>
+  </g>
+  <g stroke="#E5A547" stroke-width="1" opacity="0.7" fill="none">
+    <path d="M120 100 L200 160 L280 80 L360 180 L440 120 L540 200"/>
+    <path d="M540 200 L640 100 L720 160"/>
+  </g>
+  <text x="60" y="320" font-family="Cormorant Garamond, Georgia, serif" font-size="38" fill="#F5F0E5" font-style="italic">Dr. Elena Park, PsyD</text>
+  <text x="60" y="356" font-family="Inter, system-ui, sans-serif" font-size="15" fill="#A8B0BC" letter-spacing="3">HOUSTON · EXECUTIVE THERAPY</text>
+  <text x="60" y="450" font-family="Cormorant Garamond, Georgia, serif" font-size="52" fill="#E5A547" font-style="italic">"Identity beyond</text>
+  <text x="60" y="498" font-family="Cormorant Garamond, Georgia, serif" font-size="52" fill="#E5A547" font-style="italic">the company."</text>
+  <text x="60" y="555" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#A8B0BC" letter-spacing="2">CONSTELLATION · MIDNIGHT &amp; GOLD</text>
+  <text x="700" y="560" font-family="Cormorant Garamond, Georgia, serif" font-size="44" fill="#E5A547" text-anchor="middle">EP</text>
+</svg>

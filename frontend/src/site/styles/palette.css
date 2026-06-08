@@ -1,0 +1,127 @@
+/* Palette utility classes (task #201).
+ * Templates/portal pages set the active palette as CSS vars
+ * (--p-primary, --p-surface, --p-ink, --p-muted, --p-accent) on a
+ * top-level wrapper. Children consume them via these classes instead
+ * of per-element `style={{}}` attributes so production CSP can drop
+ * `style-src 'unsafe-inline'` AND `style-src-attr 'unsafe-inline'`.
+ */
+
+@layer utilities {
+  /* Foreground */
+  .pal-text-pp { color: var(--p-primary); }
+  .pal-text-ps { color: var(--p-surface); }
+  .pal-text-pi { color: var(--p-ink); }
+  .pal-text-pm { color: var(--p-muted); }
+
+  /* Background */
+  .pal-bg-pp { background: var(--p-primary); }
+  .pal-bg-ps { background: var(--p-surface); }
+  .pal-bg-pi { background: var(--p-ink); }
+  .pal-bg-pi-deep { background: var(--p-ink-deep, var(--p-ink)); }
+  .pal-bg-cc { background: currentColor; }
+
+  /* Border */
+  .pal-border-pp { border-color: var(--p-primary); }
+
+  /* Native form-control accent */
+  .pal-accent-pp { accent-color: var(--p-primary); }
+
+  /* color-mix tints over transparent (background) */
+  .pal-bg-pp-4  { background: color-mix(in srgb, var(--p-primary) 4%,  transparent); }
+  .pal-bg-pp-6  { background: color-mix(in srgb, var(--p-primary) 6%,  transparent); }
+  .pal-bg-pp-8  { background: color-mix(in srgb, var(--p-primary) 8%,  transparent); }
+  .pal-bg-pp-10 { background: color-mix(in srgb, var(--p-primary) 10%, transparent); }
+  .pal-bg-pp-12 { background: color-mix(in srgb, var(--p-primary) 12%, transparent); }
+  .pal-bg-pp-15 { background: color-mix(in srgb, var(--p-primary) 15%, transparent); }
+
+  /* color-mix tints over transparent (border) */
+  .pal-border-pp-12 { border-color: color-mix(in srgb, var(--p-primary) 12%, transparent); }
+  .pal-border-pp-18 { border-color: color-mix(in srgb, var(--p-primary) 18%, transparent); }
+  .pal-border-pp-20 { border-color: color-mix(in srgb, var(--p-primary) 20%, transparent); }
+  .pal-border-pp-25 { border-color: color-mix(in srgb, var(--p-primary) 25%, transparent); }
+
+  /* color-mix tints with currentColor (for dark/light tone surfaces) */
+  .pal-border-cc-14 { border-color: color-mix(in srgb, currentColor 14%, transparent); }
+  .pal-border-cc-30 { border-color: color-mix(in srgb, currentColor 30%, transparent); }
+
+  /* Mixes with ink/surface */
+  .pal-bg-pp-6-on-ps    { background: color-mix(in srgb, var(--p-primary) 6%, var(--p-surface)); }
+  .pal-bg-pi-5-on-ps    { background: color-mix(in srgb, var(--p-ink) 5%,  var(--p-surface)); }
+  .pal-bg-ps-92         { background: color-mix(in srgb, var(--p-surface) 92%, transparent); }
+  .pal-border-pi-8      { border-color: color-mix(in srgb, var(--p-ink) 8%, transparent); }
+  .pal-border-pi-12     { border-color: color-mix(in srgb, var(--p-ink) 12%, transparent); }
+  .pal-border-pi-18     { border-color: color-mix(in srgb, var(--p-ink) 18%, transparent); }
+  .pal-bg-pi-8          { background: color-mix(in srgb, var(--p-ink) 8%, transparent); }
+
+  /* PractitionerDetail hero gradient (Polaroid template) */
+  .pal-hero-gradient {
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--p-ink) 45%, transparent) 0%,
+      color-mix(in srgb, var(--p-ink) 0%,  transparent) 35%,
+      color-mix(in srgb, var(--p-ink) 75%, transparent) 100%
+    );
+  }
+
+  /* Sunrise template blob */
+  .pal-sunrise-blob {
+    background: linear-gradient(135deg, #b56576, #6d597a);
+  }
+
+  /* Garden template SVG noise overlay (was inline data-URI) */
+  .pal-garden-noise {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  }
+
+  /* Templates / Portal thumbnail strips: wrapper sets per-thumb
+     --tt-primary / --tt-surface / --tt-ink / --tt-accent in inline
+     style; children read them through these classes. */
+  .pal-tt-bg-surface { background: var(--tt-surface); }
+  .pal-tt-bg-primary { background: var(--tt-primary); }
+  .pal-tt-bg-ink     { background: var(--tt-ink); }
+  .pal-tt-bg-accent  { background: var(--tt-accent); }
+
+  /* Anti-bot honeypot */
+  .pal-honeypot {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+
+  /* SocialRow tone variants. Hover background is baked into CSS so
+     we can drop the JS mouse-handlers that mutated element.style. */
+  /* Fallbacks (`#fff` / `#1a1a1a` / `#888`) ensure the row stays
+     visible on templates that don't inject `--p-` CSS vars (Atrium,
+     Sunrise, Polaroid, etc. use hardcoded hex literals — see
+     replit.md). Without fallbacks, the icons inherit invalid color
+     and disappear inside their pill outlines. */
+  .pal-social-label-light { color: var(--p-surface, #ffffff); }
+  .pal-social-label-dark  { color: var(--p-muted, #888888); }
+  .pal-social-light {
+    color: var(--p-surface, #ffffff);
+    border-color: color-mix(in srgb, var(--p-surface, #ffffff) 30%, transparent);
+  }
+  .pal-social-light:hover {
+    background: color-mix(in srgb, var(--p-surface, #ffffff) 14%, transparent);
+  }
+  .pal-social-dark {
+    color: var(--p-ink, #1a1a1a);
+    border-color: color-mix(in srgb, var(--p-ink, #1a1a1a) 18%, transparent);
+  }
+  .pal-social-dark:hover {
+    background: color-mix(in srgb, var(--p-primary, #1a1a1a) 8%, transparent);
+  }
+
+  /* FirstVisitVideoInline glow overlay (was inline radial-gradient). */
+  .pal-fvv-glow {
+    background-image:
+      radial-gradient(circle at 30% 40%, rgba(255,255,255,0.6), transparent 50%),
+      radial-gradient(circle at 70% 60%, rgba(0,0,0,0.15), transparent 60%);
+  }
+
+  /* VoiceConfessionalDemo waveform bars */
+  .pal-vc-bar-on  { background: var(--p-primary); }
+  .pal-vc-bar-off { background: rgba(0, 0, 0, 0.15); }
+}

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Front Porch hero — therapist on a Texas porch at golden hour
+  (placeholder). Cedar primary, terracotta secondary, butter accent.
+  Phase 4 swaps for a real photograph. Wood porch posts framing,
+  string-light glow, hill country at dusk in the distance.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1100" preserveAspectRatio="xMidYMid slice" role="img" aria-hidden="true">
+  <defs>
+    <linearGradient id="fp-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F2D67E"/>
+      <stop offset="50%" stop-color="#E5A56A"/>
+      <stop offset="100%" stop-color="#C97B5A"/>
+    </linearGradient>
+    <linearGradient id="fp-floor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8B5E3C"/>
+      <stop offset="100%" stop-color="#6B4423"/>
+    </linearGradient>
+    <radialGradient id="fp-bulb" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFF7D6" stop-opacity="0.95"/>
+      <stop offset="60%" stop-color="#F2D67E" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#F2D67E" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Sky / background -->
+  <rect x="0" y="0" width="1200" height="700" fill="url(#fp-sky)"/>
+  <!-- Floor / porch -->
+  <rect x="0" y="700" width="1200" height="400" fill="url(#fp-floor)"/>
+  <!-- Floor planks -->
+  <g stroke="#5A371D" stroke-width="2" opacity="0.55">
+    <line x1="0" y1="800" x2="1200" y2="780"/>
+    <line x1="0" y1="900" x2="1200" y2="860"/>
+    <line x1="0" y1="1000" x2="1200" y2="940"/>
+    <line x1="0" y1="1080" x2="1200" y2="1020"/>
+  </g>
+
+  <!-- Hill country silhouette -->
+  <path d="M0 700 Q 200 620 400 660 Q 600 700 800 640 Q 1000 580 1200 660 L 1200 700 Z" fill="#6B4423" opacity="0.7"/>
+  <path d="M0 700 Q 300 660 500 680 Q 800 700 1100 670 L 1200 700 Z" fill="#5A371D" opacity="0.5"/>
+
+  <!-- Porch posts (left + right framing) -->
+  <rect x="80" y="60" width="40" height="640" fill="#3D2614"/>
+  <rect x="60" y="40" width="80" height="40" fill="#3D2614"/>
+  <rect x="60" y="700" width="80" height="50" fill="#3D2614"/>
+  <rect x="1080" y="60" width="40" height="640" fill="#3D2614"/>
+  <rect x="1060" y="40" width="80" height="40" fill="#3D2614"/>
+  <rect x="1060" y="700" width="80" height="50" fill="#3D2614"/>
+
+  <!-- Porch beam top -->
+  <rect x="60" y="0" width="1080" height="40" fill="#3D2614"/>
+
+  <!-- String lights with bulbs -->
+  <path d="M120 80 Q 600 220 1080 80" stroke="#3D2614" stroke-width="1.5" fill="none"/>
+  <g>
+    <ellipse cx="240" cy="160" rx="56" ry="56" fill="url(#fp-bulb)"/>
+    <ellipse cx="240" cy="160" rx="9" ry="9" fill="#FFF7D6"/>
+    <ellipse cx="420" cy="200" rx="56" ry="56" fill="url(#fp-bulb)"/>
+    <ellipse cx="420" cy="200" rx="9" ry="9" fill="#FFF7D6"/>
+    <ellipse cx="600" cy="220" rx="56" ry="56" fill="url(#fp-bulb)"/>
+    <ellipse cx="600" cy="220" rx="9" ry="9" fill="#FFF7D6"/>
+    <ellipse cx="780" cy="200" rx="56" ry="56" fill="url(#fp-bulb)"/>
+    <ellipse cx="780" cy="200" rx="9" ry="9" fill="#FFF7D6"/>
+    <ellipse cx="960" cy="160" rx="56" ry="56" fill="url(#fp-bulb)"/>
+    <ellipse cx="960" cy="160" rx="9" ry="9" fill="#FFF7D6"/>
+  </g>
+
+  <!-- Two rocking chairs facing slightly toward camera -->
+  <g transform="translate(220 600)">
+    <!-- chair back -->
+    <path d="M0 0 L 140 0 L 130 -180 L 10 -180 Z" fill="#3D2614"/>
+    <rect x="20" y="-170" width="100" height="14" fill="#5A371D"/>
+    <rect x="20" y="-140" width="100" height="14" fill="#5A371D"/>
+    <rect x="20" y="-110" width="100" height="14" fill="#5A371D"/>
+    <!-- seat -->
+    <rect x="-10" y="-10" width="160" height="30" rx="6" fill="#3D2614"/>
+    <!-- rockers -->
+    <path d="M-20 30 Q 70 60 160 30" stroke="#3D2614" stroke-width="6" fill="none"/>
+  </g>
+  <g transform="translate(840 600)">
+    <path d="M0 0 L 140 0 L 130 -180 L 10 -180 Z" fill="#3D2614"/>
+    <rect x="20" y="-170" width="100" height="14" fill="#5A371D"/>
+    <rect x="20" y="-140" width="100" height="14" fill="#5A371D"/>
+    <rect x="20" y="-110" width="100" height="14" fill="#5A371D"/>
+    <rect x="-10" y="-10" width="160" height="30" rx="6" fill="#3D2614"/>
+    <path d="M-20 30 Q 70 60 160 30" stroke="#3D2614" stroke-width="6" fill="none"/>
+  </g>
+
+  <!-- Therapist seated centre — calm direct gaze, denim shirt, beard -->
+  <g transform="translate(540 420)">
+    <!-- shoulders / shirt -->
+    <path d="M-30 280 L 20 100 Q 110 80 200 100 L 250 280 Z" fill="#5A6F8C"/>
+    <!-- neck -->
+    <rect x="92" y="60" width="40" height="40" fill="#A07248"/>
+    <!-- head -->
+    <ellipse cx="112" cy="30" rx="56" ry="62" fill="#A07248"/>
+    <!-- hair -->
+    <path d="M52 16 Q 50 -50 112 -56 Q 174 -50 172 16 Q 174 -28 130 -32 Q 154 -10 158 14 Q 134 -4 110 0 Q 86 -4 70 14 Q 70 -10 92 -32 Q 50 -22 52 16 Z" fill="#3D2614"/>
+    <!-- beard -->
+    <path d="M68 36 Q 70 78 112 86 Q 154 78 156 36 Q 156 56 134 60 Q 124 70 112 70 Q 100 70 90 60 Q 68 56 68 36 Z" fill="#3D2614"/>
+    <!-- eyes -->
+    <circle cx="92" cy="30" r="3" fill="#2F1F14"/>
+    <circle cx="132" cy="30" r="3" fill="#2F1F14"/>
+    <!-- subtle smile in beard -->
+    <path d="M96 56 Q 112 64 128 56" stroke="#5A371D" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>

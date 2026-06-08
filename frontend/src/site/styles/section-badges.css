@@ -1,0 +1,64 @@
+/* Section-badge counter + tier chip styling.
+ * The counter resets on `.template-sections` (the template root wrapper)
+ * and increments on every `.section-badge`. */
+.template-sections {
+  counter-reset: section-counter;
+}
+.section-badge {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+.section-badge__num {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display, serif);
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: var(--color-surface, #fff);
+  color: var(--color-text, #111);
+  border: 1px solid var(--color-text-muted, rgba(0,0,0,0.15));
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.section-badge__num::before {
+  counter-increment: section-counter;
+  content: counter(section-counter);
+}
+.section-badge__num[data-force-index]:not([data-force-index=""])::before {
+  content: attr(data-force-index);
+}
+.section-badge__tier {
+  font-family: var(--font-mono, ui-monospace, "SFMono-Regular", Menlo, monospace);
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  font-weight: 600;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+/* Boutique = slate, Pro = copper, Concierge = gold. Picked to match
+ * the existing brand palette tokens; the contrasting backgrounds keep
+ * the chip readable regardless of the section's `--color-surface`. */
+.section-badge--boutique .section-badge__tier {
+  background: rgba(82, 100, 125, 0.12);
+  color: #52647d;
+}
+.section-badge--pro .section-badge__tier {
+  background: rgba(139, 90, 60, 0.14);
+  color: #8b5a3c;
+}
+.section-badge--concierge .section-badge__tier {
+  background: rgba(176, 141, 87, 0.16);
+  color: #8a6a3a;
+}
+/* Pure-decoration: hide from screen readers but keep visible. */
+.section-badge { speak: none; }

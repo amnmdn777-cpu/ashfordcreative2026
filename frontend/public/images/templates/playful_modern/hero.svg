@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Playful Modern hero — bright editorial portrait placeholder.
+  Phase 4 swaps for a real D2C-style brand photo. Sage-painted wall,
+  plant in the corner, person on a video call (laptop visible).
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 700" preserveAspectRatio="xMidYMid slice" role="img" aria-hidden="true">
+  <defs>
+    <linearGradient id="wall-pm" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#C9B6FF"/>
+      <stop offset="100%" stop-color="#FDF7F4"/>
+    </linearGradient>
+  </defs>
+  <!-- Wall -->
+  <rect x="0" y="0" width="600" height="500" fill="url(#wall-pm)"/>
+  <!-- Floor / desk surface -->
+  <rect x="0" y="500" width="600" height="200" fill="#F4D9C5"/>
+
+  <!-- Plant in coral pot (left) -->
+  <g transform="translate(60 380)">
+    <ellipse cx="50" cy="200" rx="80" ry="10" fill="#1A1647" opacity="0.2"/>
+    <path d="M10 130 L 90 130 L 80 200 L 20 200 Z" fill="#FF6B5A"/>
+    <g fill="#2C2654">
+      <path d="M50 130 Q 14 56 30 -10 Q 60 24 56 120"/>
+      <path d="M50 130 Q 86 56 70 -10 Q 40 24 44 120" opacity="0.85"/>
+      <path d="M50 130 Q 20 80 -6 30 Q 36 70 50 120" opacity="0.7"/>
+    </g>
+  </g>
+
+  <!-- Person seated (centred-right), shoulders + head + hair -->
+  <g transform="translate(280 200)">
+    <!-- Shoulders / shirt -->
+    <path d="M-20 500 L 20 240 Q 110 220 200 240 L 240 500 Z" fill="#FF6B5A"/>
+    <!-- Neck -->
+    <rect x="92" y="200" width="40" height="40" fill="#D9A488"/>
+    <!-- Head -->
+    <ellipse cx="112" cy="170" rx="58" ry="64" fill="#D9A488"/>
+    <!-- Hair: short curly bob -->
+    <path d="M52 160 Q 48 96 112 90 Q 176 96 172 160 Q 176 116 130 110 Q 154 130 158 158 Q 134 138 110 144 Q 88 138 70 158 Q 70 130 92 110 Q 50 122 52 160 Z" fill="#3A2218"/>
+    <!-- Smile -->
+    <path d="M92 192 Q 112 204 132 192" stroke="#3A2218" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <!-- Eyes -->
+    <circle cx="92" cy="170" r="3" fill="#1A1647"/>
+    <circle cx="132" cy="170" r="3" fill="#1A1647"/>
+  </g>
+
+  <!-- Laptop on desk (front-center), open and angled -->
+  <g transform="translate(180 470)">
+    <path d="M0 60 L 240 60 L 220 -30 L 20 -30 Z" fill="#1A1647"/>
+    <rect x="20" y="-26" width="200" height="80" fill="#2C2654"/>
+    <rect x="0" y="60" width="240" height="14" rx="2" fill="#2C2654"/>
+    <!-- Screen content -->
+    <rect x="40" y="-14" width="60" height="44" rx="4" fill="#FF6B5A"/>
+    <rect x="110" y="-14" width="60" height="44" rx="4" fill="#C9B6FF"/>
+    <rect x="180" y="-14" width="30" height="44" rx="4" fill="#FDF7F4"/>
+  </g>
+
+  <!-- Mug on desk (right) -->
+  <g transform="translate(480 510)">
+    <ellipse cx="20" cy="0" rx="20" ry="5" fill="#1A1647"/>
+    <path d="M-2 0 L 2 50 Q 22 56 42 50 L 42 0 Z" fill="#FF6B5A"/>
+    <ellipse cx="20" cy="0" rx="18" ry="3.5" fill="#1A1647"/>
+    <!-- Steam -->
+    <path d="M14 -8 Q 8 -22 18 -34 Q 28 -46 22 -58" stroke="#1A1647" stroke-width="1.6" fill="none" opacity="0.6" stroke-linecap="round"/>
+  </g>
+</svg>

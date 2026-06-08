@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Hello Friend template thumbnail">
+  <rect width="800" height="600" fill="#2D2A6E"/>
+  <path d="M70 110 Q70 70 110 70 L580 70 Q620 70 620 110 L620 240 Q620 280 580 280 L230 280 L170 340 L190 280 L110 280 Q70 280 70 240 Z" fill="#FFD86B"/>
+  <text x="120" y="200" font-family="Inter, system-ui, sans-serif" font-weight="800" font-size="52" fill="#2D2A6E">Hi, I'm Sam.</text>
+  <g transform="translate(660 430)">
+    <circle r="60" fill="#FF8C7A"/>
+    <circle cx="-16" cy="-10" r="5" fill="#2D2A6E"/>
+    <circle cx="16" cy="-10" r="5" fill="#2D2A6E"/>
+    <path d="M-20 12 q20 20 40 0" stroke="#2D2A6E" stroke-width="4" fill="none" stroke-linecap="round"/>
+  </g>
+  <text x="60" y="430" font-family="Inter, system-ui, sans-serif" font-weight="700" font-size="32" fill="#FFF5EE">Sam Castillo (they/them)</text>
+  <text x="60" y="464" font-family="Inter, system-ui, sans-serif" font-size="15" fill="#FFD86B" letter-spacing="3">AUSTIN · QUEER- &amp; ND-AFFIRMING</text>
+  <text x="60" y="520" font-family="Inter, system-ui, sans-serif" font-size="17" fill="#FFF5EE" opacity="0.85">Sliding scale $80–$140 · intake first, not a calendar.</text>
+  <text x="60" y="565" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#FFF5EE" letter-spacing="2">HELLO FRIEND · INDIGO &amp; BUTTER</text>
+</svg>

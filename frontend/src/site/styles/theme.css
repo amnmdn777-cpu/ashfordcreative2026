@@ -1,0 +1,43 @@
+/*
+ * Theme tokens for the template design system.
+ *
+ * Templates set --color-* + --font-* via <ThemeProvider> at their
+ * root; primitives (Hero, About, Services, …) read these via
+ * `var(--color-primary)` etc. and never inline a hex literal.
+ *
+ * The `:root` defaults below are a neutral fallback so any primitive
+ * rendered outside a ThemeProvider (storybook, isolated tests) still
+ * has sensible color values.
+ */
+:root {
+  --color-primary: #1a2230;
+  --color-secondary: #52647d;
+  --color-accent: #aab8c9;
+  --color-surface: #f5f1ea;
+  --color-surface-soft: #ffffff;
+  --color-text: #1a2230;
+  --color-text-muted: #6b7689;
+
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+
+  --radius-sm: 4px;
+  --radius-md: 10px;
+  --radius-lg: 24px;
+
+  --shadow-sm: 0 1px 2px rgba(20, 20, 30, 0.04);
+  --shadow-md: 0 8px 24px rgba(20, 20, 30, 0.08);
+  --shadow-lg: 0 24px 60px rgba(20, 20, 30, 0.14);
+
+  --motion-fast: 180ms;
+  --motion-base: 320ms;
+  --motion-slow: 720ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 0ms;
+    --motion-base: 0ms;
+    --motion-slow: 0ms;
+  }
+}

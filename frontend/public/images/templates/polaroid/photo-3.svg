@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Polaroid photo 3 placeholder — therapist holding mug. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" role="img" aria-hidden="true">
+  <defs>
+    <linearGradient id="wall3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F5F0E1"/>
+      <stop offset="100%" stop-color="#E5DCBE"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="400" height="300" fill="url(#wall3)"/>
+  <!-- Soft light wash -->
+  <ellipse cx="120" cy="40" rx="180" ry="100" fill="#FFF5DD" opacity="0.6"/>
+  <!-- Shoulders / sweater -->
+  <path d="M80 300 L 120 200 Q 200 180 280 200 L 320 300 Z" fill="#264653"/>
+  <!-- Neck -->
+  <rect x="180" y="170" width="40" height="30" fill="#E0B79A"/>
+  <!-- Head -->
+  <ellipse cx="200" cy="140" rx="44" ry="50" fill="#E0B79A"/>
+  <!-- Hair -->
+  <path d="M156 130 Q 152 86 200 78 Q 248 86 244 130 Q 244 96 200 90 Q 156 96 156 130 Z" fill="#3A2A1F"/>
+  <path d="M148 158 Q 132 200 152 240 Q 142 200 156 170 Z" fill="#3A2A1F"/>
+  <path d="M252 158 Q 268 200 248 240 Q 258 200 244 170 Z" fill="#3A2A1F"/>
+  <!-- Mug in hands -->
+  <ellipse cx="210" cy="240" rx="42" ry="8" fill="#1F2937"/>
+  <path d="M168 240 L 172 290 Q 210 296 250 290 L 254 240 Z" fill="#264653"/>
+  <ellipse cx="210" cy="240" rx="38" ry="6" fill="#1F2937"/>
+  <!-- Steam -->
+  <path d="M196 230 Q 188 210 200 196 Q 212 184 204 168" stroke="#FFFCF5" stroke-width="2.4" fill="none" opacity="0.9" stroke-linecap="round"/>
+  <path d="M218 230 Q 212 214 224 200 Q 234 188 226 174" stroke="#FFFCF5" stroke-width="2.4" fill="none" opacity="0.9" stroke-linecap="round"/>
+  <!-- Hands -->
+  <ellipse cx="170" cy="248" rx="14" ry="10" fill="#E0B79A"/>
+  <ellipse cx="252" cy="248" rx="14" ry="10" fill="#E0B79A"/>
+</svg>

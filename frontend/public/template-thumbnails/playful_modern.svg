@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Playful Modern template thumbnail">
+  <defs>
+    <linearGradient id="pm" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FDF7F4"/>
+      <stop offset="0.55" stop-color="#FF6B5A"/>
+      <stop offset="1" stop-color="#2C2654"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#pm)"/>
+  <g fill="#C9B6FF" opacity="0.85">
+    <circle cx="660" cy="120" r="44"/>
+    <path d="M90 470 q40 -40 80 0 q40 -40 80 0" stroke="#FFD86B" stroke-width="6" fill="none"/>
+  </g>
+  <g transform="translate(680 440)">
+    <circle r="48" fill="#FFD86B"/>
+    <circle cx="-12" cy="-8" r="4" fill="#2C2654"/>
+    <circle cx="12" cy="-8" r="4" fill="#2C2654"/>
+    <path d="M-16 8 q16 18 32 0" stroke="#2C2654" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </g>
+  <text x="60" y="120" font-family="Inter, system-ui, sans-serif" font-weight="900" font-size="40" fill="#FDF7F4">Dr. Naomi Bellamy</text>
+  <text x="60" y="158" font-family="Inter, system-ui, sans-serif" font-size="15" fill="#FDF7F4" letter-spacing="3" opacity="0.85">TELEHEALTH · TEXAS · ANXIETY + ADHD</text>
+  <text x="60" y="360" font-family="Inter, system-ui, sans-serif" font-weight="900" font-size="74" fill="#FDF7F4">Show up</text>
+  <text x="60" y="432" font-family="Inter, system-ui, sans-serif" font-weight="900" font-size="74" fill="#FFD86B">as you are.</text>
+  <text x="60" y="555" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#FDF7F4" letter-spacing="2">PLAYFUL MODERN · INDIGO &amp; CORAL</text>
+</svg>

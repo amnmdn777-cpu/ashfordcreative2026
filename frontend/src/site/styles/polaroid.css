@@ -1,0 +1,30 @@
+/* Polaroid template styles. Fonts (Caveat, Playfair Display) come
+   from the @import at the top of src/index.css. */
+.font-handwriting { font-family: 'Caveat', cursive; }
+.font-serif { font-family: 'Playfair Display', serif; }
+.font-sans { font-family: 'Inter', sans-serif; }
+
+.paper-texture {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
+}
+
+.masking-tape {
+  position: absolute;
+  background-color: rgba(255, 255, 230, 0.6);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(2px);
+  z-index: 10;
+}
+
+.masking-tape::after,
+.masking-tape::before {
+  content: "";
+  position: absolute;
+  width: 2px;
+  height: 100%;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.5) 50%, transparent 50%);
+  background-size: 1px 2px;
+}
+
+.masking-tape::before { left: -1px; }
+.masking-tape::after { right: -1px; }

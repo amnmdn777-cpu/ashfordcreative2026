@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Polaroid template thumbnail">
+  <rect width="800" height="600" fill="#FAF6EC"/>
+  <g transform="translate(110 90) rotate(-4)">
+    <rect width="280" height="320" fill="#FFFFFF" stroke="#1F2937" stroke-opacity="0.08"/>
+    <rect x="16" y="16" width="248" height="232" fill="#264653"/>
+    <circle cx="140" cy="132" r="58" fill="#E29578" opacity="0.85"/>
+    <text x="140" y="290" font-family="Caveat, cursive" font-size="22" fill="#264653" text-anchor="middle">East Austin · Spring</text>
+  </g>
+  <rect x="160" y="78" width="80" height="22" fill="#E29578" opacity="0.55" transform="rotate(-8 200 89)"/>
+  <text x="440" y="160" font-family="Fraunces, Georgia, serif" font-size="36" fill="#1F2937" font-style="italic">Maya Alvarado, LCSW</text>
+  <text x="440" y="196" font-family="Inter, system-ui, sans-serif" font-size="14" fill="#5C6470" letter-spacing="3">AUSTIN · EMDR &amp; IFS</text>
+  <text x="440" y="290" font-family="Fraunces, Georgia, serif" font-size="36" fill="#264653" font-style="italic">"The slow,</text>
+  <text x="440" y="332" font-family="Fraunces, Georgia, serif" font-size="36" fill="#264653" font-style="italic">body-based work."</text>
+  <text x="60" y="555" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#264653" letter-spacing="2">POLAROID · PAPER &amp; TAPE</text>
+  <text x="710" y="555" font-family="Caveat, cursive" font-size="38" fill="#264653" text-anchor="middle">MA</text>
+</svg>
