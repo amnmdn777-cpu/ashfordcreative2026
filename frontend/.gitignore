@@ -13,6 +13,9 @@ out/
 .env
 .env.*
 !.env.example
+# Demo build flag (VITE_MOCK_AUTH) — intentionally committed so the deploy
+# builds in mock-auth mode. Remove before real launch.
+!.env.production
 
 # Logs
 *.log
