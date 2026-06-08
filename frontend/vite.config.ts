@@ -32,4 +32,12 @@ export default defineConfig({
       },
     },
   },
+  // `vite preview` is the production server on Railway (see frontend/railway.json).
+  // Vite 7 rejects any Host header it doesn't recognize, which would 403 the
+  // *.up.railway.app (and custom) domain — allow all hosts since this only
+  // serves prebuilt static assets. Port/host come from the start command.
+  preview: {
+    host: "0.0.0.0",
+    allowedHosts: true,
+  },
 });

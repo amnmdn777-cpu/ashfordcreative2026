@@ -6,7 +6,7 @@ This repo deploys as **three Railway services** inside one project:
 | ---------------- | ------------------ | ------------------ | ------- |
 | Postgres         | (Railway plugin)   | —                  | no      |
 | `ashford-backend`| `ashford-backend/` | Dockerfile         | yes     |
-| `frontend`       | `frontend/`        | Dockerfile (nginx) | yes     |
+| `frontend`       | `frontend/`        | Nixpacks (`vite preview`) | yes |
 
 Each service has its own `Dockerfile` + `railway.json`. In the Railway UI set
 each service's **Root Directory** to the matching folder so Railway builds the
@@ -68,11 +68,17 @@ git-ignored and was never pushed.
 
 ## 3. Frontend service (`frontend`)
 
-Vite build served by nginx with SPA fallback (so client-side routes `/admin`,
-`/sales`, `/template/...` all resolve to `index.html`).
+Built and served by **Nixpacks** (`frontend/railway.json`): Nixpacks runs
+`npm run build`, then the start command serves the prebuilt `dist/` with
+`vite preview --host 0.0.0.0 --port $PORT`. SPA fallback (so `/admin`, `/sales`,
+`/template/...` resolve to `index.html`) is built into the preview server.
 
-Vite inlines env vars **at build time**, so these are set as Railway service
-variables and the Dockerfile reads them as build ARGs:
+> `vite.config.ts` sets `preview.allowedHosts: true` — Vite 7 otherwise rejects
+> the `*.up.railway.app` Host header with "Blocked request. This host is not
+> allowed." Keep that in place.
+
+Vite inlines env vars **at build time**. Railway exposes service variables to the
+Nixpacks build, so set these as plain service variables:
 
 ```
 VITE_API_BASE=https://<your-backend-domain>     # absolute backend URL
@@ -80,7 +86,10 @@ VITE_MOCK_AUTH=false
 VITE_SENTRY_DSN=...                              # optional
 ```
 
-nginx listens on `${PORT}` (Railway-assigned) via the envsubst template.
+> Note: `vite preview` is a lightweight static server — fine to launch with. If
+> you later want a hardened static server (gzip, fine-grained caching, no dev
+> dependency at runtime), switch this service to the nginx Dockerfile variant —
+> ask and I'll restore it.
 
 ---
 
@@ -133,7 +142,8 @@ docker run --rm -p 8080:8080 \
   -e DATABASE_URL=... -e SESSION_SECRET=dev -e ALLOWED_ORIGINS=http://localhost:8081 \
   ashford-backend
 
-# frontend
-docker build -t ashford-frontend --build-arg VITE_API_BASE=http://localhost:8080 ./frontend
-docker run --rm -p 8081:8080 ashford-frontend
+# frontend (Nixpacks mirrors these two steps)
+cd frontend
+VITE_API_BASE=http://localhost:8080 npm run build
+npm run preview -- --host 0.0.0.0 --port 8081
 ```
