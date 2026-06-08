@@ -1,0 +1,22 @@
+# Rendered by the nginx image's envsubst entrypoint on boot.
+# Only ${PORT} is substituted; nginx runtime vars ($uri, $host) are left intact.
+server {
+    listen       ${PORT};
+    server_name  _;
+
+    root  /usr/share/nginx/html;
+    index index.html;
+
+    # Long-cache the content-hashed assets Vite emits under /assets/.
+    location /assets/ {
+        expires    1y;
+        add_header Cache-Control "public, immutable";
+        try_files  $uri =404;
+    }
+
+    # SPA fallback: wouter does client-side routing for /, /admin, /sales, …
+    # so every unmatched path returns index.html.
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
