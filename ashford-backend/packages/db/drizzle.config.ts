@@ -5,8 +5,11 @@ if (!process.env.DATABASE_URL) {
 }
 
 export default defineConfig({
-  schema: "./src/schema/index.ts",
-  out: "./drizzle",
+  // Paths are resolved relative to the current working directory (the backend
+  // root, /app in the container), NOT this config file — the db:* scripts run
+  // `drizzle-kit --config packages/db/drizzle.config.ts` from the backend root.
+  schema: "./packages/db/src/schema/index.ts",
+  out: "./packages/db/drizzle",
   dialect: "postgresql",
   dbCredentials: {
     url: process.env.DATABASE_URL,
