@@ -1,48 +1,43 @@
-import { Storage, type Bucket } from "@google-cloud/storage";
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+} from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { env } from "../lib/env";
 import { logger } from "../lib/logger";
 
-// Object Storage helpers for call audio. Soft-fails (returns null) when
-// DEFAULT_OBJECT_STORAGE_BUCKET_ID is unset so dev runs without storage.
+// Object Storage helpers for call audio, backed by S3-compatible storage
+// (Cloudflare R2 / AWS S3 / Backblaze B2). Soft-fails (returns null) when the
+// S3 config is incomplete so dev/voice-disabled runs work without storage.
+//
+// Migrated off the Replit Object Storage sidecar (GCS via 127.0.0.1:1106),
+// which only existed inside Replit and silently failed everywhere else.
 
-const REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
+let cachedClient: S3Client | null = null;
 
-let cachedStorage: Storage | null = null;
-let cachedBucket: Bucket | null = null;
+const isConfigured = (): boolean =>
+  !!(
+    env.s3Bucket &&
+    env.s3Endpoint &&
+    env.s3AccessKeyId &&
+    env.s3SecretAccessKey
+  );
 
-const getBucketId = (): string | null => env.objectStorageBucketId ?? null;
-
-// Storage client wired to the Replit sidecar (external_account credentials).
-const getStorage = async (): Promise<Storage | null> => {
-  if (cachedStorage) return cachedStorage;
-  cachedStorage = new Storage({
+const getClient = (): S3Client | null => {
+  if (cachedClient) return cachedClient;
+  if (!isConfigured()) return null;
+  cachedClient = new S3Client({
+    region: env.s3Region,
+    endpoint: env.s3Endpoint,
+    // R2 (and most S3-compatibles) require path-style addressing.
+    forcePathStyle: true,
     credentials: {
-      audience: "replit",
-      subject_token_type: "access_token",
-      token_url: `${REPLIT_SIDECAR_ENDPOINT}/token`,
-      type: "external_account",
-      credential_source: {
-        url: `${REPLIT_SIDECAR_ENDPOINT}/credential`,
-        format: {
-          type: "json",
-          subject_token_field_name: "access_token",
-        },
-      },
-      universe_domain: "googleapis.com",
+      accessKeyId: env.s3AccessKeyId as string,
+      secretAccessKey: env.s3SecretAccessKey as string,
     },
-    projectId: "",
   });
-  return cachedStorage;
-};
-
-const getBucket = async (): Promise<Bucket | null> => {
-  if (cachedBucket) return cachedBucket;
-  const id = getBucketId();
-  if (!id) return null;
-  const storage = await getStorage();
-  if (!storage) return null;
-  cachedBucket = storage.bucket(id);
-  return cachedBucket;
+  return cachedClient;
 };
 
 // Fetch a Twilio recording (basic-auth) and upload to the audio bucket.
@@ -50,11 +45,11 @@ export const uploadAudioFromTwilioUrl = async (
   twilioRecordingUrl: string,
   objectKey: string,
 ): Promise<string | null> => {
-  const bucket = await getBucket();
-  if (!bucket) {
+  const client = getClient();
+  if (!client) {
     logger.warn(
       { objectKey },
-      "audioStorage: bucket unavailable — skipping upload (dev fallback)",
+      "audioStorage: S3 not configured — skipping upload (dev fallback)",
     );
     return null;
   }
@@ -88,12 +83,20 @@ export const uploadAudioFromTwilioUrl = async (
   const arrayBuffer = await res.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
 
-  const file = bucket.file(objectKey);
-  await file.save(buffer, {
-    contentType: "audio/mpeg",
-    resumable: false,
-  });
-  return objectKey;
+  try {
+    await client.send(
+      new PutObjectCommand({
+        Bucket: env.s3Bucket as string,
+        Key: objectKey,
+        Body: buffer,
+        ContentType: "audio/mpeg",
+      }),
+    );
+    return objectKey;
+  } catch (err) {
+    logger.error({ err, objectKey }, "audioStorage: S3 upload failed");
+    return null;
+  }
 };
 
 // Short-lived signed READ URL for inline <audio src=...>. Default 24h TTL.
@@ -101,15 +104,17 @@ export const presignedAudioUrl = async (
   objectKey: string,
   ttlSec = 86_400,
 ): Promise<string | null> => {
-  const bucket = await getBucket();
-  if (!bucket) return null;
+  const client = getClient();
+  if (!client) return null;
   try {
-    const [url] = await bucket.file(objectKey).getSignedUrl({
-      action: "read",
-      expires: Date.now() + ttlSec * 1000,
-      version: "v4",
-    });
-    return url;
+    return await getSignedUrl(
+      client,
+      new GetObjectCommand({
+        Bucket: env.s3Bucket as string,
+        Key: objectKey,
+      }),
+      { expiresIn: ttlSec },
+    );
   } catch (err) {
     logger.warn(
       { err, objectKey },
@@ -123,15 +128,25 @@ export const presignedAudioUrl = async (
 export const streamAudioObject = async (
   objectKey: string,
 ): Promise<{ buffer: Buffer; contentType: string } | null> => {
-  const bucket = await getBucket();
-  if (!bucket) return null;
+  const client = getClient();
+  if (!client) return null;
   try {
-    const [buf] = await bucket.file(objectKey).download();
-    return { buffer: buf, contentType: "audio/mpeg" };
+    const out = await client.send(
+      new GetObjectCommand({
+        Bucket: env.s3Bucket as string,
+        Key: objectKey,
+      }),
+    );
+    if (!out.Body) return null;
+    const bytes = await out.Body.transformToByteArray();
+    return {
+      buffer: Buffer.from(bytes),
+      contentType: out.ContentType ?? "audio/mpeg",
+    };
   } catch (err) {
     logger.warn({ err, objectKey }, "audioStorage: download failed");
     return null;
   }
 };
 
-export const isAudioStorageConfigured = (): boolean => !!getBucketId();
+export const isAudioStorageConfigured = (): boolean => isConfigured();

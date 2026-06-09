@@ -348,6 +348,26 @@ export const buildPortalScreenshotUrl = (
  * actual request. We never want the API to refuse to start because of it.
  */
 export const warmBrowserOnStartup = async (): Promise<void> => {
+  // Pre-warming launches a resident Chromium (~150-300MB) at boot. On a
+  // memory-constrained host this spike trips the kernel OOM killer seconds
+  // after "chromium warmed", crash-looping the whole API for a feature
+  // (email-preview screenshots) that isn't on the login/dashboard path and
+  // launches Chromium lazily on first use anyway.
+  //
+  // Therefore we SKIP the warm by default in production (memory-safe). Opt back
+  // in on a host with enough RAM via ENABLE_BROWSER_WARM=true. DISABLE_BROWSER_WARM
+  // is still honored everywhere for an explicit off-switch in dev.
+  const disabled =
+    process.env["DISABLE_BROWSER_WARM"] === "true" ||
+    process.env["DISABLE_BROWSER_WARM"] === "1";
+  const enabled = process.env["ENABLE_BROWSER_WARM"] === "true";
+  const isProd = process.env["NODE_ENV"] === "production";
+  if (disabled || (isProd && !enabled)) {
+    logger.info(
+      "puppeteer chromium warm skipped (memory-safe default; set ENABLE_BROWSER_WARM=true to opt in)",
+    );
+    return;
+  }
   try {
     const started = Date.now();
     await getBrowser();

@@ -13,6 +13,7 @@ import { verifyPassword } from "../lib/password";
 import { asyncHandler } from "../middleware/asyncHandler";
 import { requireAuth } from "../middleware/requireAuth";
 import { writeAuditExplicit } from "../services/auditLog";
+import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
@@ -57,6 +58,7 @@ router.post(
     }
     const body = parsed.data;
     const attemptedUsername = body.username.toLowerCase();
+    logger.info({ attemptedUsername, ip: reqIp(req) }, "auth.login: attempt received");
     const [user] = await db
       .select()
       .from(salesReps)
@@ -114,6 +116,7 @@ router.post(
       ip: reqIp(req),
       userAgent: reqUa(req),
     });
+    logger.info({ userId: user.id, username: user.username, role: user.role }, "auth.login: success");
     res.json({ user: toSessionUser(user) });
   }),
 );

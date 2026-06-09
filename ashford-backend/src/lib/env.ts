@@ -255,7 +255,23 @@ export const env = {
   // Replit storage tool pane. Set when audio recordings should be
   // persisted; when unset every audio-storage helper soft-fails so
   // missing storage doesn't break the rest of the voice pipeline.
+  // DEPRECATED off Replit: integrations/audioStorage.ts now uses the S3
+  // config below (works on any host, e.g. Cloudflare R2). Kept only so any
+  // stray reference still type-checks.
   objectStorageBucketId: readEnv("DEFAULT_OBJECT_STORAGE_BUCKET_ID"),
+
+  // S3-compatible object storage for call audio (Cloudflare R2 / AWS S3 /
+  // Backblaze B2). Replaces the Replit-sidecar GCS path which only worked on
+  // Replit. ALL optional: when any of bucket/endpoint/keys is missing, every
+  // audio-storage helper soft-fails (returns null) so the voice pipeline
+  // degrades gracefully instead of crashing. For R2: S3_REGION must be "auto"
+  // and S3_ENDPOINT is https://<account-id>.r2.cloudflarestorage.com (NO
+  // bucket suffix — the bucket is passed separately).
+  s3Bucket: readEnv("S3_BUCKET"),
+  s3Endpoint: readEnv("S3_ENDPOINT"),
+  s3Region: readEnv("S3_REGION") ?? "auto",
+  s3AccessKeyId: readEnv("S3_ACCESS_KEY_ID"),
+  s3SecretAccessKey: readEnv("S3_SECRET_ACCESS_KEY"),
 
   resendApiKey: readEnv("RESEND_API_KEY"),
   resendWebhookSecret: readEnv("RESEND_WEBHOOK_SECRET"),

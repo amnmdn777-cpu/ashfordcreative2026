@@ -3,6 +3,31 @@
 import { initSentry } from "./lib/sentry";
 initSentry();
 
+// Global safety net. A process that vanishes with no stack trace in the logs
+// is the hardest failure to debug on a PaaS (Railway just shows "connection
+// refused"). These handlers force the real reason onto stderr — which Railway
+// captures in Deploy Logs — before the process exits. Without them, an
+// unhandled rejection in a scheduled task (or a late boot throw) kills the
+// server invisibly. console.* is used (not the pino logger) so this works even
+// if the failure happens before/while the logger module is importing.
+process.on("uncaughtException", (err) => {
+  // eslint-disable-next-line no-console
+  console.error("[FATAL] uncaughtException — process will exit:", err);
+  process.exit(1);
+});
+process.on("unhandledRejection", (reason) => {
+  // eslint-disable-next-line no-console
+  console.error("[FATAL] unhandledRejection — process will exit:", reason);
+  process.exit(1);
+});
+for (const sig of ["SIGTERM", "SIGINT"] as const) {
+  process.on(sig, () => {
+    // eslint-disable-next-line no-console
+    console.error(`[SIGNAL] received ${sig} — platform is stopping this process`);
+    process.exit(0);
+  });
+}
+
 // Boot sequence is async because we hydrate Stripe credentials from the
 // Replit connector BEFORE any module that depends on `env.ts` is imported.
 // `env.ts` reads `process.env.STRIPE_SECRET_KEY` at module-load time, and
