@@ -348,6 +348,17 @@ export const buildPortalScreenshotUrl = (
  * actual request. We never want the API to refuse to start because of it.
  */
 export const warmBrowserOnStartup = async (): Promise<void> => {
+  // Ops escape hatch: pre-warming launches a resident Chromium (~150-300MB)
+  // at boot. On a memory-constrained host this spike trips the kernel OOM
+  // killer seconds after "chromium warmed", crash-looping the whole API for a
+  // feature (email-preview screenshots) that isn't on the login/dashboard
+  // path. Setting DISABLE_BROWSER_WARM=true skips the warm; Chromium then
+  // launches lazily only when a screenshot is actually requested.
+  const flag = process.env["DISABLE_BROWSER_WARM"];
+  if (flag === "true" || flag === "1") {
+    logger.info("puppeteer chromium warm skipped (DISABLE_BROWSER_WARM set)");
+    return;
+  }
   try {
     const started = Date.now();
     await getBrowser();
