@@ -835,7 +835,7 @@ export default function LeadDetailPage() {
                   let finalUrl = url;
                   try {
                     const r = await fetch("/api/auth/rep-token", {
-                      credentials: "same-origin",
+                      credentials: "include",
                     });
                     if (r.ok) {
                       const j = (await r.json()) as { token?: string };

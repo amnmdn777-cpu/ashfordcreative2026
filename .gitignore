@@ -32,3 +32,8 @@ Thumbs.db
 coverage/
 .cache/
 *.local
+
+# Database dumps (contain real customer data + password hashes — never commit)
+*.sql
+backup.sql
+.claude/

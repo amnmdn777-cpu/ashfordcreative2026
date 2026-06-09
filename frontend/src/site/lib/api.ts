@@ -42,7 +42,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       "Content-Type": "application/json",
       ...(init?.headers || {}),
     },
-    credentials: "same-origin",
+    credentials: "include",
     signal: composed,
   });
   if (!res.ok) {
