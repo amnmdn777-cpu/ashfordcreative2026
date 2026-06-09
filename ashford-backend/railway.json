@@ -6,7 +6,6 @@
   },
   "deploy": {
     "startCommand": "dumb-init node --enable-source-maps ./dist/index.mjs",
-    "preDeployCommand": "npm run db:push",
     "healthcheckPath": "/api/healthz",
     "healthcheckTimeout": 120,
     "restartPolicyType": "ON_FAILURE",

@@ -13,6 +13,9 @@ out/
 .env
 .env.*
 !.env.example
+# Demo build flag (VITE_MOCK_AUTH) — intentionally committed so the deploy
+# builds in mock-auth mode. Remove before real launch.
+!.env.production
 
 # Logs
 *.log
@@ -32,8 +35,3 @@ Thumbs.db
 coverage/
 .cache/
 *.local
-
-# Database dumps (contain real customer data + password hashes — never commit)
-*.sql
-backup.sql
-.claude/

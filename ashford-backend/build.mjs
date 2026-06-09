@@ -101,6 +101,16 @@ async function buildAll() {
       "electron",
       "@resvg/*",
       "satori",
+      // resend@4 lazily pulls in @react-email/render for React-component emails.
+      // This backend only sends HTML emails, so that path never runs — but
+      // esbuild still tries to bundle the (dynamic) import and chokes because
+      // react/react-dom aren't installed. Externalize so the dead path is left
+      // as-is instead of failing the build.
+      "react",
+      "react/*",
+      "react-dom",
+      "react-dom/*",
+      "@react-email/*",
     ],
     sourcemap: "linked",
     plugins: [

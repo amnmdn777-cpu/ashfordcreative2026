@@ -427,7 +427,7 @@ function SelfServeCheckout({
       const res = await fetch(`${API_BASE}/checkout/self-serve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
+        credentials: "include",
         body: JSON.stringify({
           tierKey: selectedTier,
           customerEmail: email.trim() || undefined,

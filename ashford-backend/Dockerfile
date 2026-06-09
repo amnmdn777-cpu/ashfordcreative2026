@@ -26,7 +26,11 @@ WORKDIR /app
 # them, so copy manifests + packages first to keep the install layer cached.
 COPY package.json package-lock.json ./
 COPY packages ./packages
-RUN npm ci
+# esbuild-plugin-pino@2.3.3 declares a peer of esbuild <=0.25.8, but the project
+# uses esbuild ^0.27. The plugin works fine with 0.27; legacy-peer-deps keeps the
+# strict npm in the node:22 image from aborting the install over the peer range
+# (matches how the local node_modules was installed).
+RUN npm ci --legacy-peer-deps
 
 # App source, then bundle to dist/index.mjs via esbuild (build.mjs).
 COPY . .

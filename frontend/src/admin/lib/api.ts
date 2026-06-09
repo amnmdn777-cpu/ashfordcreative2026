@@ -27,7 +27,7 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
       ...(isForm ? {} : { "Content-Type": "application/json" }),
       ...(init?.headers || {}),
     },
-    credentials: "same-origin",
+    credentials: "include",
   });
   if (!res.ok) {
     let msg = `HTTP ${res.status}`;
