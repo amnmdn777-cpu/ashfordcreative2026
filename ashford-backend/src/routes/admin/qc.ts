@@ -169,15 +169,26 @@ router.post(
  *  a token-only middleware without disturbing the admin session
  *  guards above. */
 const internalRouter: IRouter = Router();
-internalRouter.use((req: Request, res: Response, next: NextFunction) => {
-  const expected = process.env.INTERNAL_API_TOKEN || "";
-  const got = req.header("x-ashford-internal-token") || "";
-  if (!expected || got !== expected) {
-    res.status(401).json({ error: "unauthorized" });
-    return;
-  }
-  next();
-});
+// IMPORTANT: scope this token gate to the "/internal" path. This router is
+// mounted no-path inside the admin router, so a no-path `.use()` here ran for
+// EVERY request that fell through the admin routes (e.g. /admin/approvals,
+// /admin/messages — which live in sibling routers mounted later) and 401'd
+// them with a flat {error:"unauthorized"}, because the browser never sends the
+// x-ashford-internal-token header. Scoping to "/internal" makes the gate guard
+// only the /internal/* script endpoints below and lets everything else pass
+// through to its real router.
+internalRouter.use(
+  "/internal",
+  (req: Request, res: Response, next: NextFunction) => {
+    const expected = process.env.INTERNAL_API_TOKEN || "";
+    const got = req.header("x-ashford-internal-token") || "";
+    if (!expected || got !== expected) {
+      res.status(401).json({ error: "unauthorized" });
+      return;
+    }
+    next();
+  },
+);
 internalRouter.post(
   "/internal/leads/:id/qc-validate",
   asyncHandler(async (req: Request, res: Response) => {
