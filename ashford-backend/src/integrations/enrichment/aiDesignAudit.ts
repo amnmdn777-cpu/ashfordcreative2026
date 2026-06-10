@@ -1,6 +1,6 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { db, leadEnrichment, leads } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
+import { getAnthropicClient, isAnthropicConfigured } from "../../lib/aiClient";
 import { env } from "../../lib/env";
 import { logger } from "../../lib/logger";
 import type { Candidate, EnrichmentSource, LeadInput } from "./types";
@@ -53,7 +53,7 @@ class AIDesignAuditSource implements EnrichmentSource {
   readonly label = "AI Design Audit (Claude)";
 
   isConfigured(): boolean {
-    return !!env.aiAnthropicBaseUrl && !!env.aiAnthropicApiKey;
+    return isAnthropicConfigured();
   }
 
   async fetch(lead: LeadInput): Promise<Candidate | null> {
@@ -145,10 +145,8 @@ Portal configuration assembled for this prospect:
 ${JSON.stringify(portalInputs, null, 2)}`;
 
     try {
-      const client = new Anthropic({
-        baseURL: env.aiAnthropicBaseUrl!,
-        apiKey: env.aiAnthropicApiKey!,
-      });
+      const client = getAnthropicClient();
+      if (!client) return null;
       const response = await client.messages.create({
         model: "claude-sonnet-4-6",
         max_tokens: 8192,

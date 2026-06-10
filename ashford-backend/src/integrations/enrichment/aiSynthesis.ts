@@ -1,7 +1,6 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { db, leadEnrichment } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
-import { env } from "../../lib/env";
+import { getAnthropicClient, isAnthropicConfigured } from "../../lib/aiClient";
 import { logger } from "../../lib/logger";
 import type { Candidate, EnrichmentSource, LeadInput } from "./types";
 
@@ -29,7 +28,7 @@ class AISynthesisSource implements EnrichmentSource {
   readonly label = "AI Synthesis (Claude)";
 
   isConfigured(): boolean {
-    return !!env.aiAnthropicBaseUrl && !!env.aiAnthropicApiKey;
+    return isAnthropicConfigured();
   }
 
   async fetch(lead: LeadInput): Promise<Candidate | null> {
@@ -104,10 +103,8 @@ Raw enrichment data, keyed by source:
 ${JSON.stringify(sourceBlobs, null, 2)}`;
 
     try {
-      const client = new Anthropic({
-        baseURL: env.aiAnthropicBaseUrl!,
-        apiKey: env.aiAnthropicApiKey!,
-      });
+      const client = getAnthropicClient();
+      if (!client) return null;
       const response = await client.messages.create({
         model: "claude-sonnet-4-6",
         max_tokens: 8192,
