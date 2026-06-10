@@ -54,7 +54,7 @@ export default function RepLayout({ children }: { children: ReactNode }) {
     queryKey: ["rep", "messages", "unread"],
     queryFn: () => api.unreadMessageCount(),
     refetchInterval: 30000,
-    enabled: !!user && user.role === "rep",
+    enabled: !!user && (user.role === "rep" || user.role === "admin"),
   });
   const badges: Record<string, number> = {
     messages: unreadMsgs?.unreadCount ?? 0,

@@ -18,7 +18,7 @@ export default function LoginPage() {
     setBusy(true);
     try {
       const u = await login(username.trim(), password);
-      if (u.role !== "rep") {
+      if (u.role !== "rep" && u.role !== "admin") {
         setError(
           "This account isn't a sales rep. Sign in with the Ashford team dashboard instead.",
         );
