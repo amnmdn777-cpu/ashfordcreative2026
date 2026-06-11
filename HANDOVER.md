@@ -1,6 +1,9 @@
 # Ashford Creative 2026 — Project Handover & Ownership Documentation
 
-This document serves as the master guide for the production cutover, ownership transfer, local development environment setup, and long-term maintenance of the Ashford Creative application stack (Vite frontend, Express backend, Postgres database).
+This document serves as the operational guide for the production cutover, ownership transfer, local development environment setup, and long-term maintenance of the Ashford Creative application stack.
+
+> [!NOTE]
+> For a deep-dive technical explanation of the codebase architecture, folder structure, database schema, AI prompting engine, and system integration details, please refer to the comprehensive **[PROJECT_DOCS.md](file:///d:/Client/newclient/PROJECT_DOCS.md)** guide.
 
 ---
 
