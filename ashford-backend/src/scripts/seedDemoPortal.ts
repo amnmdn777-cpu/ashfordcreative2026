@@ -47,7 +47,7 @@ async function main() {
         city: "Austin",
         state: "TX",
         phone: DEMO_PHONE,
-        email: "demo@ashfordcreative.org",
+        email: "demo@ashfordhealthcreative.com",
         locale: "en",
         currentWebsite: "https://example.com",
         profileBlurb:

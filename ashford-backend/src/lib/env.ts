@@ -80,7 +80,7 @@ const ALLOWED_ORIGINS: string[] | null = (() => {
         [
           "ALLOWED_ORIGINS is required in production and must list every browser origin",
           "that should be allowed to call this API (comma-separated, scheme + host, no trailing slash).",
-          "Example: ALLOWED_ORIGINS=https://www.ashfordcreative.org,https://sales.ashfordcreative.org,https://admin.ashfordcreative.org",
+          "Example: ALLOWED_ORIGINS=https://www.ashfordhealthcreative.com,https://sales.ashfordhealthcreative.com,https://admin.ashfordhealthcreative.com",
           "See docs/deploy.md for the full list. Refusing to boot — without it every cross-origin",
           "browser request would be rejected and the frontends would appear broken.",
         ].join(" "),
@@ -131,7 +131,7 @@ const EXPECTED_FRONTEND_ORIGINS: string[] | null = (() => {
         "It must be populated independently from ALLOWED_ORIGINS so the boot CORS self-check",
         "(services/corsBootCheck.ts) can detect typos in either var. Set it to the same hostnames",
         "documented in docs/deploy.md, e.g.:",
-        "  EXPECTED_FRONTEND_ORIGINS=https://www.ashfordcreative.org,https://sales.ashfordcreative.org,https://admin.ashfordcreative.org",
+        "  EXPECTED_FRONTEND_ORIGINS=https://www.ashfordhealthcreative.com,https://sales.ashfordhealthcreative.com,https://admin.ashfordhealthcreative.com",
         "Refusing to boot — without it the post-deploy CORS gate is non-deterministic.",
       ].join(" "),
     );
@@ -190,7 +190,7 @@ export const env = {
   // Origin where the prospect-facing marketing site (ashford-site) is served.
   // In dev this is the same Replit dev domain as the API (path-based routing
   // dispatches /api/* to the api-server and /template/* to ashford-site). In
-  // production they diverge — the site lives at https://www.ashfordcreative.org
+  // production they diverge — the site lives at https://www.ashfordhealthcreative.com
   // while the API lives on a separate subdomain. The screenshot service uses
   // this URL when navigating Chromium to capture template previews.
   siteBaseUrl:
@@ -275,13 +275,13 @@ export const env = {
 
   resendApiKey: readEnv("RESEND_API_KEY"),
   resendWebhookSecret: readEnv("RESEND_WEBHOOK_SECRET"),
-  resendFromEmail: readEnv("RESEND_FROM_EMAIL") ?? "hello@ashfordcreative.org",
+  resendFromEmail: readEnv("RESEND_FROM_EMAIL") ?? "hello@ashfordhealthcreative.com",
   // We send replies back to the parent domain (NOT a `reply.` subdomain).
-  // ImprovMX is configured on `ashfordcreative.org` with a wildcard alias
-  // `*@ashfordcreative.org` → owner inbox, so `reply@ashfordcreative.org`
-  // and tagged variants like `reply+rep42@ashfordcreative.org` both land.
+  // ImprovMX is configured on `ashfordhealthcreative.com` with a wildcard alias
+  // `*@ashfordhealthcreative.com` → owner inbox, so `reply@ashfordhealthcreative.com`
+  // and tagged variants like `reply+rep42@ashfordhealthcreative.com` both land.
   // Adding a `reply.` subdomain would have required separate MX records.
-  resendReplyDomain: readEnv("RESEND_REPLY_DOMAIN") ?? "ashfordcreative.org",
+  resendReplyDomain: readEnv("RESEND_REPLY_DOMAIN") ?? "ashfordhealthcreative.com",
 
   ownerNotificationEmail: readEnv("OWNER_NOTIFICATION_EMAIL"),
   ownerNotificationSms: readEnv("OWNER_NOTIFICATION_SMS"),

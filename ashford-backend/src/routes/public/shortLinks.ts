@@ -38,7 +38,7 @@ router.get(
         .status(404)
         .type("text/html")
         .send(
-          "<!DOCTYPE html><html><body style=\"font-family:system-ui,sans-serif;padding:32px;max-width:520px;margin:auto;color:#1f2937;\"><h1 style=\"color:#3F6657;\">Link expired</h1><p>This preview link is no longer valid. Reply to the message or write to hello@ashfordcreative.org and we'll send you a fresh one.</p></body></html>",
+          "<!DOCTYPE html><html><body style=\"font-family:system-ui,sans-serif;padding:32px;max-width:520px;margin:auto;color:#1f2937;\"><h1 style=\"color:#3F6657;\">Link expired</h1><p>This preview link is no longer valid. Reply to the message or write to hello@ashfordhealthcreative.com and we'll send you a fresh one.</p></body></html>",
         );
       return;
     }

@@ -55,7 +55,7 @@ export const translations = {
     // rep queue. (Investor roleplay 2026-05-02 — story I4.)
     contact_investor_banner_label: "Investor or partner?",
     // {email} is interpolated by Contact.tsx from `VITE_PARTNERSHIPS_EMAIL`
-    // (falls back to hello@ashfordcreative.org when the var is unset). Do
+    // (falls back to hello@ashfordhealthcreative.com when the var is unset). Do
     // NOT hardcode an address here — keep the placeholder.
     contact_investor_banner_cta: "Email {email}",
 
@@ -665,7 +665,7 @@ export const translations = {
     tier_tax_deductible_bullet: "100% tax-deductible business expense",
     tier_tax_deductible_sub: "Itemized invoices + W-9 sent at year-end for your CPA.",
     pricing_starting_checkout: "Starting checkout…",
-    pricing_checkout_failed: "Couldn't start checkout. Please try again or email hello@ashfordcreative.org.",
+    pricing_checkout_failed: "Couldn't start checkout. Please try again or email hello@ashfordhealthcreative.com.",
 
     // === SMS opt-in disclosure ===
     // SINGLE SOURCE OF TRUTH for the TCR-grade consent paragraph. The
@@ -2139,7 +2139,7 @@ export const translations = {
     tier_tax_deductible_bullet: "Gasto comercial 100% deducible de impuestos",
     tier_tax_deductible_sub: "Enviamos facturas detalladas + W-9 a fin de año para tu contador.",
     pricing_starting_checkout: "Iniciando pago…",
-    pricing_checkout_failed: "No pudimos iniciar el pago. Inténtalo de nuevo o escribe a hello@ashfordcreative.org.",
+    pricing_checkout_failed: "No pudimos iniciar el pago. Inténtalo de nuevo o escribe a hello@ashfordhealthcreative.com.",
 
     // === Divulgación de aceptación de SMS ===
     // ÚNICA FUENTE DE VERDAD para el párrafo de consentimiento.

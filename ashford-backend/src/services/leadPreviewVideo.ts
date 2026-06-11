@@ -74,14 +74,14 @@ const captionsFor = (
         { from: 6, to: 12, text: "Tu sitio está listo" },
         { from: 12, to: 18, text: `Hecho para ${practiceShort}` },
         { from: 18, to: 24, text: "Apruébalo cuando quieras" },
-        { from: 24, to: 30, text: "ashfordcreative.org" },
+        { from: 24, to: 30, text: "ashfordhealthcreative.com" },
       ]
     : [
         { from: 0, to: 6, text: `Hi ${firstName}` },
         { from: 6, to: 12, text: "Your site is ready" },
         { from: 12, to: 18, text: `Built for ${practiceShort}` },
         { from: 18, to: 24, text: "Approve it whenever" },
-        { from: 24, to: 30, text: "ashfordcreative.org" },
+        { from: 24, to: 30, text: "ashfordhealthcreative.com" },
       ];
 };
 

@@ -160,7 +160,7 @@ const buildBrochureHtml = (input: {
       </a>
     </div>
     <div style="font-size: 11px; color: ${palette.muted}; text-align: right;">
-      ashfordcreative.org
+      ashfordhealthcreative.com
     </div>
   </footer>
 </section>

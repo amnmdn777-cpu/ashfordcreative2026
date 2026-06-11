@@ -422,7 +422,7 @@ async function notifyAshfordMention(args: {
     repId: args.repId,
     body: args.noteBody,
   });
-  const adminLeadUrl = `https://admin.ashfordcreative.org/leads/${args.leadId}`;
+  const adminLeadUrl = `https://admin.ashfordhealthcreative.com/leads/${args.leadId}`;
   const subjectName = args.leadName ?? `lead #${args.leadId}`;
   const subject = `Rep tagged you on ${subjectName}`;
   const repLabel = args.repName ?? `rep #${args.repId}`;
@@ -542,7 +542,7 @@ export const replyToAdminMention = async (args: {
   if (rep.email) {
     const repFirstName = (rep.displayName ?? "").split(/\s+/)[0] || "there";
     const adminUrl =
-      `https://sales.ashfordcreative.org/leads/${lead.id}`;
+      `https://sales.ashfordhealthcreative.com/leads/${lead.id}`;
     const subject = `${adminLabel} replied to your note on ${leadLabel}`;
     const escapedBody = trimmed
       .replace(/&/g, "&amp;")

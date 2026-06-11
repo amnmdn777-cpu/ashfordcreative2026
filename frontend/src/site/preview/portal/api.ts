@@ -18,7 +18,7 @@ const API_BASE =
 let cachedToken: string | undefined;
 
 // BATCH 1.2: when a rep opens a preview link off the rep dashboard, they
-// land on the apex (ashfordcreative.org/preview/{slug}) where their
+// land on the apex (ashfordhealthcreative.com/preview/{slug}) where their
 // ash_sess cookie isn't readable (cookie was set on the *.replit.app
 // subdomain that runs the rep app). The rep app appends `?rep_token=<sess>`
 // to outbound preview links; we capture it once and forward as

@@ -81,9 +81,9 @@ async function main() {
   );
 
   const expectedLeads = [
-    "sarah.chen+demo@ashfordcreative.org",
-    "james.miller+demo@ashfordcreative.org",
-    "elena.rodriguez+demo@ashfordcreative.org",
+    "sarah.chen+demo@ashfordhealthcreative.com",
+    "james.miller+demo@ashfordhealthcreative.com",
+    "elena.rodriguez+demo@ashfordhealthcreative.com",
   ];
   const seededLeads = await db
     .select({ email: leads.email, status: leads.status })

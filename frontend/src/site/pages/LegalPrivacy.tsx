@@ -13,7 +13,7 @@ export default function LegalPrivacy() {
       <h2>What we collect</h2>
       <ul>
         <li>
-          <strong>Site interactions on ashfordcreative.org:</strong> contact
+          <strong>Site interactions on ashfordhealthcreative.com:</strong> contact
           form and chatbot submissions (name, email, phone, message), and
           basic access logs (IP address and visit time) for security.
         </li>
@@ -72,7 +72,7 @@ export default function LegalPrivacy() {
       </p>
       <h2>Contact</h2>
       <p>
-        Questions? Email <a href="mailto:privacy@ashfordcreative.org">privacy@ashfordcreative.org</a>.
+        Questions? Email <a href="mailto:privacy@ashfordhealthcreative.com">privacy@ashfordhealthcreative.com</a>.
       </p>
     </>
   );
@@ -87,7 +87,7 @@ export default function LegalPrivacy() {
       <h2>Qué recopilamos</h2>
       <ul>
         <li>
-          <strong>Interacciones en ashfordcreative.org:</strong> envíos del
+          <strong>Interacciones en ashfordhealthcreative.com:</strong> envíos del
           formulario de contacto y del chatbot (nombre, correo, teléfono,
           mensaje), y registros básicos de acceso (dirección IP y hora de
           visita) por seguridad.
@@ -148,7 +148,7 @@ export default function LegalPrivacy() {
       </p>
       <h2>Contacto</h2>
       <p>
-        ¿Preguntas? Escribe a <a href="mailto:privacy@ashfordcreative.org">privacy@ashfordcreative.org</a>.
+        ¿Preguntas? Escribe a <a href="mailto:privacy@ashfordhealthcreative.com">privacy@ashfordhealthcreative.com</a>.
       </p>
     </>
   );

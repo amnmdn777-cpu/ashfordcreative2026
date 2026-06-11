@@ -37,3 +37,5 @@ coverage/
 *.sql
 backup.sql
 .claude/
+
+ashfordcreativemigrated/

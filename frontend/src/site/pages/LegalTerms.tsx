@@ -102,7 +102,7 @@ export default function LegalTerms() {
       </p>
       <h2>Contact</h2>
       <p>
-        Questions? Email <a href="mailto:legal@ashfordcreative.org">legal@ashfordcreative.org</a>.
+        Questions? Email <a href="mailto:legal@ashfordhealthcreative.com">legal@ashfordhealthcreative.com</a>.
       </p>
     </>
   );
@@ -191,7 +191,7 @@ export default function LegalTerms() {
       </p>
       <h2>Contacto</h2>
       <p>
-        ¿Preguntas? Escribe a <a href="mailto:legal@ashfordcreative.org">legal@ashfordcreative.org</a>.
+        ¿Preguntas? Escribe a <a href="mailto:legal@ashfordhealthcreative.com">legal@ashfordhealthcreative.com</a>.
       </p>
     </>
   );

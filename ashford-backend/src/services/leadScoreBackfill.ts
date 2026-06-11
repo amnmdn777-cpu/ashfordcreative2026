@@ -6,7 +6,7 @@
  * runs — Replit's Publish flow only runs schema migrations, not data
  * scripts. The result was the rep team seeing every Available Lead
  * row render with `—` in the Score column (founder feedback 2026-05,
- * screenshot of ashfordcreative.org).
+ * screenshot of ashfordhealthcreative.com).
  *
  * Running it on every boot is safe because:
  *  - It's WHERE-gated to `lead_score IS NULL`, so already-scored rows

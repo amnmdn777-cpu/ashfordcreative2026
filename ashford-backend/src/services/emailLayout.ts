@@ -80,16 +80,16 @@ const buildFooterCopy = (
       line1:
         "Ashford Creative - sitios web para profesionales de la salud mental en Texas.",
       line2: voice
-        ? `Responde directamente a este correo, llámanos al ${voice}, o escribe a hello@ashfordcreative.org.`
-        : "Responde directamente a este correo o escribe a hello@ashfordcreative.org.",
+        ? `Responde directamente a este correo, llámanos al ${voice}, o escribe a hello@ashfordhealthcreative.com.`
+        : "Responde directamente a este correo o escribe a hello@ashfordhealthcreative.com.",
     };
   }
   return {
     line1:
       "Ashford Creative - boutique websites for Texas mental-health practices.",
     line2: voice
-      ? `Reply directly to this email, call us at ${voice}, or write to hello@ashfordcreative.org for support.`
-      : "Reply directly to this email or write to hello@ashfordcreative.org for support.",
+      ? `Reply directly to this email, call us at ${voice}, or write to hello@ashfordhealthcreative.com for support.`
+      : "Reply directly to this email or write to hello@ashfordhealthcreative.com for support.",
   };
 };
 

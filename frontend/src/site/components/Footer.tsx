@@ -46,7 +46,7 @@ export function Footer() {
             <ul className="space-y-2 text-sm">
               <li><Link href="/about" className="hover:text-cream">{t("nav_about")}</Link></li>
               <li><Link href="/contact" className="hover:text-cream">{t("nav_contact")}</Link></li>
-              <li><a href="mailto:hello@ashfordcreative.org" className="hover:text-cream break-all">hello@ashfordcreative.org</a></li>
+              <li><a href="mailto:hello@ashfordhealthcreative.com" className="hover:text-cream break-all">hello@ashfordhealthcreative.com</a></li>
               {voicePretty && (
                 <li>
                   <a href={`tel:${voiceTel}`} className="hover:text-cream">

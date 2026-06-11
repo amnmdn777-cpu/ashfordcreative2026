@@ -1684,7 +1684,7 @@ router.post(
       leadId: LEAD_ID,
       slug: after[0]?.slug,
       previewUrl: after[0]
-        ? `https://www.ashfordcreative.org/preview/${after[0].slug}?t=${after[0].token}`
+        ? `https://www.ashfordhealthcreative.com/preview/${after[0].slug}?t=${after[0].token}`
         : null,
     });
   }),

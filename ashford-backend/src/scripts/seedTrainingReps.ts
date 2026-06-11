@@ -43,7 +43,7 @@ const TRAINING_REPS: TrainingRepSpec[] = [
     trainingPassword: "Candice",
     promoCode: "CANDICE",
     phone: "+15125550111",
-    email: "candice+demo@ashfordcreative.org",
+    email: "candice+demo@ashfordhealthcreative.com",
   },
   {
     username: "veronica",
@@ -51,7 +51,7 @@ const TRAINING_REPS: TrainingRepSpec[] = [
     trainingPassword: "Veronica",
     promoCode: "VERONICA",
     phone: "+15125550112",
-    email: "veronica+demo@ashfordcreative.org",
+    email: "veronica+demo@ashfordhealthcreative.com",
   },
   {
     username: "lovette",
@@ -59,7 +59,7 @@ const TRAINING_REPS: TrainingRepSpec[] = [
     trainingPassword: "Lovette",
     promoCode: "LOVETTE",
     phone: "+15125550113",
-    email: "lovette+demo@ashfordcreative.org",
+    email: "lovette+demo@ashfordhealthcreative.com",
   },
 ];
 

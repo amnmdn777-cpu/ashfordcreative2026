@@ -33,7 +33,7 @@ export default function LegalRefund() {
         <li>
           <strong>Cancel anytime in the first 90 days</strong> — no notice
           required, no questions asked. Email{" "}
-          <a href="mailto:hello@ashfordcreative.org">hello@ashfordcreative.org</a>{" "}
+          <a href="mailto:hello@ashfordhealthcreative.com">hello@ashfordhealthcreative.com</a>{" "}
           and we stop billing immediately.
         </li>
         <li>
@@ -77,7 +77,7 @@ export default function LegalRefund() {
 
       <h2>How to request a refund</h2>
       <p>
-        Email <a href="mailto:hello@ashfordcreative.org">hello@ashfordcreative.org</a>{" "}
+        Email <a href="mailto:hello@ashfordhealthcreative.com">hello@ashfordhealthcreative.com</a>{" "}
         from the address on file with the subject line "Refund request" and your
         practice name. We confirm within 2 business days and process eligible
         refunds within 10 business days through the original payment method.
@@ -123,7 +123,7 @@ export default function LegalRefund() {
         <li>
           <strong>Cancela en los primeros 90 días</strong> — sin aviso
           previo, sin preguntas. Escribe a{" "}
-          <a href="mailto:hello@ashfordcreative.org">hello@ashfordcreative.org</a>{" "}
+          <a href="mailto:hello@ashfordhealthcreative.com">hello@ashfordhealthcreative.com</a>{" "}
           y detenemos los cobros de inmediato.
         </li>
         <li>
@@ -169,7 +169,7 @@ export default function LegalRefund() {
 
       <h2>Cómo solicitar un reembolso</h2>
       <p>
-        Escribe a <a href="mailto:hello@ashfordcreative.org">hello@ashfordcreative.org</a>{" "}
+        Escribe a <a href="mailto:hello@ashfordhealthcreative.com">hello@ashfordhealthcreative.com</a>{" "}
         desde la dirección en archivo con el asunto «Solicitud de reembolso» y
         el nombre de tu práctica. Confirmamos en 2 días hábiles y procesamos
         reembolsos elegibles en 10 días hábiles al método de pago original.

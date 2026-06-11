@@ -111,7 +111,7 @@ function FindTherapistInner({ city, specialty }: Combo) {
       provider: {
         "@type": "Organization",
         name: "Ashford Creative",
-        url: "https://ashfordcreative.org",
+        url: "https://ashfordhealthcreative.com",
       },
       offers: {
         "@type": "Offer",

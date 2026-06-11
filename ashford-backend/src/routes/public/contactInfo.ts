@@ -9,7 +9,7 @@ router.get("/contact-info", (_req, res) => {
   res.json({
     voiceNumber: env.dialpadFromNumber ?? null,
     smsNumber: env.dialpadFromNumber ?? null,
-    supportEmail: env.resendFromEmail ?? "hello@ashfordcreative.org",
+    supportEmail: env.resendFromEmail ?? "hello@ashfordhealthcreative.com",
   });
 });
 
