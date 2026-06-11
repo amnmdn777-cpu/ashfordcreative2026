@@ -506,7 +506,12 @@ export default function TemplateRoute() {
        *  TierProvider so the inline demos, pricing pill, and feature
        *  list stay in sync. Hidden on ?bare=1 (thumbnail capture).
        * ============================================================ */}
-      {/* LIVE DEMO tier-switcher pill removed per client request. */}
+      {!bare && (
+        <LiveTierSwitcher
+          currentTier={selectedTier}
+          onChange={onSelectTier}
+        />
+      )}
 
       {/* === Floating demo bar. ====================================
        *  A "Try this template" pill anchored lower-left expands on

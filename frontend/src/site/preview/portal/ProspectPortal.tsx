@@ -1405,7 +1405,10 @@ function PortalBody({ initialData }: { initialData: PortalPublicResponse }) {
        *   capability set ticked on. Sits at z-60 so it stays above
        *   the sticky toolbar but below the rebuild overlay (z-100).
        * ============================================================ */}
-      {/* LIVE DEMO tier-switcher pill removed per client request. */}
+      <LiveTierSwitcher
+        currentTier={selectedTier}
+        onChange={onTierChange}
+      />
 
       {/* 2026-05-14 audit fix: when `data.practice` is a scraper-junk
           brand (Care, Headway, Grow Therapy, Headlight, Alma, etc.)
