@@ -1242,7 +1242,15 @@ function PortalBody({ initialData }: { initialData: PortalPublicResponse }) {
       // hero, render an empty string and let the template's portrait
       // fallback (team[0].photo, then SAMPLE only when !hasRealLeadData)
       // handle the gap rather than leaking a stranger's photo.
-      heroImage: previewHero ?? (hasRealLeadData ? "" : baseContent.heroImage),
+      // ASH-8: fall back to the rep-set hero image when enrichment found no
+      // policy-clean photo. This URL is set only via the authenticated rep
+      // endpoint (/dashboard/leads/:id/hero-image), which validates it's an
+      // https URL — the "Mary D Jackson case" that endpoint was built for.
+      // Previously it was saved but never displayed.
+      heroImage:
+        previewHero ??
+        (customizations as { heroImageUrl?: string }).heroImageUrl ??
+        (hasRealLeadData ? "" : baseContent.heroImage),
       team: personalisedTeam,
       services: personalisedServices,
       reviews: personalisedReviews,
