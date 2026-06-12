@@ -5,6 +5,7 @@ import type {
   PortalReserveResponse,
 } from "@workspace/api-zod";
 
+
 const API_BASE =
   (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/$/, "") ||
   "/api";
@@ -27,6 +28,14 @@ let cachedToken: string | undefined;
 // TODO: drop once api + site + rep share a single cookie scope.
 let cachedRepAuth: string | undefined;
 
+// ASH-10: when a rep/tech opens the preview off the dashboard the link
+// carries `?internal=1`. We must forward that to the API (as the
+// `X-Ashford-Internal` header the server already checks) so the open is
+// excluded from the prospect's open-count / hot-lead tracking. Previously
+// the marker sat on the browser URL but was never sent to the backend, so
+// internal views were counted as genuine client opens.
+let cachedInternal = false;
+
 export const portalAuth = {
   /** Read once on portal load (URL → cache). */
   prime: () => {
@@ -36,6 +45,8 @@ export const portalAuth = {
       if (t) cachedToken = t;
       const r = sp.get("rep_token");
       if (r) cachedRepAuth = r;
+      const internal = sp.get("internal");
+      if (internal === "1" || internal === "rep") cachedInternal = true;
     } catch {
       // SSR / non-browser — ignore.
     }
@@ -59,6 +70,9 @@ const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
   };
   if (cachedToken) headers["X-Portal-Token"] = cachedToken;
   if (cachedRepAuth) headers["X-Rep-Auth"] = cachedRepAuth;
+  // ASH-10: forward the internal-preview marker so rep/tech opens are
+  // excluded from prospect open-tracking on the server.
+  if (cachedInternal) headers["X-Ashford-Internal"] = "rep";
   // Also include `?t=` on the very first GET so the server gets the token
   // even before the cache is set from the response.
   let url = `${API_BASE}${path}`;

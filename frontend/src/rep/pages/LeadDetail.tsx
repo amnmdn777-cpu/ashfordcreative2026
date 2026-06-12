@@ -819,7 +819,13 @@ export default function LeadDetailPage() {
               const current =
                 qc.getQueryData<typeof portal.data>(["lead-portal", id]) ??
                 portal.data;
-              const rawUrl = current?.shortUrl ?? current?.url;
+              // ASH-10: use the LONG url (not the short link) for the rep's
+              // own preview open. The /s/:code short link 302-redirects to a
+              // fixed target and drops query params, so `internal=1` +
+              // `rep_token` would be lost — meaning the rep/tech open gets
+              // counted as a genuine prospect open. The long url carries the
+              // markers straight to the preview SPA.
+              const rawUrl = current?.url ?? current?.shortUrl;
               // 2026-05-14 audit fix #4: tag rep-side opens so they don't
               // pollute the prospect openCount / lastOpenedAt metrics.
               const url = rawUrl
