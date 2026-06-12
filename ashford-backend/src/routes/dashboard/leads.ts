@@ -408,8 +408,17 @@ router.post(
     const stored = await uploadObject(key, buffer, contentType);
     if (!stored)
       throw badRequest("Image storage is not available right now.");
-    // Cache-busted stable URL so a re-upload immediately replaces the old one.
-    const heroImageUrl = `${envForRecap.publicBaseUrl}/api/public/portals/${portal.slug}/hero-image?v=${Date.now()}`;
+    // The serve route lives on THIS api host (publicBaseUrl is the frontend
+    // site, which doesn't serve /api). Build from the incoming request so the
+    // <img src> points at the backend that can stream it. Cache-busted so a
+    // re-upload replaces the old one immediately.
+    const proto = (
+      req.get("x-forwarded-proto") ||
+      req.protocol ||
+      "https"
+    ).split(",")[0];
+    const apiHost = `${proto}://${req.get("host")}`;
+    const heroImageUrl = `${apiHost}/api/public/portals/${portal.slug}/hero-image?v=${Date.now()}`;
     const nextCustomizations: Record<string, unknown> = {
       ...((portal.customizations as Record<string, unknown> | null) ?? {}),
     };
