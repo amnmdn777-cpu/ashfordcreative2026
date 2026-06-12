@@ -672,6 +672,8 @@ export default function LeadDetailPage() {
                 {l.phone ? (
                   <CallButton
                     phone={l.phone}
+                    leadId={id}
+                    practiceName={l.practice ?? null}
                     onCopied={() => setInfo("Phone number copied to clipboard.")}
                   />
                 ) : (
@@ -2164,31 +2166,34 @@ function toE164(phone: string): string | null {
  */
 function CallButton({
   phone,
+  leadId,
+  practiceName,
   onCopied,
 }: {
   phone: string;
+  leadId: number | null;
+  practiceName?: string | null;
   onCopied: () => void;
 }) {
-  const [isTouch, setIsTouch] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return window.matchMedia?.("(any-pointer: coarse)").matches ?? false;
-  });
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return;
-    const mq = window.matchMedia("(any-pointer: coarse)");
-    const handler = (e: MediaQueryListEvent) => setIsTouch(e.matches);
-    if (mq.addEventListener) {
-      mq.addEventListener("change", handler);
-      return () => mq.removeEventListener("change", handler);
-    }
-    mq.addListener(handler);
-    return () => mq.removeListener(handler);
-  }, []);
-
+  // ASH-11: place the call through the in-app dialer (DialPad API) instead of
+  // opening `https://dialpad.com/call?phone=…`, which 404s and never placed a
+  // call. The dialer rings the rep's computer (desktop/web app) — the backend
+  // now targets that device specifically — and the global <CallScreen> shows
+  // the active call.
+  const { placeCall } = useDialer();
+  const [calling, setCalling] = useState(false);
   const e164 = toE164(phone);
-  const dialpadHref = e164
-    ? `https://dialpad.com/call?phone=${encodeURIComponent(e164)}`
-    : null;
+  const handleCall = async () => {
+    if (!e164 || calling) return;
+    setCalling(true);
+    try {
+      await placeCall({ leadId, toNumber: e164, practiceName });
+    } catch {
+      // The dialer surfaces failures in <CallScreen> (errorMessage/status).
+    } finally {
+      setCalling(false);
+    }
+  };
 
   const handleCopy = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -2213,18 +2218,18 @@ function CallButton({
   return (
     <div className="flex items-center gap-2 flex-wrap">
       <span data-phone-text>{phone}</span>
-      {dialpadHref ? (
-        <a
-          href={dialpadHref}
-          target={isTouch ? undefined : "_blank"}
-          rel={isTouch ? undefined : "noopener noreferrer"}
+      {e164 ? (
+        <button
+          type="button"
+          onClick={handleCall}
+          disabled={calling}
           aria-label={`Call ${phone} via DialPad`}
-          title="Call via DialPad"
-          className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-accent/40 bg-accent/10 text-accent text-xs font-medium hover:bg-accent/20 transition-colors"
+          title="Call via DialPad (rings your computer)"
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-accent/40 bg-accent/10 text-accent text-xs font-medium hover:bg-accent/20 transition-colors disabled:opacity-60"
         >
           <Phone size={12} />
-          Call
-        </a>
+          {calling ? "Calling…" : "Call"}
+        </button>
       ) : (
         <span
           aria-label={`Cannot call — phone number ${phone} is not in a recognized format`}
