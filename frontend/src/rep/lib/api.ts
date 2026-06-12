@@ -463,6 +463,17 @@ export const api = {
       `/dashboard/leads/${id}/template`,
       { method: "PATCH", body: JSON.stringify({ templateKey }) },
     ),
+  // Routes through `request()` so it hits API_BASE (the backend) like every
+  // other call — a previous raw `fetch("/api/...")` went same-origin and
+  // never reached the backend in production (ASH-9).
+  setLeadTemperature: (
+    id: number,
+    temperature: "disqualifier" | "cold" | "lukewarm" | "hot" | null,
+  ) =>
+    request<{ ok: boolean }>(
+      `/dashboard/leads/${id}/temperature`,
+      { method: "PATCH", body: JSON.stringify({ temperature }) },
+    ),
   setLeadHeroImage: (id: number, heroImageUrl: string | null) =>
     request<{ heroImageUrl: string | null }>(
       `/dashboard/leads/${id}/hero-image`,

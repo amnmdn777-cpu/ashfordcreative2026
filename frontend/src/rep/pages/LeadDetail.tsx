@@ -4179,15 +4179,7 @@ function LeadTemperaturePicker({
   const qc = useQueryClient();
   const mut = useMutation({
     mutationFn: (next: LeadTemperature | null) =>
-      fetch(`/api/dashboard/leads/${leadId}/temperature`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ temperature: next }),
-      }).then((r) => {
-        if (!r.ok) throw new Error(`Temperature update failed (${r.status})`);
-        return r.json();
-      }),
+      api.setLeadTemperature(leadId, next),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["lead", leadId] });
       onSuccess?.();
