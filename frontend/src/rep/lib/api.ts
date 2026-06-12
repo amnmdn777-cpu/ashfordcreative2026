@@ -18,6 +18,12 @@ const API_BASE =
   (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/$/, "") ||
   "/api";
 
+// Build an absolute API URL for cases that can't use `request()` — e.g.
+// blob/binary downloads that need the raw Response. Using this instead of a
+// hardcoded `/api/...` ensures the call hits API_BASE (the backend) in
+// production rather than dead-ending same-origin (same class of bug as ASH-9).
+export const apiUrl = (path: string): string => `${API_BASE}${path}`;
+
 export class ApiError extends Error {
   status: number;
   constructor(message: string, status: number) {

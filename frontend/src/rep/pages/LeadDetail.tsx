@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import {
   api,
+  apiUrl,
   fmtDateTime,
   DISQUALIFY_REASON_LABELS,
 } from "@rep/lib/api";
@@ -191,7 +192,7 @@ export default function LeadDetailPage() {
     setDownloadingVideo(true);
     setError(null);
     try {
-      const res = await fetch(`/api/dashboard/leads/${id}/portal/video`, {
+      const res = await fetch(apiUrl(`/dashboard/leads/${id}/portal/video`), {
         credentials: "include",
       });
       if (!res.ok) throw new Error(`Video render failed (${res.status})`);
@@ -218,7 +219,7 @@ export default function LeadDetailPage() {
     setDownloadingPdf(true);
     setError(null);
     try {
-      const res = await fetch(`/api/dashboard/leads/${id}/portal/pdf`, {
+      const res = await fetch(apiUrl(`/dashboard/leads/${id}/portal/pdf`), {
         credentials: "include",
       });
       if (!res.ok) throw new Error(`PDF render failed (${res.status})`);
