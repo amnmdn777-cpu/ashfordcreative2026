@@ -381,6 +381,37 @@ function CustomerPortalCard({ leadId }: { leadId: number }) {
     refetchOnWindowFocus: false,
   });
 
+  // ASH-8: rep/admin hero-image upload.
+  const qc = useQueryClient();
+  const [heroError, setHeroError] = useState<string | null>(null);
+  const uploadHero = useMutation({
+    mutationFn: (dataUrl: string) => api.uploadLeadHeroImage(leadId, dataUrl),
+    onSuccess: () => {
+      setHeroError(null);
+      qc.invalidateQueries({ queryKey: ["admin", "lead-portal", leadId] });
+    },
+    onError: (e) =>
+      setHeroError(e instanceof Error ? e.message : "Upload failed."),
+  });
+  const onHeroFile = (file: File | null | undefined) => {
+    setHeroError(null);
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setHeroError("Please choose an image file.");
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      setHeroError("Image too large (max 4 MB).");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onerror = () => setHeroError("Could not read that file.");
+    reader.onload = () => {
+      if (typeof reader.result === "string") uploadHero.mutate(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
   if (portal.isPending) {
     return (
       <div className="bg-card border border-card-border rounded-xl p-6 shadow-sm">
@@ -478,6 +509,42 @@ function CustomerPortalCard({ leadId }: { leadId: number }) {
               </code>
             </details>
           )}
+        </div>
+
+        {/* ASH-8: therapist hero photo upload. Saves to storage and renders
+            on the preview (rep + client side). */}
+        <div className="mb-4 rounded-md border border-input bg-background/60 px-3 py-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs uppercase tracking-wide text-muted-foreground">
+              Hero photo
+            </span>
+            {p.heroImageUrl ? (
+              <span className="text-[11px] text-accent">Set ✓</span>
+            ) : null}
+          </div>
+          {p.heroImageUrl ? (
+            <img
+              src={p.heroImageUrl}
+              alt="Lead hero"
+              className="mt-2 h-20 w-20 rounded-md object-cover border border-input"
+            />
+          ) : null}
+          <input
+            type="file"
+            accept="image/*"
+            disabled={uploadHero.isPending}
+            onChange={(e) => onHeroFile(e.target.files?.[0])}
+            data-testid="lead-hero-upload"
+            className="mt-2 w-full text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-muted file:text-foreground hover:file:bg-muted/80"
+          />
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            {uploadHero.isPending
+              ? "Uploading…"
+              : "JPG/PNG/WebP, up to 4 MB. Replaces the preview photo."}
+          </p>
+          {heroError ? (
+            <p className="mt-1 text-[11px] text-destructive">{heroError}</p>
+          ) : null}
         </div>
 
         <div className="flex items-center flex-wrap gap-2 mb-4">

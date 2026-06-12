@@ -31,6 +31,7 @@ import {
 import { dateToIso } from "../../lib/serialize";
 import { sendSms } from "../../integrations/dialpad";
 import { sendEmail } from "../../integrations/resend";
+import { uploadObject } from "../../integrations/audioStorage";
 import {
   db,
   leads as leadsTbl,
@@ -362,6 +363,68 @@ router.patch(
       targetId: id,
       before: { heroImageUrl: before },
       after: { heroImageUrl },
+    });
+    res.json({ heroImageUrl });
+  }),
+);
+
+// ASH-8: real file upload for the therapist hero photo. The rep picks a file
+// in the editor; the browser sends it as a base64 data URL. We store it in
+// object storage (R2/S3) and point heroImageUrl at a stable backend serve
+// route (GET /api/public/portals/:slug/hero-image) so the bucket need not be
+// public and the preview can render it on both the rep and client side.
+const UploadHeroImageBody = z.object({
+  dataUrl: z
+    .string()
+    .regex(
+      /^data:image\/(jpeg|jpg|png|webp|gif);base64,/i,
+      "Must be a base64 image data URL (jpeg/png/webp/gif)",
+    ),
+});
+const MAX_HERO_IMAGE_BYTES = 4 * 1024 * 1024; // 4 MB
+const HERO_IMAGE_EXT: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/jpg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+router.post(
+  "/dashboard/leads/:id/hero-image/upload",
+  asyncHandler(async (req, res) => {
+    const id = z.coerce.number().int().parse(req.params.id);
+    const { dataUrl } = UploadHeroImageBody.parse(req.body);
+    await loadOwnedLead(id, req.user!);
+    const match = /^data:(image\/[a-z]+);base64,(.+)$/i.exec(dataUrl);
+    if (!match) throw badRequest("Invalid image data.");
+    const contentType = match[1].toLowerCase();
+    const buffer = Buffer.from(match[2], "base64");
+    if (buffer.length === 0) throw badRequest("Empty image.");
+    if (buffer.length > MAX_HERO_IMAGE_BYTES)
+      throw badRequest("Image too large (max 4 MB).");
+    const ext = HERO_IMAGE_EXT[contentType] ?? "jpg";
+    const portal = await ensurePortalForLead(id);
+    const key = `lead-hero/${id}.${ext}`;
+    const stored = await uploadObject(key, buffer, contentType);
+    if (!stored)
+      throw badRequest("Image storage is not available right now.");
+    // Cache-busted stable URL so a re-upload immediately replaces the old one.
+    const heroImageUrl = `${envForRecap.publicBaseUrl}/api/public/portals/${portal.slug}/hero-image?v=${Date.now()}`;
+    const nextCustomizations: Record<string, unknown> = {
+      ...((portal.customizations as Record<string, unknown> | null) ?? {}),
+    };
+    nextCustomizations.heroImageKey = key;
+    nextCustomizations.heroImageContentType = contentType;
+    nextCustomizations.heroImageUrl = heroImageUrl;
+    await db
+      .update(prospectPortals)
+      .set({ customizations: nextCustomizations, updatedAt: new Date() })
+      .where(eq(prospectPortals.id, portal.id));
+    await writeAudit(req, {
+      action: "lead.hero_image_uploaded",
+      targetType: "lead",
+      targetId: id,
+      after: { heroImageUrl, bytes: buffer.length },
     });
     res.json({ heroImageUrl });
   }),

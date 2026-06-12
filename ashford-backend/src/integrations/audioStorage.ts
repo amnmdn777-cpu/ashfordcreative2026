@@ -99,6 +99,35 @@ export const uploadAudioFromTwilioUrl = async (
   }
 };
 
+// Upload an arbitrary object (e.g. a rep-uploaded lead hero image) to the
+// bucket. Returns true on success, false when storage isn't configured or the
+// put fails. Reuses the same S3-compatible client as call audio.
+export const uploadObject = async (
+  objectKey: string,
+  body: Buffer,
+  contentType: string,
+): Promise<boolean> => {
+  const client = getClient();
+  if (!client) {
+    logger.warn({ objectKey }, "storage: S3 not configured — skipping upload");
+    return false;
+  }
+  try {
+    await client.send(
+      new PutObjectCommand({
+        Bucket: env.s3Bucket as string,
+        Key: objectKey,
+        Body: body,
+        ContentType: contentType,
+      }),
+    );
+    return true;
+  } catch (err) {
+    logger.error({ err, objectKey }, "storage: object upload failed");
+    return false;
+  }
+};
+
 // Short-lived signed READ URL for inline <audio src=...>. Default 24h TTL.
 export const presignedAudioUrl = async (
   objectKey: string,

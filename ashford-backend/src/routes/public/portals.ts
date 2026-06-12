@@ -27,6 +27,7 @@ import {
   computeOgSignature,
 } from "../../services/portals";
 import { stripe } from "../../integrations/stripe";
+import { streamAudioObject } from "../../integrations/audioStorage";
 import { logger } from "../../lib/logger";
 import { env } from "../../lib/env";
 import { db, leads } from "@workspace/db";
@@ -129,6 +130,34 @@ router.get(
     }
     const payload = await buildPortalPublicResponse(portal);
     res.json(payload);
+  }),
+);
+
+// ASH-8: serve the rep-uploaded hero image from object storage through a
+// stable, public URL. The portal's customizations hold the object key; we
+// stream the bytes so the storage bucket itself need not be public. Used by
+// both the rep preview and the client-facing portal (and the emailed copy).
+router.get(
+  "/public/portals/:slug/hero-image",
+  rateLimit({ name: "portal_hero_image", capacity: 60, refillPerSecond: 60 / 60 }),
+  asyncHandler(async (req, res) => {
+    const slug = SlugParam.parse(req.params.slug).toLowerCase();
+    const portal = await getPortalBySlug(slug);
+    const key = (
+      portal?.customizations as { heroImageKey?: string } | null | undefined
+    )?.heroImageKey;
+    if (!portal || !key) {
+      res.status(404).end();
+      return;
+    }
+    const obj = await streamAudioObject(key);
+    if (!obj) {
+      res.status(404).end();
+      return;
+    }
+    res.setHeader("Content-Type", obj.contentType);
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.send(obj.buffer);
   }),
 );
 

@@ -143,6 +143,7 @@ export interface LeadPortalDto {
   inviteSentAt: string | null;
   reservedAt: string | null;
   selectedTemplate: string | null;
+  heroImageUrl: string | null;
   enrichment: {
     sourceKey: string;
     confidence: number | null;
@@ -453,6 +454,15 @@ export const api = {
   // Customer-portal panel payload (mirrors rep `/dashboard/leads/:id/portal`)
   getLeadPortal: (id: number) =>
     request<LeadPortalDto>(`/admin/leads/${id}/portal`),
+
+  // ASH-8: upload the therapist hero photo. `dataUrl` is a base64 data URL
+  // (FileReader.readAsDataURL). Stored in object storage; the returned
+  // heroImageUrl renders on the preview (rep + client side).
+  uploadLeadHeroImage: (id: number, dataUrl: string) =>
+    request<{ heroImageUrl: string }>(
+      `/dashboard/leads/${id}/hero-image/upload`,
+      { method: "POST", body: JSON.stringify({ dataUrl }) },
+    ),
 
   // contact requests
   contactRequests: () =>
