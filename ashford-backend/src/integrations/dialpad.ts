@@ -255,6 +255,53 @@ export const getRepDialpadVoice = async (
   return getRepDialpadAccessToken(repId);
 };
 
+// ASH-11: the call API has NO `device_type` field — passing one is a no-op,
+// so Dialpad rings ALL of the rep's devices and the deskphone/handheld grabs
+// the call. To keep the call on the computer we must ring a single device by
+// `device_id`. List the user's devices and prefer a software client (desktop
+// / web app) over a physical deskphone. Returns null (→ ring all, legacy
+// behavior) when the lookup fails or no suitable device is found.
+type DialpadUserDevice = {
+  id?: string | number;
+  type?: string | null;
+  name?: string | null;
+};
+// Software clients we want the call to land on.
+const COMPUTER_DEVICE_RE = /desktop|web|app|cti|soft/i;
+// Physical phones we want to avoid auto-answering.
+const PHYSICAL_DEVICE_RE = /deskphone|hardphone|sip|cell|mobile/i;
+const resolveComputerDeviceId = async (
+  userId: string | number,
+  auth: DialpadFetchOpts["auth"],
+): Promise<string | null> => {
+  try {
+    const res = await dialpadFetch<{ items?: DialpadUserDevice[] }>(
+      `/userdevices`,
+      { query: { user_id: userId }, auth },
+    );
+    const devices = res.items ?? [];
+    // Logged so we can confirm the exact device `type` strings against a live
+    // seat and tighten the matching if needed.
+    logger.info(
+      {
+        userId,
+        devices: devices.map((d) => ({ id: d.id, type: d.type, name: d.name })),
+      },
+      "dialpad: user devices for outbound ring (ASH-11)",
+    );
+    const pick =
+      devices.find((d) => COMPUTER_DEVICE_RE.test(String(d.type ?? ""))) ??
+      devices.find((d) => !PHYSICAL_DEVICE_RE.test(String(d.type ?? "")));
+    return pick?.id != null ? String(pick.id) : null;
+  } catch (err) {
+    logger.warn(
+      { err: err instanceof Error ? err.message : String(err), userId },
+      "dialpad: userdevices lookup failed — falling back to ring-all",
+    );
+    return null;
+  }
+};
+
 /**
  * Dialpad click-to-call. Server tells Dialpad to ring the rep's
  * registered Dialpad device first, then bridge to `toNumber`. No
@@ -283,6 +330,9 @@ export const placeDialpadCall = async (params: {
   if (params.repId !== undefined && isDialpadOauthConfigured()) {
     const conn = await getRepDialpadAccessToken(params.repId);
     if (conn) {
+      const auth = { kind: "repToken" as const, bearer: conn.accessToken };
+      // ASH-11: ring the rep's computer/app device specifically.
+      const deviceId = await resolveComputerDeviceId(conn.dialpadUserId, auth);
       return dialpadFetch<{ call_id: string | number; status?: string }>(
         `/call`,
         {
@@ -294,9 +344,9 @@ export const placeDialpadCall = async (params: {
           body: {
             user_id: conn.dialpadUserId,
             phone_number: normalizePhoneE164(params.toNumber),
-            device_type: "any",
+            ...(deviceId ? { device_id: deviceId } : {}),
           },
-          auth: { kind: "repToken", bearer: conn.accessToken },
+          auth,
         },
       );
     }
@@ -310,12 +360,16 @@ export const placeDialpadCall = async (params: {
   if (!isDialpadVoiceConfigured()) {
     throw new Error("Dialpad voice not configured");
   }
+  // ASH-11: ring the shared user's computer/app device specifically.
+  const sharedDeviceId = await resolveComputerDeviceId(env.dialpadUserId!, {
+    kind: "shared",
+  });
   return dialpadFetch<{ call_id: string | number; status?: string }>(`/call`, {
     method: "POST",
     body: {
       user_id: env.dialpadUserId!,
       phone_number: normalizePhoneE164(params.toNumber),
-      device_type: "any",
+      ...(sharedDeviceId ? { device_id: sharedDeviceId } : {}),
       outbound_caller_id: env.dialpadFromNumber!,
     },
   });
