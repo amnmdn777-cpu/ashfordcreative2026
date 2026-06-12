@@ -96,7 +96,7 @@ export default function Pricing() {
       provider: {
         "@type": "Organization",
         name: "Ashford Creative",
-        url: "https://ashfordcreative.org",
+        url: "https://ashfordhealthcreative.com",
       },
       areaServed: { "@type": "AdministrativeArea", name: "Texas" },
       offers: tiers.map((tier) => ({
@@ -112,7 +112,7 @@ export default function Pricing() {
           unitText: "MONTH",
         },
         availability: "https://schema.org/InStock",
-        url: "https://ashfordcreative.org/pricing",
+        url: "https://ashfordhealthcreative.com/pricing",
       })),
     };
   }, [tiers]);

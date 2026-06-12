@@ -152,7 +152,17 @@ router.post(
         });
       }
     }
-    res.clearCookie(SESSION_COOKIE, { path: "/" });
+    // Clear with the SAME attributes the cookie was set with. In production the
+    // session cookie is `SameSite=None; Secure` (frontend is a different origin),
+    // and browsers REJECT a clearing Set-Cookie that lacks those attributes on a
+    // cross-site request. Without this, logout appears to succeed but the cookie
+    // survives — so visiting /admin again silently re-authenticates.
+    res.clearCookie(SESSION_COOKIE, {
+      path: "/",
+      httpOnly: sessionCookieOptions.httpOnly,
+      sameSite: sessionCookieOptions.sameSite,
+      secure: sessionCookieOptions.secure,
+    });
     res.json({ ok: true });
   }),
 );

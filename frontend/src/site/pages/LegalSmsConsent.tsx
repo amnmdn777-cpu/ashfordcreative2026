@@ -70,8 +70,8 @@ export default function LegalSmsConsent() {
         <li>
           <strong>Web-form opt-in.</strong> The recipient submits a
           request on our public contact form at{" "}
-          <a href="https://www.ashfordcreative.org/contact" className="break-all">
-            https://www.ashfordcreative.org/contact
+          <a href="https://www.ashfordhealthcreative.com/contact" className="break-all">
+            https://www.ashfordhealthcreative.com/contact
           </a>{" "}
           or through the chatbot on our website. When a phone number is
           provided, an explicit, unchecked-by-default consent checkbox is
@@ -113,7 +113,7 @@ export default function LegalSmsConsent() {
         to any message you receive from us. After you send STOP, we will
         send you one final confirmation message and we will not send you
         any further messages unless you opt back in. You can also email
-        <a href="mailto:sms@ashfordcreative.org"> sms@ashfordcreative.org</a>
+        <a href="mailto:sms@ashfordhealthcreative.com"> sms@ashfordhealthcreative.com</a>
         and we will remove your number within one business day.
       </p>
 
@@ -121,7 +121,7 @@ export default function LegalSmsConsent() {
       <p>
         For help, reply <strong>HELP</strong> to any message you receive
         from us, or contact us at
-        <a href="mailto:support@ashfordcreative.org"> support@ashfordcreative.org</a>
+        <a href="mailto:support@ashfordhealthcreative.com"> support@ashfordhealthcreative.com</a>
         or 1-512-555-0182. Our hours are Monday through Friday,
         9:00 a.m. to 6:00 p.m. Central Time.
       </p>
@@ -158,7 +158,7 @@ export default function LegalSmsConsent() {
       <h2>Contact</h2>
       <p>
         Ashford Creative LLC, Austin, Texas. Questions about the SMS
-        Program: <a href="mailto:sms@ashfordcreative.org">sms@ashfordcreative.org</a>.
+        Program: <a href="mailto:sms@ashfordhealthcreative.com">sms@ashfordhealthcreative.com</a>.
       </p>
     </>
   );
@@ -236,8 +236,8 @@ export default function LegalSmsConsent() {
           <strong>Aceptación por formulario web.</strong> El destinatario
           envía una solicitud en nuestro formulario público de contacto
           en{" "}
-          <a href="https://www.ashfordcreative.org/contact" className="break-all">
-            https://www.ashfordcreative.org/contact
+          <a href="https://www.ashfordhealthcreative.com/contact" className="break-all">
+            https://www.ashfordhealthcreative.com/contact
           </a>{" "}
           o a través del chatbot del sitio. Cuando se proporciona un
           número de teléfono, se muestra una casilla de consentimiento
@@ -283,7 +283,7 @@ export default function LegalSmsConsent() {
         Después de que envíes STOP, te enviaremos un mensaje final de
         confirmación y no te enviaremos más mensajes a menos que vuelvas
         a aceptar. También puedes escribir a
-        <a href="mailto:sms@ashfordcreative.org"> sms@ashfordcreative.org</a>
+        <a href="mailto:sms@ashfordhealthcreative.com"> sms@ashfordhealthcreative.com</a>
         y eliminaremos tu número en un día hábil.
       </p>
 
@@ -291,7 +291,7 @@ export default function LegalSmsConsent() {
       <p>
         Para obtener ayuda, responde <strong>HELP</strong> a cualquier
         mensaje, o contáctanos en
-        <a href="mailto:support@ashfordcreative.org"> support@ashfordcreative.org</a>
+        <a href="mailto:support@ashfordhealthcreative.com"> support@ashfordhealthcreative.com</a>
         o al 1-512-555-0182. Nuestro horario es de lunes a viernes, de
         9:00 a. m. a 6:00 p. m., hora del centro.
       </p>
@@ -330,7 +330,7 @@ export default function LegalSmsConsent() {
       <h2>Contacto</h2>
       <p>
         Ashford Creative LLC, Austin, Texas. Preguntas sobre el Programa
-        de SMS: <a href="mailto:sms@ashfordcreative.org">sms@ashfordcreative.org</a>.
+        de SMS: <a href="mailto:sms@ashfordhealthcreative.com">sms@ashfordhealthcreative.com</a>.
       </p>
     </>
   );

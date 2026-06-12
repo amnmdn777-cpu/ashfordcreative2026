@@ -17,7 +17,7 @@ type PrefChannel = "callback" | "sms" | "email";
 // in the site's `.env` (or environment-secrets) before `pnpm build`.
 const PARTNERSHIPS_EMAIL =
   (import.meta.env.VITE_PARTNERSHIPS_EMAIL as string | undefined)?.trim() ||
-  "hello@ashfordcreative.org";
+  "hello@ashfordhealthcreative.com";
 
 export default function Contact() {
   const { t, locale } = useI18n();
@@ -341,10 +341,10 @@ export default function Contact() {
                 label={t("contact_other_ways_email_label")}
                 value={
                   <a
-                    href="mailto:hello@ashfordcreative.org"
+                    href="mailto:hello@ashfordhealthcreative.com"
                     className="text-ink hover:text-sage underline-offset-2 hover:underline"
                   >
-                    hello@ashfordcreative.org
+                    hello@ashfordhealthcreative.com
                   </a>
                 }
               />

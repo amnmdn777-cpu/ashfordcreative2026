@@ -56,7 +56,7 @@ export default function MyLeadsPage() {
     queryKey: ["leads", "mine", tab, name],
     queryFn: () => api.myLeads(tab, name || undefined),
   });
-  const filteredData = (data ?? []).filter((lead: any) => {
+  const filteredData = (data?.leads ?? []).filter((lead: any) => {
     if (city.trim() && !(lead.city ?? "").toLowerCase().includes(city.trim().toLowerCase())) return false;
     if (specialty.trim() && !(lead.specialty ?? "").toLowerCase().includes(specialty.trim().toLowerCase())) return false;
     if (hasWebsite === "yes" && !lead.currentWebsite) return false;
@@ -156,7 +156,7 @@ export default function MyLeadsPage() {
                   </td>
                 </tr>
               )}
-              {data && data.leads.length === 0 && (
+              {data && filteredData.length === 0 && (
                 <tr>
                   <td
                     colSpan={6}
@@ -166,7 +166,7 @@ export default function MyLeadsPage() {
                   </td>
                 </tr>
               )}
-              {data?.leads.map((l) => (
+              {filteredData.map((l) => (
                 <tr key={l.id} className="hover:bg-muted/30">
                   <td className="px-4 py-3 whitespace-nowrap">
                     <ScoreBadge

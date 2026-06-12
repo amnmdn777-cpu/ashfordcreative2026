@@ -34,6 +34,29 @@ import { tierForScore } from "./leadScoring";
 export const STALE_CLAIM_DAYS = 7;
 
 /**
+ * Loads the lead and verifies the authenticated rep owns it (or is admin).
+ * Throws 404 if the lead doesn't exist, 403 if the rep doesn't own it.
+ * Shared by the dashboard lead + portal routes so the ownership check
+ * stays in one place (previously duplicated as a route-local helper).
+ */
+export const loadOwnedLead = async (
+  leadId: number,
+  user: { id: number; role?: string | null },
+) => {
+  const [lead] = await db
+    .select()
+    .from(leads)
+    .where(eq(leads.id, leadId))
+    .limit(1);
+  if (!lead) throw notFound("Lead not found");
+  const isAdmin = user.role === "admin" || user.role === "owner";
+  if (!isAdmin && lead.claimedByRepId !== user.id) {
+    throw forbidden("You don't own this lead.");
+  }
+  return lead;
+};
+
+/**
  * Strip the lead's `selfServeMeta` jsonb down to the keys the rep
  * dashboard is allowed to see. The column also stores prospect-typed
  * answers (template/palette/addons/funnel session id) that have nothing
@@ -422,7 +445,7 @@ async function notifyAshfordMention(args: {
     repId: args.repId,
     body: args.noteBody,
   });
-  const adminLeadUrl = `https://admin.ashfordcreative.org/leads/${args.leadId}`;
+  const adminLeadUrl = `https://admin.ashfordhealthcreative.com/leads/${args.leadId}`;
   const subjectName = args.leadName ?? `lead #${args.leadId}`;
   const subject = `Rep tagged you on ${subjectName}`;
   const repLabel = args.repName ?? `rep #${args.repId}`;
@@ -542,7 +565,7 @@ export const replyToAdminMention = async (args: {
   if (rep.email) {
     const repFirstName = (rep.displayName ?? "").split(/\s+/)[0] || "there";
     const adminUrl =
-      `https://sales.ashfordcreative.org/leads/${lead.id}`;
+      `https://sales.ashfordhealthcreative.com/leads/${lead.id}`;
     const subject = `${adminLabel} replied to your note on ${leadLabel}`;
     const escapedBody = trimmed
       .replace(/&/g, "&amp;")

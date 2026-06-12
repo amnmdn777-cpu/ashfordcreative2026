@@ -77,7 +77,21 @@ export const runHealthChecks = async (): Promise<HealthCheckResult> => {
   );
   const stripePromise: Promise<"ok" | "skipped"> = stripe
     ? withTimeout(
-        stripe.accounts.retrieve().then(() => "ok" as const),
+        stripe.balance.retrieve()
+          .then(() => "ok" as const)
+          .catch((err: any) => {
+            // A 403 / permission error indicates the key is active and successfully
+            // authenticated/connected, but has restricted access. We treat this as "ok".
+            if (
+              err?.statusCode === 403 ||
+              err?.type === "StripePermissionError" ||
+              err?.code === "restricted_key_missing_permission" ||
+              err?.raw?.code === "restricted_key_missing_permission"
+            ) {
+              return "ok" as const;
+            }
+            throw err;
+          }),
         CHECK_TIMEOUT_MS,
         "stripe",
       )

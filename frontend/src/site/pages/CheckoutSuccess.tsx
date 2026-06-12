@@ -44,8 +44,8 @@ export default function CheckoutSuccess() {
             <ol className="space-y-2 text-sm text-ink/80 list-decimal list-inside">
               <li>
                 {locale === "es"
-                  ? "Recibirás un correo de confirmación desde hello@ashfordcreative.org (revisa también la carpeta de spam)."
-                  : "You'll get a confirmation email from hello@ashfordcreative.org (check spam too, just in case)."}
+                  ? "Recibirás un correo de confirmación desde hello@ashfordhealthcreative.com (revisa también la carpeta de spam)."
+                  : "You'll get a confirmation email from hello@ashfordhealthcreative.com (check spam too, just in case)."}
               </li>
               <li>
                 {locale === "es"
@@ -63,9 +63,9 @@ export default function CheckoutSuccess() {
             {locale === "es" ? "¿Preguntas? " : "Questions? "}
             <a
               className="underline"
-              href="mailto:hello@ashfordcreative.org"
+              href="mailto:hello@ashfordhealthcreative.com"
             >
-              hello@ashfordcreative.org
+              hello@ashfordhealthcreative.com
             </a>
           </p>
         </div>

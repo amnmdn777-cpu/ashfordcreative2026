@@ -1,7 +1,7 @@
 import { Helmet } from "react-helmet-async";
 import { useI18n } from "@site/lib/i18n";
 
-export const SITE_URL = "https://ashfordcreative.org";
+export const SITE_URL = "https://ashfordhealthcreative.com";
 export const SITE_NAME = "Ashford Creative";
 const BASE = import.meta.env.BASE_URL.endsWith("/")
   ? import.meta.env.BASE_URL

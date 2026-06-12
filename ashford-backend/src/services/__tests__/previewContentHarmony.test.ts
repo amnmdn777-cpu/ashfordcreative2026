@@ -171,7 +171,7 @@ function safeRedirect(rawUrl: string, currentOrigin: string): string {
 }
 
 describe("safeRedirect (mirror of assertSafeRedirectUrl)", () => {
-  const origin = "https://ashfordcreative.org";
+  const origin = "https://ashfordhealthcreative.com";
 
   it("allows Stripe Checkout and Billing", () => {
     expect(
@@ -184,8 +184,8 @@ describe("safeRedirect (mirror of assertSafeRedirectUrl)", () => {
 
   it("allows the current origin (fallback success page)", () => {
     expect(
-      safeRedirect("https://ashfordcreative.org/checkout/success", origin),
-    ).toBe("https://ashfordcreative.org/checkout/success");
+      safeRedirect("https://ashfordhealthcreative.com/checkout/success", origin),
+    ).toBe("https://ashfordhealthcreative.com/checkout/success");
   });
 
   it("rejects an attacker-controlled host", () => {

@@ -3,15 +3,13 @@ import { z } from "zod";
 import { asyncHandler } from "../../middleware/asyncHandler";
 import { requireAuth, requireOnboardingComplete } from "../../middleware/requireAuth";
 import { rateLimit } from "../../middleware/rateLimit";
-import { forbidden, notFound } from "../../lib/errors";
-import { db, leads as leadsTbl } from "@workspace/db";
-import { eq } from "drizzle-orm";
 import {
   ensurePortalForLead,
   regeneratePortalAccessToken,
   resetPortalCompletely,
   getPortalEnrichmentForLead,
 } from "../../services/portals";
+import { loadOwnedLead } from "../../services/leads";
 // 2026-05-21 — `briefing` service stubbed (Sprint 2 streamline). The rep
 // pre-call AI briefing falls back to a static heuristic until restored.
 import {
@@ -30,23 +28,6 @@ const router: IRouter = Router();
 router.use("/dashboard", requireAuth, requireOnboardingComplete);
 
 const LeadIdParam = z.coerce.number().int().positive();
-
-/**
- * Loads the lead and verifies the authenticated rep owns it (or is admin).
- * Throws 404 if the lead doesn't exist, 403 if the rep doesn't own it.
- */
-const loadOwnedLead = async (
-  leadId: number,
-  user: { id: number; role?: string | null },
-) => {
-  const [lead] = await db.select().from(leadsTbl).where(eq(leadsTbl.id, leadId)).limit(1);
-  if (!lead) throw notFound("Lead not found");
-  const isAdmin = user.role === "admin" || user.role === "owner";
-  if (!isAdmin && lead.claimedByRepId !== user.id) {
-    throw forbidden("You don't own this lead.");
-  }
-  return lead;
-};
 
 /**
  * Read-side endpoint for the LeadDetail panel: returns the portal URL,

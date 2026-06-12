@@ -87,20 +87,20 @@ const sanitizeLocalPart = (name: string): string | null => {
 // Build the "From" header.
 //
 // Rep-claimed leads use a first-name-only label, e.g.
-//   "Sarah" <sarah@ashfordcreative.org>
+//   "Sarah" <sarah@ashfordhealthcreative.com>
 //
 // Unclaimed-lead / generic sends use a clean Ashford identity instead of
 // just "Ashford" — the caller passes "Ashford" as the first name on that
 // path, so fall through to the generic envelope:
-//   "Ashford Creative" <hello@ashfordcreative.org>
+//   "Ashford Creative" <hello@ashfordhealthcreative.com>
 const GENERIC_SENDER_LABEL = "Ashford Creative";
 
 const buildFromAddress = (fromRepFirstName?: string): string => {
-  const baseEmail = env.resendFromEmail ?? "hello@ashfordcreative.org";
+  const baseEmail = env.resendFromEmail ?? "hello@ashfordhealthcreative.com";
   const emailOnly = baseEmail.includes("<")
     ? baseEmail.replace(/.*<([^>]+)>.*/, "$1")
     : baseEmail;
-  const domain = emailOnly.split("@")[1] ?? "ashfordcreative.org";
+  const domain = emailOnly.split("@")[1] ?? "ashfordhealthcreative.com";
 
   if (fromRepFirstName) {
     const safeLocal = sanitizeLocalPart(fromRepFirstName);
@@ -116,7 +116,7 @@ const buildFromAddress = (fromRepFirstName?: string): string => {
 export const sendEmail = async (
   params: SendEmailParams,
 ): Promise<{ id: number; status: string; resendId: string | null }> => {
-  // Spec sender format: `"Sarah" <sarah@ashfordcreative.org>`.
+  // Spec sender format: `"Sarah" <sarah@ashfordhealthcreative.com>`.
   // The first name (when present) becomes both the alias label and the
   // local-part of the sender address. Existing callers historically pass
   // `fromRepFirstName` directly (it predates `fromRepDisplayName`); honor

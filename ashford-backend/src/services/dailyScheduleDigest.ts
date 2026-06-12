@@ -173,7 +173,7 @@ export const runEditorialReminderDigest = async (
   }
   const fromAddr = env.resendFromEmail;
   const adminUrl =
-    (env.publicBaseUrl ?? "").replace(/\/$/, "") || "https://ashfordcreative.org";
+    (env.publicBaseUrl ?? "").replace(/\/$/, "") || "https://ashfordhealthcreative.com";
   const { subject, text } = renderEditorialReminder(items, adminUrl);
   if (!env.resendApiKey) {
     logger.info({ count: items.length }, "[editorial-reminder] dev-skipped (no RESEND_API_KEY)");

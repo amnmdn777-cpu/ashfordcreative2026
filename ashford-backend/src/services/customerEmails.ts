@@ -26,7 +26,7 @@ export type WelcomeEmailParams = {
 };
 
 const buildSenderAddress = (): string => {
-  const baseEmail = env.resendFromEmail ?? "hello@ashfordcreative.org";
+  const baseEmail = env.resendFromEmail ?? "hello@ashfordhealthcreative.com";
   const emailOnly = baseEmail.includes("<")
     ? baseEmail.replace(/.*<([^>]+)>.*/, "$1")
     : baseEmail;
@@ -64,7 +64,7 @@ const buildContent = (params: WelcomeEmailParams): { subject: string; body: stri
       `Tu rep te contacta en las próximas 24 horas para empezar a construir tu sitio. No tienes nada que llenar — ya tenemos lo que necesitamos de nuestra conversación.\n\n` +
       `Administrar tu facturación\n` +
       `${params.managePortalUrl}\n\n` +
-      `¿Preguntas? Responde a este correo o escribe directamente a hello@ashfordcreative.org.\n\n` +
+      `¿Preguntas? Responde a este correo o escribe directamente a hello@ashfordhealthcreative.com.\n\n` +
       `${signoff}\n`;
     return { subject, body };
   }
@@ -80,7 +80,7 @@ const buildContent = (params: WelcomeEmailParams): { subject: string; body: stri
     `Your rep will reach out within the next 24 hours to start building your site. There's nothing for you to fill out — we already have what we need from our conversation.\n\n` +
     `Manage your billing\n` +
     `${params.managePortalUrl}\n\n` +
-    `Questions? Just reply to this email or write directly to hello@ashfordcreative.org.\n\n` +
+    `Questions? Just reply to this email or write directly to hello@ashfordhealthcreative.com.\n\n` +
     `${signoff}\n`;
   return { subject, body };
 };
@@ -152,7 +152,7 @@ const buildPaymentFailedContent = (
       `Para actualizar tu tarjeta o método de pago ahora, abre tu portal de facturación:\n\n` +
       `${params.managePortalUrl}\n\n` +
       `Tu sitio sigue activo — solo necesitamos un método de pago vigente para continuar.\n\n` +
-      `¿Preguntas? Responde a este correo o escribe a hello@ashfordcreative.org.\n\n` +
+      `¿Preguntas? Responde a este correo o escribe a hello@ashfordhealthcreative.com.\n\n` +
       `${signoff}\n`;
     return { subject, body };
   }
@@ -167,7 +167,7 @@ const buildPaymentFailedContent = (
     `To update your card or payment method now, open your billing portal:\n\n` +
     `${params.managePortalUrl}\n\n` +
     `Your site is still up — we just need a working payment method to keep things going.\n\n` +
-    `Questions? Reply to this email or write to hello@ashfordcreative.org.\n\n` +
+    `Questions? Reply to this email or write to hello@ashfordhealthcreative.com.\n\n` +
     `${signoff}\n`;
   return { subject, body };
 };
@@ -177,7 +177,7 @@ export const sendPaymentFailedEmail = async (
 ): Promise<{ id: number; status: string; resendId: string | null }> => {
   const { subject, body } = buildPaymentFailedContent(params);
   const from = buildSenderAddress();
-  const replyTo = `hello@${(env.resendFromEmail ?? "hello@ashfordcreative.org").split("@")[1] ?? "ashfordcreative.org"}`;
+  const replyTo = `hello@${(env.resendFromEmail ?? "hello@ashfordhealthcreative.com").split("@")[1] ?? "ashfordhealthcreative.com"}`;
   const locale = params.locale === "es" ? "es" : "en";
   const htmlBody = wrapHtmlEmail({
     bodyText: body,
@@ -270,7 +270,7 @@ export const sendWelcomeEmail = async (
 ): Promise<{ id: number; status: string; resendId: string | null }> => {
   const { subject, body } = buildContent(params);
   const from = buildSenderAddress();
-  const replyTo = `hello@${(env.resendFromEmail ?? "hello@ashfordcreative.org").split("@")[1] ?? "ashfordcreative.org"}`;
+  const replyTo = `hello@${(env.resendFromEmail ?? "hello@ashfordhealthcreative.com").split("@")[1] ?? "ashfordhealthcreative.com"}`;
   const locale = params.locale === "es" ? "es" : "en";
   const htmlBody = wrapHtmlEmail({
     bodyText: body,

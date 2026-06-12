@@ -55,7 +55,7 @@ const stopReply = (): string => {
 const helpReply = (): string => {
   const voice = formatVoiceNumber(env.twilioVoiceNumber);
   const callLine = voice ? ` Call ${voice} for support.` : "";
-  return `Ashford Creative — bilingual websites for Texas mental-health practices. Msg & data rates may apply. Reply STOP to unsubscribe.${callLine} Email hello@ashfordcreative.org for support.`;
+  return `Ashford Creative — bilingual websites for Texas mental-health practices. Msg & data rates may apply. Reply STOP to unsubscribe.${callLine} Email hello@ashfordhealthcreative.com for support.`;
 };
 
 const xmlEscape = (s: string): string =>

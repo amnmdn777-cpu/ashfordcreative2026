@@ -40,7 +40,7 @@ export type CreateShortLinkResult = {
 
 /**
  * Mint a short link for an arbitrary target URL. The returned `url` is the
- * public-facing redirect endpoint (e.g. `https://www.ashfordcreative.org/s/abc1234`).
+ * public-facing redirect endpoint (e.g. `https://www.ashfordhealthcreative.com/s/abc1234`).
  *
  * Retries up to 5 times on unique-constraint collisions, growing the code
  * length each retry so we never get stuck on a hot bucket.

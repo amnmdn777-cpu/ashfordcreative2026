@@ -40,7 +40,7 @@ export default function FindTherapistIndex() {
           "@type": "CollectionPage",
           name: title,
           description,
-          url: "https://ashfordcreative.org/therapists",
+          url: "https://ashfordhealthcreative.com/therapists",
           numberOfItems: TX_CITIES.length * SPECIALTIES.length,
         }}
       />

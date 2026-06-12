@@ -177,9 +177,9 @@ const COPY: Record<EmailLocale, CheckoutCopy> = {
     footerOrg:
       "Ashford Creative — boutique websites for Texas mental-health practices.",
     footerContactWithPhone: (phone: string) =>
-      `Reply directly · ${phone} · hello@ashfordcreative.org`,
+      `Reply directly · ${phone} · hello@ashfordhealthcreative.com`,
     footerContactNoPhone:
-      "Reply directly · hello@ashfordcreative.org",
+      "Reply directly · hello@ashfordhealthcreative.com",
     preheader: (practice: string) =>
       `${practice} is ready — take a look and let me know what you think.`,
     heroAlt: "Site preview",
@@ -207,9 +207,9 @@ const COPY: Record<EmailLocale, CheckoutCopy> = {
     footerOrg:
       "Ashford Creative — sitios web para profesionales de la salud mental en Texas.",
     footerContactWithPhone: (phone: string) =>
-      `Responde directamente · ${phone} · hello@ashfordcreative.org`,
+      `Responde directamente · ${phone} · hello@ashfordhealthcreative.com`,
     footerContactNoPhone:
-      "Responde directamente · hello@ashfordcreative.org",
+      "Responde directamente · hello@ashfordhealthcreative.com",
     preheader: (practice: string) =>
       `${practice} está listo — échale un vistazo y dime qué piensas.`,
     heroAlt: "Vista previa del sitio",

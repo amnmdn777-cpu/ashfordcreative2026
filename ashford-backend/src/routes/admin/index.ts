@@ -747,7 +747,11 @@ router.get(
         practice: r.practice,
         callCount: r.callCount,
         transcriptCount: r.transcriptCount,
-        lastCallAt: r.lastCallAt ? r.lastCallAt.toISOString() : null,
+        // drizzle returns this sql<Date> aggregate as a raw string (the <Date>
+        // is only a TS hint, not runtime parsing), so calling .toISOString()
+        // directly threw a 500. Normalize through new Date() — works whether the
+        // driver hands back a string or a Date.
+        lastCallAt: r.lastCallAt ? new Date(r.lastCallAt).toISOString() : null,
       })),
     });
   }),
@@ -1680,7 +1684,7 @@ router.post(
       leadId: LEAD_ID,
       slug: after[0]?.slug,
       previewUrl: after[0]
-        ? `https://www.ashfordcreative.org/preview/${after[0].slug}?t=${after[0].token}`
+        ? `https://www.ashfordhealthcreative.com/preview/${after[0].slug}?t=${after[0].token}`
         : null,
     });
   }),

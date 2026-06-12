@@ -5,7 +5,7 @@
  * so the demo dashboard always shows them claimable.
  *
  * Phones use the +1-555-01XX NANP test block; emails use +demo@
- * aliases on ashfordcreative.org so any outbound is observable.
+ * aliases on ashfordhealthcreative.com so any outbound is observable.
  *
  * Usage: pnpm --filter @workspace/api-server exec tsx \
  *   src/scripts/seedTestLeads.ts
@@ -32,7 +32,7 @@ const TEST_LEADS: TestLeadSpec[] = [
     specialty: "Anxiety & OCD Specialist",
     city: "Austin",
     phone: "+15125550143",
-    email: "sarah.chen+demo@ashfordcreative.org",
+    email: "sarah.chen+demo@ashfordhealthcreative.com",
     locale: "en",
     currentWebsite: "https://skylinementalhealth.squarespace.com",
     profileBlurb:
@@ -49,7 +49,7 @@ const TEST_LEADS: TestLeadSpec[] = [
     specialty: "Marriage & Family Therapy",
     city: "Dallas",
     phone: "+12145550188",
-    email: "james.miller+demo@ashfordcreative.org",
+    email: "james.miller+demo@ashfordhealthcreative.com",
     locale: "en",
     currentWebsite: null,
     profileBlurb:
@@ -65,7 +65,7 @@ const TEST_LEADS: TestLeadSpec[] = [
     specialty: "Bilingual Child Psychology",
     city: "Houston",
     phone: "+17135550212",
-    email: "elena.rodriguez+demo@ashfordcreative.org",
+    email: "elena.rodriguez+demo@ashfordhealthcreative.com",
     locale: "es",
     currentWebsite: "https://rodriguezwellnessgroup.com",
     profileBlurb:

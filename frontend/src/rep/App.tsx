@@ -106,7 +106,10 @@ function RepRoutes() {
     );
   }
   if (!user) return <LoginPage />;
-  if (user.role !== "rep") {
+  // Admins can use the rep/sales dashboard too (e.g. maaz/faizan/shivkanya/kanav
+  // run both /admin and /sales from one login). Only non-rep, non-admin roles
+  // hit the mismatch screen.
+  if (user.role !== "rep" && user.role !== "admin") {
     return <RoleMismatch />;
   }
 
