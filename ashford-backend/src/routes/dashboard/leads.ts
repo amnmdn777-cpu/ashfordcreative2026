@@ -26,6 +26,7 @@ import {
   addLeadRepNote,
   listLeadRepNotes,
   editLeadRepNote,
+  loadOwnedLead,
 } from "../../services/leads";
 import { dateToIso } from "../../lib/serialize";
 import { sendSms } from "../../integrations/dialpad";
@@ -1456,7 +1457,7 @@ router.post(
 router.patch(
   "/dashboard/leads/:id/temperature",
   asyncHandler(async (req, res) => {
-    const leadId = LeadIdParam.parse(req.params.id);
+    const leadId = z.coerce.number().int().parse(req.params.id);
     const body = z.object({
       temperature: z.enum(["disqualifier", "cold", "lukewarm", "hot"]).nullable(),
     }).parse(req.body);
