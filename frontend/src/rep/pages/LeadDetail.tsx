@@ -4141,6 +4141,14 @@ function RepAttachmentsPanel({
           Ready: <span className="font-medium text-foreground">{fileName}</span>
         </div>
       ) : null}
+      {filePayload && filePayload.startsWith("data:image/") ? (
+        <img
+          src={filePayload}
+          alt={fileName ?? "Selected image"}
+          data-testid="rep-attachments-thumb"
+          className="mb-2 max-h-32 rounded-md border border-input object-contain"
+        />
+      ) : null}
       {fileError ? (
         <div className="text-xs text-destructive mb-2">{fileError}</div>
       ) : null}
