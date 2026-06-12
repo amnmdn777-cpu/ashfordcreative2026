@@ -1921,11 +1921,15 @@ export const patchPortalCustomizations = async (
     updatedAt: new Date(),
   };
   if (patch.selectedTemplate) {
-    if (locked.has("template_key") || locked.has("selectedTemplate")) {
-      skipped.push("template_key");
-    } else {
-      setPatch.selectedTemplate = patch.selectedTemplate;
-    }
+    // ASH-8: the template *choice* is not locked by QC validation. The lock
+    // is meant to protect the validated copy/headline/palette so they survive
+    // a template flip (B2) — NOT to block switching templates. Previously
+    // `template_key` sat in the lock set, which silently dropped the rep's
+    // template change and reverted the lead to its specialty-suggested
+    // default (e.g. "constellation"), exactly the ASH-8 complaint. Always
+    // apply the template; the per-field copy locks below still protect the
+    // validated text/palette.
+    setPatch.selectedTemplate = patch.selectedTemplate;
   }
   if (patch.customizations) {
     // Drop any locked keys from the inbound customisation patch before
