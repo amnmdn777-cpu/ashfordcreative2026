@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { PhoneOff } from "lucide-react";
+import { PhoneOff, AlertTriangle } from "lucide-react";
 import { useDialer } from "@rep/contexts/DialerProvider";
 import { Button } from "@rep/components/ui/button";
 
@@ -16,7 +16,7 @@ const fmtDuration = (seconds: number): string => {
 };
 
 export function CallScreen() {
-  const { active, hangUp } = useDialer();
+  const { active, errorMessage, hangUp, clearError } = useDialer();
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -24,6 +24,39 @@ export function CallScreen() {
     const id = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(id);
   }, [active]);
+
+  // A failed placeCall throws before `active` is set, so without this the
+  // rep saw nothing at all when a call could not be placed (403/409/502).
+  if (!active && errorMessage) {
+    return (
+      <div
+        data-testid="call-error"
+        className="fixed bottom-4 right-4 z-50 w-80 rounded-lg border border-destructive/40 bg-card shadow-xl"
+      >
+        <div className="flex items-start gap-2 p-3">
+          <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-destructive" />
+          <div className="min-w-0">
+            <div className="text-xs font-medium uppercase tracking-wide text-destructive">
+              Call failed
+            </div>
+            <p className="text-sm text-foreground mt-0.5 wrap-break-word">
+              {errorMessage}
+            </p>
+          </div>
+        </div>
+        <div className="p-3 pt-0">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={clearError}
+            data-testid="call-error-dismiss"
+          >
+            Dismiss
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (!active) return null;
   const elapsedSec = Math.floor((Date.now() - active.startedAt) / 1000);

@@ -29,7 +29,9 @@ const StartCallBody = z.object({
 router.post(
   "/dashboard/voice/start",
   asyncHandler(async (req, res) => {
-    if (req.user!.role !== "rep") throw forbidden("Reps only");
+    const role = req.user!.role;
+    const isPrivileged = role === "admin" || role === "owner";
+    if (role !== "rep" && !isPrivileged) throw forbidden("Reps only");
     const body = StartCallBody.parse(req.body);
 
     // When per-rep OAuth is configured we REQUIRE the active rep to
@@ -60,7 +62,9 @@ router.post(
         .where(eq(leadsTbl.id, body.leadId))
         .limit(1);
       if (!lead) throw badRequest("Lead not found.");
-      if (lead.claimedByRepId !== req.user!.id)
+      // Admins/owners may dial any lead (e.g. when testing or covering a
+      // rep). Reps remain restricted to leads they've claimed.
+      if (!isPrivileged && lead.claimedByRepId !== req.user!.id)
         throw forbidden("You don't own this lead.");
     }
 

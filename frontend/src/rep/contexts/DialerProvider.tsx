@@ -52,6 +52,8 @@ export interface DialerContextValue {
    * button on each lead is gated on this when `perRepOauth` is on. */
   repConnected: boolean;
   placeCall: (args: PlaceCallArgs) => Promise<number>;
+  /** Dismiss the last placeCall failure banner. */
+  clearError: () => void;
   acceptIncoming: () => void;
   rejectIncoming: () => void;
   hangUp: () => void;
@@ -121,6 +123,8 @@ export function DialerProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const clearError = useCallback(() => setErrorMessage(null), []);
+
   // Audio path is the rep's Dialpad device, not the browser. The card is
   // just a UI hint — "Dismiss" clears it; mute/keypad/hang-up happen on
   // the rep's phone itself.
@@ -145,6 +149,7 @@ export function DialerProvider({ children }: { children: ReactNode }) {
       perRepOauth,
       repConnected,
       placeCall,
+      clearError,
       acceptIncoming,
       rejectIncoming,
       hangUp,
@@ -160,6 +165,7 @@ export function DialerProvider({ children }: { children: ReactNode }) {
       perRepOauth,
       repConnected,
       placeCall,
+      clearError,
       acceptIncoming,
       rejectIncoming,
       hangUp,
