@@ -20,7 +20,7 @@ import {
   type DialpadTranscript,
 } from "../integrations/dialpad";
 import { findRepByDialpadUserId } from "../integrations/dialpadOAuth";
-import { notify } from "./notifications";
+import { notify, notifyOwner } from "./notifications";
 
 /**
  * DialPad call ingestion + Vi enrichment.
@@ -506,6 +506,53 @@ export const ingestDialpadSummary = async (
         generatedAt: new Date(),
       },
     });
+
+  // Share the AI summary with BOTH the rep (in-app) and the owner (email).
+  // Requested by the client: each call's Vi summary should reach Candice
+  // and the owner. Best-effort — a failure here never undoes the persisted
+  // summary above.
+  try {
+    const [meta] = await db
+      .select({
+        leadId: calls.leadId,
+        repId: calls.repId,
+        practice: leads.practice,
+        leadName: leads.name,
+      })
+      .from(calls)
+      .leftJoin(leads, eq(calls.leadId, leads.id))
+      .where(eq(calls.id, callRow.id))
+      .limit(1);
+
+    const label = meta?.practice ?? meta?.leadName ?? "a lead";
+    const preview =
+      summaryText.length > 280 ? `${summaryText.slice(0, 277)}…` : summaryText;
+    const nextLine = nextActions.length
+      ? `\n\nNext: ${nextActions.join("; ")}`
+      : "";
+
+    if (meta?.repId) {
+      await notify({
+        repId: meta.repId,
+        type: "call.summary",
+        title: `AI call summary · ${label}`,
+        body: `${preview}${nextLine}`,
+        linkUrl: meta.leadId ? `/dashboard/leads/${meta.leadId}` : undefined,
+      }).catch(() => {});
+    }
+
+    await notifyOwner({
+      type: "call.summary",
+      title: `AI call summary · ${label}`,
+      body: `${preview}${nextLine}`,
+      linkUrl: meta?.leadId ? `/admin/leads/${meta.leadId}` : undefined,
+    }).catch(() => {});
+  } catch (err) {
+    logger.warn(
+      { err, dialpadCallId },
+      "dialpad: summary share notification failed (non-fatal)",
+    );
+  }
 };
 
 // Suppress unused-import warning for `and` if it ever drops to single-condition

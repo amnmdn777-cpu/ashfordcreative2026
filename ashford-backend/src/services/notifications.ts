@@ -82,11 +82,16 @@ export const notifyOwner = async (params: {
 
   const subjectPrefix = `[Ashford] ${params.type}`;
 
-  // Email via Resend
-  if (env.ownerNotificationEmail) {
+  // Email via Resend. OWNER_NOTIFICATION_EMAIL may be a comma-separated list
+  // so a summary/alert can reach several people (e.g. the rep + the owner).
+  const ownerRecipients = (env.ownerNotificationEmail ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (ownerRecipients.length > 0) {
     if (!env.resendApiKey) {
       logger.info(
-        { type: params.type, to: env.ownerNotificationEmail },
+        { type: params.type, to: ownerRecipients },
         "[owner-notify] dev-skipped email (no RESEND_API_KEY)",
       );
     } else {
@@ -101,7 +106,7 @@ export const notifyOwner = async (params: {
           .join("\n\n");
         await resend.emails.send({
           from: env.resendFromEmail,
-          to: env.ownerNotificationEmail,
+          to: ownerRecipients,
           subject: `${subjectPrefix} — ${params.title}`.slice(0, 160),
           text,
         });

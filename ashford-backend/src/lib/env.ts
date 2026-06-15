@@ -286,7 +286,7 @@ export const env = {
   ownerNotificationEmail: readEnv("OWNER_NOTIFICATION_EMAIL"),
   ownerNotificationSms: readEnv("OWNER_NOTIFICATION_SMS"),
   ownerNotificationTypes: (readEnv("OWNER_NOTIFICATION_TYPES") ??
-    "sale.won,subscription.past_due,client_onboarding.ready_to_build,custom_dev.quote_requested,approval.requested,escalation.opened,health.degraded,health.recovered,whatsapp.click")
+    "sale.won,subscription.past_due,client_onboarding.ready_to_build,custom_dev.quote_requested,approval.requested,escalation.opened,health.degraded,health.recovered,whatsapp.click,call.summary")
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean),
