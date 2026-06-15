@@ -126,8 +126,15 @@ export const sendEmail = async (
     params.fromRepFirstName?.trim() ||
     params.fromRepDisplayName?.trim().split(/\s+/)[0];
   const from = buildFromAddress(repFirstName);
-  const replyToTag = params.repId ? `+rep${params.repId}` : "";
-  const replyTo = `reply${replyToTag}@${env.resendReplyDomain}`;
+  // Reply-To mirrors the From mailbox so a client's reply lands directly in
+  // that rep's real inbox (e.g. candice@ashfordhealthcreative.com) instead of
+  // the old, unmonitored reply+rep{N}@ address (no inbound parsing existed for
+  // it). buildFromAddress already resolves the rep's first name to their
+  // mailbox local-part; each sending rep needs a matching Hostinger
+  // mailbox/alias for replies to be received.
+  const replyTo = from.includes("<")
+    ? from.replace(/.*<([^>]+)>.*/, "$1")
+    : from;
   const htmlBody = params.htmlOverride
     ? params.htmlOverride
     : params.plain
