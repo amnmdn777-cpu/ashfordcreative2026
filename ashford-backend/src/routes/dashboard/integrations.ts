@@ -47,8 +47,17 @@ router.use("/dashboard/integrations", requireAuth);
 const COOKIE_NAME = "dp_oauth";
 const COOKIE_MAX_AGE_MS = 10 * 60 * 1000; // 10 min — long enough for the consent screen.
 
-const redirectUri = (): string =>
-  `${env.publicBaseUrl.replace(/\/$/, "")}/api/dashboard/integrations/dialpad/callback`;
+// The OAuth callback MUST resolve to the backend host (where this router is
+// mounted), not PUBLIC_BASE_URL — in the split deploy PUBLIC_BASE_URL is the
+// www frontend, which has no /api proxy. Prefer the explicit override; else
+// derive from the incoming request (both /start and /callback hit the same
+// backend host, so the value matches across the round-trip).
+const redirectUri = (req: { protocol: string; get(name: string): string | undefined }): string => {
+  if (env.dialpadOauthRedirectUri) return env.dialpadOauthRedirectUri;
+  const proto = (req.get("x-forwarded-proto") ?? req.protocol).split(",")[0];
+  const host = req.get("host");
+  return `${proto}://${host}/api/dashboard/integrations/dialpad/callback`;
+};
 
 const settingsUrl = (status: string, msg?: string): string => {
   const u = new URL(
@@ -117,7 +126,7 @@ router.get(
     });
 
     const url = buildAuthorizeUrl({
-      redirectUri: redirectUri(),
+      redirectUri: redirectUri(req),
       state,
       codeChallenge: challenge,
     });
@@ -184,7 +193,7 @@ router.get(
       token = await exchangeCodeForToken({
         code: q.code,
         codeVerifier: saved.v,
-        redirectUri: redirectUri(),
+        redirectUri: redirectUri(req),
       });
     } catch (err) {
       logger.error({ err }, "dialpad oauth: token exchange failed");

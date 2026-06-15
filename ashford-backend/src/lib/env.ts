@@ -376,6 +376,14 @@ export const env = {
   // This means a half-configured production env never breaks the rep app.
   dialpadOauthClientId: readEnv("DIALPAD_OAUTH_CLIENT_ID"),
   dialpadOauthClientSecret: readEnv("DIALPAD_OAUTH_CLIENT_SECRET"),
+  // Explicit OAuth callback URL. REQUIRED in the split frontend/backend
+  // deploy where PUBLIC_BASE_URL points at the www frontend (no /api proxy):
+  // the callback lives on the BACKEND, so set this to the backend's own
+  // host, e.g.
+  //   https://backend-production-b774.up.railway.app/api/dashboard/integrations/dialpad/callback
+  // When unset, the code derives the callback from the incoming request
+  // host (also the backend, since /start and /callback are mounted there).
+  dialpadOauthRedirectUri: readEnv("DIALPAD_OAUTH_REDIRECT_URI"),
   // AES-256-GCM key for the rep_dialpad_credentials table. Accepts hex
   // (64 chars), base64 (44 chars), or any ≥32-char passphrase (SHA-256
   // expanded). Rotating this key invalidates all stored tokens — reps

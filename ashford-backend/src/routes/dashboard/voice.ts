@@ -30,7 +30,7 @@ router.post(
   "/dashboard/voice/start",
   asyncHandler(async (req, res) => {
     const role = req.user!.role;
-    const isPrivileged = role === "admin" || role === "owner";
+    const isPrivileged = role === "admin";
     if (role !== "rep" && !isPrivileged) throw forbidden("Reps only");
     const body = StartCallBody.parse(req.body);
 
