@@ -266,8 +266,9 @@ type DialpadUserDevice = {
   type?: string | null;
   name?: string | null;
 };
-// Software clients we want the call to land on.
-const COMPUTER_DEVICE_RE = /desktop|web|app|cti|soft/i;
+// Software clients we want the call to land on. `native` is Dialpad's
+// desktop app; `web` is the browser client.
+const COMPUTER_DEVICE_RE = /desktop|web|app|cti|soft|native/i;
 // Physical phones we want to avoid auto-answering.
 const PHYSICAL_DEVICE_RE = /deskphone|hardphone|sip|cell|mobile/i;
 const resolveComputerDeviceId = async (
@@ -289,6 +290,15 @@ const resolveComputerDeviceId = async (
       },
       "dialpad: user devices for outbound ring (ASH-11)",
     );
+    // The device-targeting exists ONLY to keep the call off a physical
+    // handheld. When the user has no physical phone (all clients are
+    // desktop/web), forcing a single device_id is counter-productive — it
+    // would silently miss whichever client happens to be open. Ring all
+    // (return null) in that case.
+    const hasPhysical = devices.some((d) =>
+      PHYSICAL_DEVICE_RE.test(String(d.type ?? "")),
+    );
+    if (!hasPhysical) return null;
     const pick =
       devices.find((d) => COMPUTER_DEVICE_RE.test(String(d.type ?? ""))) ??
       devices.find((d) => !PHYSICAL_DEVICE_RE.test(String(d.type ?? "")));
