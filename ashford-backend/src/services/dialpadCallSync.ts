@@ -488,6 +488,16 @@ export const ingestDialpadSummary = async (
     .limit(1);
   if (!callRow) return;
 
+  // Was this summary already stored? The periodic backfill re-ingests the
+  // same call every few minutes, so we must only fire the share
+  // notification on the FIRST insert — otherwise the owner gets a duplicate
+  // email on every poll.
+  const [priorSummary] = await db
+    .select({ callId: callSummaries.callId })
+    .from(callSummaries)
+    .where(eq(callSummaries.callId, callRow.id))
+    .limit(1);
+
   await db
     .insert(callSummaries)
     .values({
@@ -506,6 +516,9 @@ export const ingestDialpadSummary = async (
         generatedAt: new Date(),
       },
     });
+
+  // Already shared on a previous run — don't re-notify.
+  if (priorSummary) return;
 
   // Share the AI summary with BOTH the rep (in-app) and the owner (email).
   // Requested by the client: each call's Vi summary should reach Candice

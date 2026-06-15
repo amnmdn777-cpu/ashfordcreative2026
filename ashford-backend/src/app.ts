@@ -215,6 +215,26 @@ setTimeout(() => {
   );
 }, 30_000).unref();
 
+// AI call summaries: Dialpad's Vi finishes the transcript + summary a few
+// minutes AFTER a call ends, and there's no "summary ready" call-state we can
+// subscribe to. The webhook keeps the call rows fresh; this poll pulls the
+// transcript + Vi summary once they're ready (idempotent on dialpadCallId —
+// the summary share notification only fires on first ingest). Gated on
+// Dialpad being configured so unconfigured envs stay quiet.
+import { backfillRecentCalls } from "./services/dialpadCallSync";
+import { isDialpadConfigured as isDialpadCfg } from "./integrations/dialpad";
+const DIALPAD_BACKFILL_INTERVAL_MS = 5 * 60 * 1000;
+setInterval(() => {
+  if (!isDialpadCfg()) return;
+  backfillRecentCalls({ sinceMs: Date.now() - 30 * 60 * 1000 })
+    .then((r) => {
+      if (r.withSummary > 0 || r.withTranscript > 0) {
+        logger.info(r, "dialpad backfill: pulled transcripts/summaries");
+      }
+    })
+    .catch((err) => logger.error({ err }, "dialpad backfill failed"));
+}, DIALPAD_BACKFILL_INTERVAL_MS).unref();
+
 // CLEANUP C.1 — daily_schedule_digest. node-cron "0 7 * * 1-5" (7am Mon-Fri).
 // Today the data source returns [] (see services/dailyScheduleDigest.ts for
 // the TODO seam); the cron is wired live so it's observable from prod logs
