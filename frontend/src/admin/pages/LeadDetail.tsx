@@ -2,7 +2,13 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
 import { ExternalLink, ArrowLeft } from "lucide-react";
-import { api, fmtDateTime, type LeadPortalDto } from "@admin/lib/api";
+import {
+  api,
+  fmtDateTime,
+  type LeadPortalDto,
+  type LeadRow,
+  type LeadHistoryEntry,
+} from "@admin/lib/api";
 import { PageHeader } from "@admin/components/AdminLayout";
 
 /**
@@ -73,64 +79,15 @@ export default function LeadDetailPage() {
         }
       />
 
-      <section className="bg-card border border-card-border rounded-xl p-6 shadow-sm">
-        <h2 className="font-serif text-lg mb-4">Lead identity</h2>
-        <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-          <div className="flex gap-2">
-            <dt className="text-muted-foreground w-32 shrink-0">Phone</dt>
-            <dd>{lead.phone ?? "—"}</dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="text-muted-foreground w-32 shrink-0">Email</dt>
-            <dd className="truncate">{lead.email ?? "—"}</dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="text-muted-foreground w-32 shrink-0">Specialty</dt>
-            <dd>{lead.specialty ?? "—"}</dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="text-muted-foreground w-32 shrink-0">Location</dt>
-            <dd>{[lead.city, lead.state].filter(Boolean).join(", ") || "—"}</dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="text-muted-foreground w-32 shrink-0">Pool status</dt>
-            <dd>{lead.poolStatus}</dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="text-muted-foreground w-32 shrink-0">Claimed by</dt>
-            <dd>{lead.claimedByRepId ? `Rep #${lead.claimedByRepId}` : "—"}</dd>
-          </div>
-          <div className="flex gap-2 md:col-span-2">
-            <dt className="text-muted-foreground w-32 shrink-0">Current site</dt>
-            <dd className="truncate">
-              {lead.currentWebsite ? (
-                <a
-                  href={lead.currentWebsite}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-accent hover:underline"
-                >
-                  {lead.currentWebsite}
-                </a>
-              ) : (
-                "—"
-              )}
-            </dd>
-          </div>
-          {lead.profileBlurb && (
-            <div className="flex gap-2 md:col-span-2">
-              <dt className="text-muted-foreground w-32 shrink-0">Profile</dt>
-              <dd className="whitespace-pre-wrap">{lead.profileBlurb}</dd>
-            </div>
-          )}
-        </dl>
-      </section>
+      <EditableFieldsCard leadId={id} lead={lead} />
 
       <QualityCheckCard leadId={id} lead={lead} />
 
       <BookingUrlsCard leadId={id} lead={lead} />
 
       <CustomerPortalCard leadId={id} />
+
+      <HistoryCard leadId={id} />
     </div>
   );
 }
@@ -147,6 +104,250 @@ export default function LeadDetailPage() {
  *  - Validate / Reset / Accept-with-initials buttons calling the
  *    /api/admin/leads/:id/qc-* endpoints.
  */
+// ── Bundle 1.1 — inline-editable lead fields ────────────────────────────────
+const STATUS_OPTIONS = [
+  "available", "claimed", "nurturing", "won", "disqualified", "recycled", "cold",
+].map((v) => ({ value: v, label: v }));
+const TEMP_OPTIONS = ["disqualifier", "cold", "lukewarm", "hot"].map((v) => ({
+  value: v,
+  label: v,
+}));
+const DISQUALIFY_OPTIONS = [
+  "not_interested", "wrong_number", "do_not_call", "already_has_provider",
+  "out_of_market", "budget_concern", "other",
+].map((v) => ({ value: v, label: v }));
+const LOCALE_OPTIONS = [
+  { value: "en", label: "en" },
+  { value: "es", label: "es" },
+];
+
+/** Click-to-edit field. Commits on Enter or blur; Escape cancels. */
+function EditableField({
+  label,
+  value,
+  type = "text",
+  options,
+  multiline = false,
+  onSave,
+}: {
+  label: string;
+  value: string | null | undefined;
+  type?: "text" | "select";
+  options?: { value: string; label: string }[];
+  multiline?: boolean;
+  onSave: (v: string | null) => Promise<void>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value ?? "");
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    setDraft(value ?? "");
+  }, [value]);
+
+  const commit = async () => {
+    setEditing(false);
+    const next = draft.trim();
+    const cur = (value ?? "").toString();
+    if (next === cur) return;
+    setSaving(true);
+    setErr(null);
+    try {
+      await onSave(next === "" ? null : next);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Save failed");
+      setDraft(cur);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const inputCls =
+    "w-full rounded border border-input bg-background px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-ring";
+
+  return (
+    <div className="flex gap-2 items-start">
+      <dt className="text-muted-foreground w-32 shrink-0 pt-1">{label}</dt>
+      <dd className="flex-1 min-w-0">
+        {editing ? (
+          type === "select" ? (
+            <select
+              autoFocus
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onBlur={commit}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commit();
+                if (e.key === "Escape") setEditing(false);
+              }}
+              className={inputCls}
+            >
+              <option value="">—</option>
+              {options?.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          ) : multiline ? (
+            <textarea
+              autoFocus
+              rows={3}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onBlur={commit}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") setEditing(false);
+              }}
+              className={inputCls}
+            />
+          ) : (
+            <input
+              autoFocus
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onBlur={commit}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commit();
+                if (e.key === "Escape") setEditing(false);
+              }}
+              className={inputCls}
+            />
+          )
+        ) : (
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="text-left hover:bg-muted/60 rounded px-1 -mx-1 w-full min-h-[1.75rem] whitespace-pre-wrap break-words"
+            title="Click to edit"
+          >
+            {saving ? (
+              <span className="text-muted-foreground">Saving…</span>
+            ) : value ? (
+              <span>{value}</span>
+            ) : (
+              <span className="text-muted-foreground italic">—</span>
+            )}
+          </button>
+        )}
+        {err && <div className="text-xs text-destructive mt-1">{err}</div>}
+      </dd>
+    </div>
+  );
+}
+
+function EditableFieldsCard({
+  leadId,
+  lead,
+}: {
+  leadId: number;
+  lead: LeadRow;
+}) {
+  const qc = useQueryClient();
+  const save = (patch: Partial<LeadRow>) =>
+    api.updateLead(leadId, patch).then(() => {
+      qc.invalidateQueries({ queryKey: ["admin", "lead", leadId] });
+      qc.invalidateQueries({ queryKey: ["admin", "lead", leadId, "history"] });
+      qc.invalidateQueries({ queryKey: ["admin-leads"] });
+    });
+
+  return (
+    <section className="bg-card border border-card-border rounded-xl p-6 shadow-sm">
+      <h2 className="font-serif text-lg mb-1">Lead fields</h2>
+      <p className="text-xs text-muted-foreground mb-4">
+        Click any value to edit. Saves on Enter or when you click away. Every
+        change is recorded in the History below.
+      </p>
+      <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+        <EditableField label="Name" value={lead.name} onSave={(v) => save({ name: v ?? "" })} />
+        <EditableField label="Practice" value={lead.practice} onSave={(v) => save({ practice: v })} />
+        <EditableField label="Specialty" value={lead.specialty} onSave={(v) => save({ specialty: v })} />
+        <EditableField label="City" value={lead.city} onSave={(v) => save({ city: v })} />
+        <EditableField label="State" value={lead.state} onSave={(v) => save({ state: v })} />
+        <EditableField label="Phone" value={lead.phone} onSave={(v) => save({ phone: v })} />
+        <EditableField label="Email" value={lead.email} onSave={(v) => save({ email: v })} />
+        <EditableField label="Locale" type="select" options={LOCALE_OPTIONS} value={lead.locale} onSave={(v) => save({ locale: (v as "en" | "es") ?? "en" })} />
+        <EditableField label="Status" type="select" options={STATUS_OPTIONS} value={lead.status} onSave={(v) => save({ status: v ?? "available" })} />
+        <EditableField label="Temperature" type="select" options={TEMP_OPTIONS} value={lead.temperature} onSave={(v) => save({ temperature: v })} />
+        <EditableField label="Disqualify reason" type="select" options={DISQUALIFY_OPTIONS} value={lead.disqualifyReason} onSave={(v) => save({ disqualifyReason: v })} />
+        <EditableField label="Owner (rep id)" value={lead.claimedByRepId != null ? String(lead.claimedByRepId) : null} onSave={(v) => save({ claimedByRepId: v ? Number(v) : null })} />
+        <EditableField label="Calendly URL" value={lead.calendlyUrl} onSave={(v) => save({ calendlyUrl: v })} />
+        <EditableField label="Doxy URL" value={lead.doxyUrl} onSave={(v) => save({ doxyUrl: v })} />
+        <div className="md:col-span-2">
+          <EditableField label="Current site" value={lead.currentWebsite} onSave={(v) => save({ currentWebsite: v })} />
+        </div>
+        <div className="md:col-span-2">
+          <EditableField label="Disqualify note" multiline value={lead.disqualifyNote} onSave={(v) => save({ disqualifyNote: v })} />
+        </div>
+        <div className="md:col-span-2">
+          <EditableField label="Profile blurb" multiline value={lead.profileBlurb} onSave={(v) => save({ profileBlurb: v })} />
+        </div>
+      </dl>
+    </section>
+  );
+}
+
+// ── Bundle 1.4 — lead change history (read-only) ────────────────────────────
+const fmtHistVal = (v: unknown): string =>
+  v === null || v === undefined || v === "" ? "—" : String(v);
+
+function HistoryDiff({ entry }: { entry: LeadHistoryEntry }) {
+  const after = entry.after ?? {};
+  const before = entry.before ?? {};
+  const keys = Object.keys(after);
+  const changed = keys.filter(
+    (k) => JSON.stringify(before[k]) !== JSON.stringify(after[k]),
+  );
+  if (changed.length === 0) {
+    return <div className="text-xs text-muted-foreground">{entry.action}</div>;
+  }
+  return (
+    <div className="space-y-0.5">
+      {changed.map((k) => (
+        <div key={k} className="text-xs">
+          <span className="font-medium">{k}</span>:{" "}
+          <span className="text-muted-foreground line-through">
+            {fmtHistVal(before[k])}
+          </span>{" "}
+          → <span>{fmtHistVal(after[k])}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function HistoryCard({ leadId }: { leadId: number }) {
+  const q = useQuery({
+    queryKey: ["admin", "lead", leadId, "history"],
+    queryFn: () => api.leadHistory(leadId),
+  });
+  const entries = q.data?.history ?? [];
+  return (
+    <section className="bg-card border border-card-border rounded-xl p-6 shadow-sm">
+      <h2 className="font-serif text-lg mb-4">History</h2>
+      {q.isLoading ? (
+        <p className="text-sm text-muted-foreground">Loading…</p>
+      ) : entries.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          No changes recorded yet. Edits to the fields above will appear here.
+        </p>
+      ) : (
+        <ul className="space-y-3">
+          {entries.map((e) => (
+            <li key={e.id} className="border-b border-border/60 pb-2 last:border-0">
+              <div className="text-xs text-muted-foreground mb-1">
+                {fmtDateTime(e.at)} · {e.actor}
+              </div>
+              <HistoryDiff entry={e} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 function QualityCheckCard({
   leadId,
   lead,

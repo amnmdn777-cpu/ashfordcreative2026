@@ -1,14 +1,19 @@
 import { useEffect, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { Upload, Download, FileText, Eraser, RotateCcw } from "lucide-react";
-import { api } from "@admin/lib/api";
+import { useLocation } from "wouter";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Upload, Download, FileText, Eraser, RotateCcw, FileDown } from "lucide-react";
+import { api, type ImportLeadsResult } from "@admin/lib/api";
 import { PageHeader } from "@admin/components/AdminLayout";
 
+const PAGE_SIZE = 50;
+
 export default function LeadsPage() {
+  const [, navigate] = useLocation();
+  const qc = useQueryClient();
   const [csv, setCsv] = useState("");
-  const [result, setResult] = useState<
-    { inserted: number; duplicates?: number; errors: string[] } | null
-  >(null);
+  const [page, setPage] = useState(0);
+  const [exporting, setExporting] = useState(false);
+  const [result, setResult] = useState<ImportLeadsResult | null>(null);
   const [wipeResult, setWipeResult] = useState<{
     cleared: number;
     scope: string;
@@ -52,7 +57,10 @@ export default function LeadsPage() {
 
   const upload = useMutation({
     mutationFn: (text: string) => api.importLeads(text),
-    onSuccess: (r) => setResult(r),
+    onSuccess: (r) => {
+      setResult(r);
+      qc.invalidateQueries({ queryKey: ["admin-leads"] });
+    },
   });
 
   const wipeNotes = useMutation({
@@ -85,6 +93,30 @@ export default function LeadsPage() {
     setCsv(text);
   };
 
+  // Bundle 1.1 — leads table (paginated).
+  const leadsQuery = useQuery({
+    queryKey: ["admin-leads", page],
+    queryFn: () => api.listLeads({ limit: PAGE_SIZE, offset: page * PAGE_SIZE }),
+  });
+  const leadRows = leadsQuery.data?.leads ?? [];
+  const total = leadsQuery.data?.total ?? 0;
+
+  // Bundle 1.3 — export current view to CSV.
+  const onExport = async () => {
+    setExporting(true);
+    try {
+      const blob = await api.exportLeadsBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `leads-export-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="p-6 md:p-10">
       <PageHeader
@@ -101,6 +133,93 @@ export default function LeadsPage() {
         }
       />
 
+      {/* Bundle 1.1 — leads table. Click a row to open the detail (inline edit). */}
+      <section className="bg-card border border-card-border rounded-lg p-5 shadow-sm mb-6">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div className="flex items-center gap-2">
+            <h2 className="font-serif text-lg">All leads</h2>
+            <span className="text-xs text-muted-foreground">{total} total</span>
+          </div>
+          <button
+            type="button"
+            onClick={onExport}
+            disabled={exporting}
+            className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm hover:bg-muted disabled:opacity-60"
+          >
+            <FileDown size={14} /> {exporting ? "Exporting…" : "Export CSV"}
+          </button>
+        </div>
+
+        {leadsQuery.isLoading ? (
+          <p className="text-sm text-muted-foreground py-6">Loading leads…</p>
+        ) : leadRows.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-6">No leads yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground border-b border-border">
+                  <th className="py-2 pr-3 font-medium">Name</th>
+                  <th className="py-2 pr-3 font-medium">Practice</th>
+                  <th className="py-2 pr-3 font-medium">City</th>
+                  <th className="py-2 pr-3 font-medium">Status</th>
+                  <th className="py-2 pr-3 font-medium">Temp</th>
+                  <th className="py-2 pr-3 font-medium">Owner</th>
+                  <th className="py-2 pr-3 font-medium">Updated</th>
+                </tr>
+              </thead>
+              <tbody>
+                {leadRows.map((l) => (
+                  <tr
+                    key={l.id}
+                    onClick={() => navigate(`/leads/${l.id}`)}
+                    className="border-b border-border/60 hover:bg-muted/50 cursor-pointer"
+                  >
+                    <td className="py-2 pr-3 font-medium">{l.name}</td>
+                    <td className="py-2 pr-3 text-muted-foreground truncate max-w-[200px]">
+                      {l.practice ?? "—"}
+                    </td>
+                    <td className="py-2 pr-3">{l.city ?? "—"}</td>
+                    <td className="py-2 pr-3">{l.status}</td>
+                    <td className="py-2 pr-3">{l.temperature ?? "—"}</td>
+                    <td className="py-2 pr-3">
+                      {l.claimedByRepId ? `#${l.claimedByRepId}` : "—"}
+                    </td>
+                    <td className="py-2 pr-3 text-muted-foreground whitespace-nowrap">
+                      {l.updatedAt
+                        ? new Date(l.updatedAt).toLocaleDateString()
+                        : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between mt-3 text-sm">
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="rounded-md border border-border px-3 py-1.5 disabled:opacity-50 hover:bg-muted"
+          >
+            ← Prev
+          </button>
+          <span className="text-xs text-muted-foreground">
+            Page {page + 1} of {Math.max(1, Math.ceil(total / PAGE_SIZE))}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={(page + 1) * PAGE_SIZE >= total}
+            className="rounded-md border border-border px-3 py-1.5 disabled:opacity-50 hover:bg-muted"
+          >
+            Next →
+          </button>
+        </div>
+      </section>
+
       <section className="bg-card border border-card-border rounded-lg p-5 shadow-sm">
         <div className="flex items-center gap-2 mb-3">
           <FileText size={16} className="text-muted-foreground" />
@@ -108,8 +227,9 @@ export default function LeadsPage() {
         </div>
         <p className="text-sm text-muted-foreground mb-4">
           Required columns: <code className="font-mono text-xs">name, practice, specialty, city, phone</code>.
-          Optional: <code className="font-mono text-xs">state, email, current_website</code>.
-          Duplicate phone or email rows are skipped.
+          Optional: <code className="font-mono text-xs">state, email, current_website, locale</code>.
+          Rows are matched by <strong>email</strong> (then phone): existing leads are
+          updated, new ones created.
         </p>
 
         <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center mb-4">
@@ -155,22 +275,23 @@ export default function LeadsPage() {
         {result && (
           <div className="mt-4 space-y-2 rounded-md border border-border bg-muted/40 p-3 text-sm">
             <div>
-              ✅ Inserted <strong>{result.inserted}</strong>
-              {typeof result.duplicates === "number" && (
+              ✅ <strong>{result.created}</strong> created ·{" "}
+              <strong>{result.updated}</strong> updated
+              {result.skipped.length > 0 && (
                 <>
-                  {" "}· skipped <strong>{result.duplicates}</strong> duplicates
-                </>
-              )}
-              {result.errors.length > 0 && (
-                <>
-                  {" "}· <span className="text-destructive">{result.errors.length} errors</span>
+                  {" "}·{" "}
+                  <span className="text-destructive">
+                    {result.skipped.length} skipped
+                  </span>
                 </>
               )}
             </div>
-            {result.errors.length > 0 && (
+            {result.skipped.length > 0 && (
               <ul className="list-disc pl-6 text-xs text-destructive space-y-0.5 max-h-40 overflow-auto">
-                {result.errors.map((e, i) => (
-                  <li key={i}>{e}</li>
+                {result.skipped.map((s, i) => (
+                  <li key={i}>
+                    Row {s.row}: {s.reason}
+                  </li>
                 ))}
               </ul>
             )}
