@@ -169,11 +169,21 @@ export const sendEmail = async (
     return { id: row.id, status: "dev_skipped", resendId: null };
   }
 
+  // Traceability copy: CC the configured audit address(es) (e.g. hello@) on
+  // every outbound email so a visible copy lands in that inbox. Sent via
+  // Resend, so the copy appears in the CC'd INBOX (and the app's email log) —
+  // not in the mailbox's "Sent" folder.
+  const cc = (env.outboundCc ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
   try {
     const result = await client.emails.send({
       from,
       to: params.to,
       replyTo,
+      ...(cc.length > 0 ? { cc } : {}),
       subject: params.subject,
       html: htmlBody,
       text: params.body,

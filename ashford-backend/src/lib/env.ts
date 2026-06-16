@@ -282,6 +282,11 @@ export const env = {
   // and tagged variants like `reply+rep42@ashfordhealthcreative.com` both land.
   // Adding a `reply.` subdomain would have required separate MX records.
   resendReplyDomain: readEnv("RESEND_REPLY_DOMAIN") ?? "ashfordhealthcreative.com",
+  // Comma-separated list of addresses CC'd on every outbound prospect/client
+  // email (portal invites, rep→prospect messages) for traceability — a copy
+  // lands in those inboxes. CC (visible) per founder request, e.g.
+  // "hello@ashfordhealthcreative.com". Empty/unset = no CC.
+  outboundCc: readEnv("OUTBOUND_CC"),
 
   ownerNotificationEmail: readEnv("OWNER_NOTIFICATION_EMAIL"),
   ownerNotificationSms: readEnv("OWNER_NOTIFICATION_SMS"),
