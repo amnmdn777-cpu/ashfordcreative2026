@@ -43,6 +43,20 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.text() as unknown as Promise<T>;
 }
 
+/** Build a `?a=b&c=d` query string, skipping undefined/empty values. */
+function buildQuery(
+  params?: Record<string, string | number | undefined>,
+): string {
+  if (!params) return "";
+  const usp = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v === undefined || v === "") continue;
+    usp.set(k, String(v));
+  }
+  const s = usp.toString();
+  return s ? `?${s}` : "";
+}
+
 export interface DashboardSummary {
   salesThisMonth: number;
   activeSubscriptions: number;
@@ -125,6 +139,34 @@ export interface LeadRow {
   // PHASE A.2 — therapist Calendly + Doxy URLs.
   calendlyUrl?: string | null;
   doxyUrl?: string | null;
+  // Bundle 1 — additional editable / display fields surfaced in the admin grid.
+  temperature?: string | null;
+  disqualifyReason?: string | null;
+  disqualifyNote?: string | null;
+  leadScore?: number | null;
+  notes?: string | null;
+  updatedAt?: string;
+}
+
+/** Bundle 1.4 — one entry in a lead's change history (from the audit log). */
+export interface LeadHistoryEntry {
+  id: number;
+  action: string;
+  at: string;
+  actor: string;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+}
+
+/** Bundle 1.2 — CSV import (upsert) result. */
+export interface ImportLeadsResult {
+  created: number;
+  updated: number;
+  skipped: { row: number; reason: string }[];
+  // Back-compat aliases.
+  inserted: number;
+  duplicates: number;
+  errors: string[];
 }
 
 /**
@@ -400,10 +442,35 @@ export const api = {
 
   // leads
   importLeads: (csv: string) =>
-    request<{ inserted: number; duplicates?: number; errors: string[] }>(
-      "/admin/leads/import",
-      { method: "POST", body: JSON.stringify({ csv }) },
+    request<ImportLeadsResult>("/admin/leads/import", {
+      method: "POST",
+      body: JSON.stringify({ csv }),
+    }),
+  // Bundle 1.1 — paginated, filter/sort-aware leads list (all fields).
+  listLeads: (params?: Record<string, string | number | undefined>) =>
+    request<{ leads: LeadRow[]; total: number; limit: number; offset: number }>(
+      `/admin/leads${buildQuery(params)}`,
     ),
+  // Bundle 1.1 — inline-edit a single lead field (or several).
+  updateLead: (id: number, patch: Partial<LeadRow>) =>
+    request<{ lead: LeadRow }>(`/admin/leads/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    }),
+  // Bundle 1.4 — lead change history (read-only).
+  leadHistory: (id: number) =>
+    request<{ history: LeadHistoryEntry[] }>(`/admin/leads/${id}/history`),
+  // Bundle 1.3 — export the current view to CSV (fetched as a blob so the
+  // session cookie is sent and the download respects active filters).
+  exportLeadsBlob: async (
+    params?: Record<string, string | number | undefined>,
+  ): Promise<Blob> => {
+    const res = await fetch(`${API_BASE}/admin/leads/export${buildQuery(params)}`, {
+      credentials: "include",
+    });
+    if (!res.ok) throw new ApiError(`Export failed (HTTP ${res.status})`, res.status);
+    return res.blob();
+  },
   // One-shot reset of every lead's rep_notes. Founder-only maintenance
   // action; the endpoint is gated by `requireAdmin` server-side.
   // LOT 1.6 — confirmation is part of the API contract; the server
