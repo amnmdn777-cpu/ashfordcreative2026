@@ -3,9 +3,9 @@ import qcRouter from "./qc";
 import portalRequestsRouter from "./portalRequests";
 import { z } from "zod";
 // 2026-05-21 — `clientOnboardings` table dropped (Sprint 2 streamline).
-import { db, salesReps, leads, leadRepNotes, sales, subscriptions, contactRequests, customDevQuotes, adminAuditLog, emailMessages, funnelEvents, calls, callTranscripts, adminNotifications } from "@workspace/db";
+import { db, salesReps, leads, leadRepNotes, leadFieldLocks, sales, subscriptions, contactRequests, customDevQuotes, adminAuditLog, emailMessages, funnelEvents, calls, callTranscripts, adminNotifications } from "@workspace/db";
 import { TEMPLATES, PALETTES, CAPABILITIES, normalizeTemplateKey } from "@workspace/api-zod";
-import { eq, sql, desc, isNotNull } from "drizzle-orm";
+import { eq, sql, desc, asc, isNotNull, and, or, ilike, gte, lte, inArray } from "drizzle-orm";
 import { asyncHandler } from "../../middleware/asyncHandler";
 import { requireAdmin, requireAuth } from "../../middleware/requireAuth";
 import { dateToIso } from "../../lib/serialize";
@@ -460,13 +460,17 @@ const ImportLeadsRequest = z.object({
   csv: z.string().min(20),
 });
 
+// Bundle 1.2 — CSV import (upsert). Columns map by header name against the
+// fixed template (see GET /admin/leads/import-template). Each row UPDATES the
+// matching lead (match key: email, fallback phone) or CREATES a new one.
+// Returns { created, updated, skipped:[{row, reason}] }.
 router.post(
   "/admin/leads/import",
   asyncHandler(async (req, res) => {
     const body = ImportLeadsRequest.parse(req.body);
     const lines = body.csv.trim().split(/\r?\n/);
     if (lines.length < 2) {
-      res.json({ inserted: 0, errors: ["Empty CSV"] });
+      res.json({ created: 0, updated: 0, skipped: [{ row: 0, reason: "Empty CSV" }], inserted: 0, duplicates: 0, errors: ["Empty CSV"] });
       return;
     }
     const header = lines[0].split(",").map((s) => s.trim().toLowerCase());
@@ -479,83 +483,254 @@ router.post(
       return;
     }
     const idx = (k: string) => header.indexOf(k);
-    let inserted = 0;
-    let duplicates = 0;
-    const errors: string[] = [];
+    const get = (cols: string[], k: string): string =>
+      idx(k) >= 0 ? (cols[idx(k)] ?? "").trim() : "";
     const normalizePhone = (p: string) => p.replace(/[^\d]/g, "");
     const normalizeEmail = (e: string | null) => (e ?? "").trim().toLowerCase();
 
-    // Pre-load existing phone+email pairs once to dedupe efficiently.
+    let created = 0;
+    let updated = 0;
+    const skipped: { row: number; reason: string }[] = [];
+
+    // Pre-load existing leads so we can match by email (then phone) to upsert.
     const existingRows = await db
-      .select({ phone: leads.phone, email: leads.email })
+      .select({ id: leads.id, phone: leads.phone, email: leads.email })
       .from(leads);
-    const existingKeys = new Set<string>();
+    const byEmail = new Map<string, number>();
+    const byPhone = new Map<string, number>();
     for (const r of existingRows) {
-      existingKeys.add(`p:${normalizePhone(r.phone)}`);
-      if (r.email) existingKeys.add(`e:${normalizeEmail(r.email)}`);
+      if (r.email) byEmail.set(normalizeEmail(r.email), r.id);
+      const p = normalizePhone(r.phone);
+      if (p) byPhone.set(p, r.id);
     }
 
     for (let i = 1; i < lines.length; i++) {
       const cols = parseCsvLine(lines[i]);
-      const phone = cols[idx("phone")] ?? "";
-      const email = idx("email") >= 0 ? cols[idx("email")] || null : null;
-      const phoneKey = `p:${normalizePhone(phone)}`;
-      const emailKey = email ? `e:${normalizeEmail(email)}` : null;
-      if (existingKeys.has(phoneKey) || (emailKey && existingKeys.has(emailKey))) {
-        duplicates++;
+      if (cols.every((c) => c === "")) continue; // blank line
+      const name = get(cols, "name");
+      const practice = get(cols, "practice");
+      const specialty = get(cols, "specialty");
+      const city = get(cols, "city");
+      const phone = get(cols, "phone");
+      const email = idx("email") >= 0 ? (cols[idx("email")] || "").trim() || null : null;
+
+      // Required-field validation per row.
+      const rowMissing = [
+        !name && "name",
+        !practice && "practice",
+        !specialty && "specialty",
+        !city && "city",
+        !phone && "phone",
+      ].filter(Boolean);
+      if (rowMissing.length > 0) {
+        skipped.push({ row: i + 1, reason: `Missing ${rowMissing.join(", ")}` });
         continue;
       }
+
+      const rawLocale = get(cols, "locale").toLowerCase();
+      const locale = rawLocale === "es" ? "es" : "en";
+      const currentWebsite =
+        idx("current_website") >= 0 ? get(cols, "current_website") || null : null;
+      const state = idx("state") >= 0 ? get(cols, "state") || "TX" : "TX";
+
+      const emailKey = email ? normalizeEmail(email) : null;
+      const phoneKey = normalizePhone(phone);
+      // Match: email first, fallback phone.
+      const matchId =
+        (emailKey && byEmail.get(emailKey)) || (phoneKey && byPhone.get(phoneKey)) || null;
+
       try {
-        const rawLocale =
-          idx("locale") >= 0 ? (cols[idx("locale")] || "").trim().toLowerCase() : "";
-        const locale = rawLocale === "es" ? "es" : "en";
-        const [created] = await db
-          .insert(leads)
-          .values({
-            // Run the doubled-token cleanup at write time so messy
-            // CSVs ("Cynthia Los De Los Santos") land already clean
-            // — sanitizeLeadForRep also runs it on read as a safety
-            // net for legacy rows. See lib/normalizeName.ts.
-            name: normalizePersonName(cols[idx("name")]),
-            practice: cols[idx("practice")],
-            specialty: cols[idx("specialty")],
-            city: cols[idx("city")],
-            state: idx("state") >= 0 ? cols[idx("state")] || "TX" : "TX",
-            phone,
-            email,
-            locale,
-            currentWebsite:
-              idx("current_website") >= 0
-                ? cols[idx("current_website")] || null
-                : null,
-          })
-          .returning({ id: leads.id });
-        existingKeys.add(phoneKey);
-        if (emailKey) existingKeys.add(emailKey);
-        inserted++;
-        // Fire-and-forget: bootstrap a portal and run enrichment so the
-        // lead is sales-ready by the time a rep opens it. Both branches are
-        // soft-fail — they log on error but never block the import response
-        // (which is the user's interactive feedback path).
-        if (created?.id) {
-          void ensurePortalForLead(created.id).catch((err) =>
-            logger.warn(
-              { err, leadId: created.id },
-              "lead-import: portal bootstrap failed",
-            ),
-          );
-          void runEnrichmentForLead(created.id, "auto").catch((err) =>
-            logger.warn(
-              { err, leadId: created.id },
-              "lead-import: auto-enrichment failed",
-            ),
-          );
+        if (matchId) {
+          // UPDATE the matched lead with the CSV values (only mapped fields).
+          await db
+            .update(leads)
+            .set({
+              name: normalizePersonName(name),
+              practice,
+              specialty,
+              city,
+              state,
+              phone,
+              email,
+              locale,
+              ...(idx("current_website") >= 0 ? { currentWebsite } : {}),
+              updatedAt: new Date(),
+            })
+            .where(eq(leads.id, matchId));
+          updated++;
+        } else {
+          const [row] = await db
+            .insert(leads)
+            .values({
+              // Run the doubled-token cleanup at write time so messy CSVs
+              // ("Cynthia Los De Los Santos") land already clean.
+              name: normalizePersonName(name),
+              practice,
+              specialty,
+              city,
+              state,
+              phone,
+              email,
+              locale,
+              currentWebsite,
+            })
+            .returning({ id: leads.id });
+          created++;
+          // Index the new row so a later duplicate row in the same file
+          // updates it instead of creating a second copy.
+          if (emailKey) byEmail.set(emailKey, row.id);
+          if (phoneKey) byPhone.set(phoneKey, row.id);
+          // Fire-and-forget: bootstrap a portal + run enrichment so the lead
+          // is sales-ready. Soft-fail — never blocks the import response.
+          if (row?.id) {
+            void ensurePortalForLead(row.id).catch((err) =>
+              logger.warn({ err, leadId: row.id }, "lead-import: portal bootstrap failed"),
+            );
+            void runEnrichmentForLead(row.id, "auto").catch((err) =>
+              logger.warn({ err, leadId: row.id }, "lead-import: auto-enrichment failed"),
+            );
+          }
         }
       } catch (err) {
-        errors.push(`Row ${i + 1}: ${err instanceof Error ? err.message : String(err)}`);
+        skipped.push({
+          row: i + 1,
+          reason: err instanceof Error ? err.message : String(err),
+        });
       }
     }
-    res.json({ inserted, duplicates, errors });
+
+    await writeAudit(req, {
+      action: "leads.import",
+      targetType: "leads",
+      targetId: null,
+      before: null,
+      after: { created, updated, skipped: skipped.length },
+    });
+
+    res.json({
+      created,
+      updated,
+      skipped,
+      // Back-compat aliases for the existing UI.
+      inserted: created,
+      duplicates: skipped.length,
+      errors: skipped.map((s) => `Row ${s.row}: ${s.reason}`),
+    });
+  }),
+);
+
+// ── Bundle 1.1 / 1.3 — admin leads list + CSV export ────────────────────────
+// Shared filter/sort builder so the export always matches what the table shows.
+// (Filter params are accepted now so Bundle 2's filter bar rides on the same
+// endpoint; with no filters the list/export return everything.)
+const LeadsQuery = z.object({
+  q: z.string().trim().max(120).optional(),
+  status: z.string().optional(), // comma-separated lead_status values
+  temperature: z.string().optional(), // comma-separated
+  repId: z.coerce.number().int().optional(),
+  createdFrom: z.string().optional(),
+  createdTo: z.string().optional(),
+  sort: z.enum(["updated", "created", "name", "score"]).optional(),
+  order: z.enum(["asc", "desc"]).optional(),
+  limit: z.coerce.number().int().min(1).max(500).optional(),
+  offset: z.coerce.number().int().min(0).optional(),
+});
+
+const buildLeadsWhere = (q: z.infer<typeof LeadsQuery>) => {
+  const conds = [];
+  if (q.q) {
+    const like = `%${q.q}%`;
+    conds.push(
+      or(
+        ilike(leads.name, like),
+        ilike(leads.practice, like),
+        ilike(leads.email, like),
+        ilike(leads.phone, like),
+      ),
+    );
+  }
+  if (q.status) {
+    const vals = q.status.split(",").map((s) => s.trim()).filter(Boolean);
+    if (vals.length) conds.push(inArray(leads.status, vals as never[]));
+  }
+  if (q.temperature) {
+    const vals = q.temperature.split(",").map((s) => s.trim()).filter(Boolean);
+    if (vals.length) conds.push(inArray(leads.temperature, vals as never[]));
+  }
+  if (q.repId !== undefined) conds.push(eq(leads.claimedByRepId, q.repId));
+  if (q.createdFrom) conds.push(gte(leads.createdAt, new Date(q.createdFrom)));
+  if (q.createdTo) conds.push(lte(leads.createdAt, new Date(q.createdTo)));
+  return conds.length ? and(...conds) : undefined;
+};
+
+const leadsOrderBy = (q: z.infer<typeof LeadsQuery>) => {
+  const dir = q.order === "asc" ? asc : desc;
+  switch (q.sort) {
+    case "created":
+      return dir(leads.createdAt);
+    case "name":
+      return dir(leads.name);
+    case "score":
+      return dir(leads.leadScore);
+    default:
+      return dir(leads.updatedAt);
+  }
+};
+
+router.get(
+  "/admin/leads",
+  asyncHandler(async (req, res) => {
+    const q = LeadsQuery.parse(req.query);
+    const where = buildLeadsWhere(q);
+    const limit = q.limit ?? 100;
+    const offset = q.offset ?? 0;
+    const rows = await db
+      .select()
+      .from(leads)
+      .where(where)
+      .orderBy(leadsOrderBy(q))
+      .limit(limit)
+      .offset(offset);
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(leads)
+      .where(where);
+    res.json({ leads: dateToIso(rows), total: count, limit, offset });
+  }),
+);
+
+// Export the current view to a UTF-8 CSV (BOM-prefixed for Excel). Respects
+// the same filters as the list; with no filters it exports all leads.
+const EXPORT_COLS = [
+  "id", "name", "practice", "specialty", "city", "state", "phone", "email",
+  "locale", "currentWebsite", "status", "temperature", "disqualifyReason",
+  "claimedByRepId", "leadScore", "createdAt", "updatedAt",
+] as const;
+
+router.get(
+  "/admin/leads/export",
+  asyncHandler(async (req, res) => {
+    const q = LeadsQuery.parse(req.query);
+    const where = buildLeadsWhere(q);
+    const rows = await db
+      .select()
+      .from(leads)
+      .where(where)
+      .orderBy(leadsOrderBy(q))
+      .limit(10000);
+    const esc = (v: unknown): string => {
+      if (v === null || v === undefined) return "";
+      const s = v instanceof Date ? v.toISOString() : String(v);
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const out: string[] = [EXPORT_COLS.join(",")];
+    for (const r of rows) {
+      out.push(EXPORT_COLS.map((c) => esc((r as Record<string, unknown>)[c])).join(","));
+    }
+    res
+      .type("text/csv")
+      .header("Content-Disposition", 'attachment; filename="leads-export.csv"')
+      .send("﻿" + out.join("\n"));
   }),
 );
 
@@ -804,6 +979,139 @@ router.get(
       .limit(1);
     if (!row) throw notFound("Lead not found");
     res.json({ lead: dateToIso(row) });
+  }),
+);
+
+// ── Bundle 1.1 — inline edit: general field update (validated + audited) ────
+// Reuses the existing lead columns/validation; no new fields. QC-locked fields
+// on a validated lead stay immutable. Every change is written to the audit log
+// (Bundle 1.4) with the before/after of the touched fields.
+const PatchLeadRequest = z
+  .object({
+    name: z.string().min(1).max(128).optional(),
+    practice: z.string().min(1).max(192).optional(),
+    specialty: z.string().min(1).max(96).optional(),
+    city: z.string().min(1).max(64).optional(),
+    state: z.string().length(2).optional(),
+    phone: z.string().min(3).max(32).optional(),
+    email: z.string().email().max(192).nullable().optional(),
+    locale: z.enum(["en", "es"]).optional(),
+    currentWebsite: z.string().max(256).nullable().optional(),
+    profileBlurb: z.string().max(5000).nullable().optional(),
+    status: z
+      .enum(["available", "claimed", "nurturing", "won", "disqualified", "recycled", "cold"])
+      .optional(),
+    temperature: z.enum(["disqualifier", "cold", "lukewarm", "hot"]).nullable().optional(),
+    disqualifyReason: z
+      .enum(["not_interested", "wrong_number", "do_not_call", "already_has_provider", "out_of_market", "budget_concern", "other"])
+      .nullable()
+      .optional(),
+    disqualifyNote: z.string().max(2000).nullable().optional(),
+    calendlyUrl: z.string().max(256).nullable().optional(),
+    doxyUrl: z.string().max(256).nullable().optional(),
+    claimedByRepId: z.number().int().positive().nullable().optional(),
+  })
+  .strict();
+
+const camelToSnake = (s: string): string =>
+  s.replace(/[A-Z]/g, (m) => "_" + m.toLowerCase());
+
+router.patch(
+  "/admin/leads/:id",
+  asyncHandler(async (req, res) => {
+    const id = z.coerce.number().int().parse(req.params.id);
+    const patch = PatchLeadRequest.parse(req.body ?? {});
+    const keys = Object.keys(patch) as (keyof typeof patch)[];
+    if (keys.length === 0) throw badRequest("No fields to update.");
+
+    // QC field locks: a validated lead keeps listed fields immutable.
+    const locks = await db
+      .select({ fieldName: leadFieldLocks.fieldName })
+      .from(leadFieldLocks)
+      .where(eq(leadFieldLocks.leadId, id));
+    if (locks.length) {
+      const locked = new Set(locks.map((l) => l.fieldName));
+      const violated = keys.filter(
+        (k) => locked.has(camelToSnake(k as string)) || locked.has(k as string),
+      );
+      if (violated.length) {
+        throw badRequest(`Field(s) locked by QC validation: ${violated.join(", ")}`, {
+          code: "field_locked",
+          fields: violated,
+        });
+      }
+    }
+
+    const [prev] = await db.select().from(leads).where(eq(leads.id, id)).limit(1);
+    if (!prev) throw notFound("Lead not found");
+
+    const [row] = await db
+      .update(leads)
+      .set({ ...patch, lastActivityAt: new Date(), updatedAt: new Date() })
+      .where(eq(leads.id, id))
+      .returning();
+
+    await writeAudit(req, {
+      action: "lead.update",
+      targetType: "lead",
+      targetId: id,
+      before: snapshotKeys(prev, keys as (keyof typeof prev)[]),
+      after: snapshotKeys(row, keys as (keyof typeof row)[]),
+    });
+
+    res.json({ lead: dateToIso(row) });
+  }),
+);
+
+// ── Bundle 1.4 — lead change history (read-only) ────────────────────────────
+router.get(
+  "/admin/leads/:id/history",
+  asyncHandler(async (req, res) => {
+    const id = z.coerce.number().int().parse(req.params.id);
+    const rows = await db
+      .select({
+        id: adminAuditLog.id,
+        action: adminAuditLog.action,
+        before: adminAuditLog.before,
+        after: adminAuditLog.after,
+        actorRepId: adminAuditLog.actorRepId,
+        actorRole: adminAuditLog.actorRole,
+        occurredAt: adminAuditLog.occurredAt,
+      })
+      .from(adminAuditLog)
+      .where(
+        and(
+          eq(adminAuditLog.targetType, "lead"),
+          eq(adminAuditLog.targetId, String(id)),
+        ),
+      )
+      .orderBy(desc(adminAuditLog.occurredAt))
+      .limit(200);
+
+    // Resolve actor names for display.
+    const repIds = [
+      ...new Set(rows.map((r) => r.actorRepId).filter((x): x is number => x != null)),
+    ];
+    const names = new Map<number, string>();
+    if (repIds.length) {
+      const reps = await db
+        .select({ id: salesReps.id, displayName: salesReps.displayName })
+        .from(salesReps)
+        .where(inArray(salesReps.id, repIds));
+      for (const r of reps) names.set(r.id, r.displayName);
+    }
+
+    const history = rows.map((r) => ({
+      id: r.id,
+      action: r.action,
+      at: r.occurredAt,
+      actor: r.actorRepId
+        ? (names.get(r.actorRepId) ?? `Rep #${r.actorRepId}`)
+        : (r.actorRole ?? "system"),
+      before: r.before,
+      after: r.after,
+    }));
+    res.json({ history: dateToIso(history) });
   }),
 );
 
