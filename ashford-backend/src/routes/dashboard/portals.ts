@@ -235,11 +235,22 @@ router.get(
     const leadId = LeadIdParam.parse(req.params.id);
     await loadOwnedLead(leadId, req.user!);
     const { pdf, filename } = await renderLeadPreviewPdf(leadId);
+    // Encode the filename using RFC 5987 so browsers handle non-ASCII
+    // characters correctly and never mistake the response for a ZIP.
+    // `filename` is already ASCII-safe (slugified in leadPreviewPdf.ts)
+    // but the encoded form + nosniff header prevents any proxy or OS
+    // download manager from re-sniffing the binary and mis-filing it.
+    const encodedFilename = encodeURIComponent(filename);
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="${filename}"`,
+      `attachment; filename="${filename}"; filename*=UTF-8''${encodedFilename}`,
     );
+    // Prevent any CDN / proxy / browser from re-sniffing the MIME type
+    // (the primary cause of "downloads as a ZIP" on some Windows setups).
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Content-Transfer-Encoding", "binary");
+    res.setHeader("Content-Length", pdf.length);
     res.setHeader("Cache-Control", "private, no-store");
     res.end(pdf);
   }),

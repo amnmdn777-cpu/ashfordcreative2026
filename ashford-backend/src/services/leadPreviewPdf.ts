@@ -45,6 +45,33 @@ const firstName = (full: string): string =>
     .trim()
     .split(/\s+/)[0] ?? full;
 
+/**
+ * Some leads were imported with a directory profile URL in the `practice`
+ * column instead of the actual practice name (e.g. the Grow Therapy import
+ * pipeline stored the profile link before the name was resolved).
+ * Detect any http(s) URL and fall back to a human-readable label so the
+ * brochure cover never renders a raw URL as the headline.
+ */
+const sanitizePractice = (practice: string, fallbackName: string): string => {
+  const trimmed = practice.trim();
+  // Detect bare URLs (with or without protocol) and profile-link patterns.
+  if (
+    /^https?:\/\//i.test(trimmed) ||
+    /^www\./i.test(trimmed) ||
+    /growtherapy\.com|psychologytoday\.com|therapyden\.com|headway\.co|zocdoc\.com/i.test(trimmed)
+  ) {
+    // Build a friendly fallback: "[First] [Last]'s Practice"
+    const fn = firstName(fallbackName);
+    const parts = fallbackName
+      .replace(/^(?:dr|mr|mrs|ms|mx|prof)\.?\s+/i, "")
+      .trim()
+      .split(/\s+/);
+    const last = parts.length > 1 ? ` ${parts[parts.length - 1]}` : "";
+    return `${fn}${last}'s Practice`;
+  }
+  return trimmed || fallbackName;
+};
+
 const buildBrochureHtml = (input: {
   practice: string;
   name: string;
@@ -189,8 +216,12 @@ export const renderLeadPreviewPdf = async (
 
   const palette = paletteFor(portal.selectedTemplate);
 
+  // Sanitize the practice name — some leads were imported with a directory
+  // profile URL in this column. Strip it and fall back to a human name.
+  const practiceName = sanitizePractice(lead.practice, lead.name);
+
   const brochureHtml = buildBrochureHtml({
-    practice: lead.practice,
+    practice: practiceName,
     name: lead.name,
     specialty: lead.specialty,
     city: lead.city,
@@ -209,10 +240,23 @@ export const renderLeadPreviewPdf = async (
     await page.setViewport({ width: 1024, height: 1400, deviceScaleFactor: 1 });
     await page.goto(previewUrl, {
       waitUntil: "networkidle2",
-      timeout: 35_000,
+      timeout: 40_000,
     });
-    // Settle for any client-side animations / fonts.
-    await new Promise((r) => setTimeout(r, 1200));
+    // Wait for the React SPA to finish hydrating. `networkidle2` only means
+    // HTTP traffic has settled — the JS bundle may still be mounting components.
+    // We wait for a real portal section element before proceeding; if it never
+    // appears (e.g. an error page) we fall back after 10 s so we don't hang.
+    await Promise.race([
+      page
+        .waitForSelector(
+          "[data-section], section, main, #root > div, .portal-root",
+          { timeout: 10_000 },
+        )
+        .catch(() => undefined), // ignore timeout — snapshot whatever is there
+      new Promise((r) => setTimeout(r, 10_000)),
+    ]);
+    // Extra settle for fonts, lazy images, and CSS transitions.
+    await new Promise((r) => setTimeout(r, 1500));
 
     // Inject the brochure as the very first element of <body>, hide
     // any rep-only overlays (`?internal=1` flips a global flag in the
@@ -262,7 +306,8 @@ export const renderLeadPreviewPdf = async (
       margin: { top: "0", right: "0", bottom: "0", left: "0" },
     });
 
-    const slug = `${lead.practice}-${lead.name}`
+    // Use the sanitized practice name so the filename is never a URL slug.
+    const slug = `${practiceName}-${lead.name}`
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")
