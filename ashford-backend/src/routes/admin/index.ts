@@ -3,7 +3,7 @@ import qcRouter from "./qc";
 import portalRequestsRouter from "./portalRequests";
 import { z } from "zod";
 // 2026-05-21 — `clientOnboardings` table dropped (Sprint 2 streamline).
-import { db, salesReps, leads, leadContacts, leadRepNotes, leadFieldLocks, sales, subscriptions, contactRequests, customDevQuotes, adminAuditLog, emailMessages, funnelEvents, calls, callTranscripts, adminNotifications } from "@workspace/db";
+import { db, salesReps, leads, leadContacts, leadAttachments, leadRepNotes, leadFieldLocks, sales, subscriptions, contactRequests, customDevQuotes, adminAuditLog, emailMessages, funnelEvents, calls, callTranscripts, adminNotifications } from "@workspace/db";
 import { TEMPLATES, PALETTES, CAPABILITIES, normalizeTemplateKey } from "@workspace/api-zod";
 import { eq, sql, desc, asc, isNotNull, and, or, ilike, gte, lte, inArray } from "drizzle-orm";
 import { asyncHandler } from "../../middleware/asyncHandler";
@@ -35,6 +35,7 @@ import {
   isDialpadWebhookConfigured,
 } from "../../integrations/dialpad";
 import { checkDailyCostCap, dailyCostByRep } from "../../services/voiceCostCap";
+import { uploadObject, streamAudioObject } from "../../integrations/audioStorage";
 
 const router: IRouter = Router();
 router.use("/admin", requireAuth, requireAdmin);
@@ -1243,6 +1244,145 @@ router.delete(
       await tx.delete(leadContacts).where(eq(leadContacts.id, contactId));
     });
 
+    res.json({ deleted: true });
+  }),
+);
+
+// ── Bundle 3 — file attachments per lead (stored in Cloudflare R2) ───────────
+// Allowed file types + 10 MB cap. The browser sends the file as a base64 data
+// URL (FileReader.readAsDataURL); we store the bytes in object storage and keep
+// metadata in lead_attachments.
+const ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+const ATTACHMENT_ALLOWED_TYPES = new Set<string>([
+  "application/pdf",
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
+  "application/msword", // .doc
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+  "text/plain",
+  "text/csv",
+  "application/vnd.ms-excel", // .xls
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+]);
+
+const UploadAttachmentBody = z.object({
+  filename: z.string().min(1).max(256),
+  dataUrl: z.string().regex(/^data:[^;]+;base64,/i, "Must be a base64 data URL"),
+});
+
+router.get(
+  "/admin/leads/:id/attachments",
+  asyncHandler(async (req, res) => {
+    const id = z.coerce.number().int().parse(req.params.id);
+    const rows = await db
+      .select({
+        id: leadAttachments.id,
+        filename: leadAttachments.filename,
+        contentType: leadAttachments.contentType,
+        sizeBytes: leadAttachments.sizeBytes,
+        uploadedByRepId: leadAttachments.uploadedByRepId,
+        createdAt: leadAttachments.createdAt,
+      })
+      .from(leadAttachments)
+      .where(eq(leadAttachments.leadId, id))
+      .orderBy(desc(leadAttachments.createdAt));
+    res.json({ attachments: dateToIso(rows) });
+  }),
+);
+
+router.post(
+  "/admin/leads/:id/attachments",
+  asyncHandler(async (req, res) => {
+    const id = z.coerce.number().int().parse(req.params.id);
+    const body = UploadAttachmentBody.parse(req.body);
+
+    const [lead] = await db.select({ id: leads.id }).from(leads).where(eq(leads.id, id)).limit(1);
+    if (!lead) throw notFound("Lead not found");
+
+    const match = /^data:([^;]+);base64,(.+)$/i.exec(body.dataUrl);
+    if (!match) throw badRequest("Invalid file data.");
+    const contentType = match[1].toLowerCase();
+    if (!ATTACHMENT_ALLOWED_TYPES.has(contentType)) {
+      throw badRequest(`File type not allowed: ${contentType}`, {
+        code: "type_not_allowed",
+      });
+    }
+    const buffer = Buffer.from(match[2], "base64");
+    if (buffer.length === 0) throw badRequest("Empty file.");
+    if (buffer.length > ATTACHMENT_MAX_BYTES)
+      throw badRequest("File too large (max 10 MB).");
+
+    const safeName = body.filename.replace(/[^\w.\-]+/g, "_").slice(0, 200);
+    const key = `lead-attachments/${id}/${Date.now()}-${safeName}`;
+    const stored = await uploadObject(key, buffer, contentType);
+    if (!stored) throw badRequest("File storage is not available right now.");
+
+    const [row] = await db
+      .insert(leadAttachments)
+      .values({
+        leadId: id,
+        storageKey: key,
+        filename: body.filename.slice(0, 256),
+        contentType,
+        sizeBytes: buffer.length,
+        uploadedByRepId: req.user?.id ?? null,
+      })
+      .returning();
+
+    await writeAudit(req, {
+      action: "lead.attachment_added",
+      targetType: "lead",
+      targetId: id,
+      before: null,
+      after: { attachmentId: row.id, filename: row.filename, sizeBytes: row.sizeBytes },
+    });
+
+    res.json({ attachment: dateToIso(row) });
+  }),
+);
+
+router.get(
+  "/admin/attachments/:id/download",
+  asyncHandler(async (req, res) => {
+    const id = z.coerce.number().int().parse(req.params.id);
+    const [row] = await db
+      .select()
+      .from(leadAttachments)
+      .where(eq(leadAttachments.id, id))
+      .limit(1);
+    if (!row) throw notFound("Attachment not found");
+    const obj = await streamAudioObject(row.storageKey);
+    if (!obj) throw notFound("File is no longer available in storage.");
+    res
+      .type(row.contentType || obj.contentType || "application/octet-stream")
+      .header(
+        "Content-Disposition",
+        `attachment; filename="${row.filename.replace(/"/g, "")}"`,
+      )
+      .send(obj.buffer);
+  }),
+);
+
+router.delete(
+  "/admin/attachments/:id",
+  asyncHandler(async (req, res) => {
+    const id = z.coerce.number().int().parse(req.params.id);
+    const [row] = await db
+      .select()
+      .from(leadAttachments)
+      .where(eq(leadAttachments.id, id))
+      .limit(1);
+    if (!row) throw notFound("Attachment not found");
+    await db.delete(leadAttachments).where(eq(leadAttachments.id, id));
+    await writeAudit(req, {
+      action: "lead.attachment_deleted",
+      targetType: "lead",
+      targetId: row.leadId,
+      before: { attachmentId: row.id, filename: row.filename },
+      after: null,
+    });
     res.json({ deleted: true });
   }),
 );

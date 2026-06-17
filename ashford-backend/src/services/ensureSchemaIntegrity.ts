@@ -151,5 +151,31 @@ export async function ensureSchemaIntegrity(): Promise<void> {
       "ensureSchemaIntegrity failed — search indexes may be unavailable",
     );
   }
+
+  // lead_attachments (Bundle 3 — supporting files per lead, stored in R2)
+  try {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS "lead_attachments" (
+        "id" serial PRIMARY KEY NOT NULL,
+        "lead_id" integer NOT NULL REFERENCES "leads"("id") ON DELETE CASCADE,
+        "storage_key" varchar(256) NOT NULL,
+        "filename" varchar(256) NOT NULL,
+        "content_type" varchar(128) NOT NULL,
+        "size_bytes" integer NOT NULL,
+        "uploaded_by_rep_id" integer REFERENCES "sales_reps"("id") ON DELETE SET NULL,
+        "created_at" timestamp with time zone NOT NULL DEFAULT now()
+      );
+    `);
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS "lead_attachments_lead_id_idx"
+        ON "lead_attachments" ("lead_id");
+    `);
+    logger.info("ensureSchemaIntegrity: lead_attachments OK");
+  } catch (err) {
+    logger.error(
+      { err },
+      "ensureSchemaIntegrity failed — lead_attachments may be unavailable",
+    );
+  }
 }
 

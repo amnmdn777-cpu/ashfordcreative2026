@@ -26,3 +26,4 @@ export * from "./repDialpadCredentials";
 export * from "./editorial";
 export * from "./whatsappClicks";
 export * from "./leadContacts";
+export * from "./leadAttachments";

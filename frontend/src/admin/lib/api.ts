@@ -180,6 +180,16 @@ export interface ImportLeadsResult {
   errors: string[];
 }
 
+/** Bundle 3 — a file attached to a lead (metadata; bytes live in R2). */
+export interface LeadAttachment {
+  id: number;
+  filename: string;
+  contentType: string;
+  sizeBytes: number;
+  uploadedByRepId: number | null;
+  createdAt: string;
+}
+
 /**
  * Mirrors the rep `/dashboard/leads/:id/portal` shape (built by
  * `services/leadPortalView.ts` on the API). Only the fields the
@@ -471,6 +481,26 @@ export const api = {
   // Bundle 1.4 — lead change history (read-only).
   leadHistory: (id: number) =>
     request<{ history: LeadHistoryEntry[] }>(`/admin/leads/${id}/history`),
+  // Bundle 3 — file attachments.
+  listLeadAttachments: (id: number) =>
+    request<{ attachments: LeadAttachment[] }>(`/admin/leads/${id}/attachments`),
+  uploadLeadAttachment: (id: number, body: { filename: string; dataUrl: string }) =>
+    request<{ attachment: LeadAttachment }>(`/admin/leads/${id}/attachments`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  deleteLeadAttachment: (attachmentId: number) =>
+    request<{ deleted: boolean }>(`/admin/attachments/${attachmentId}`, {
+      method: "DELETE",
+    }),
+  // Fetched as a blob so the session cookie is sent on the download.
+  downloadAttachmentBlob: async (attachmentId: number): Promise<Blob> => {
+    const res = await fetch(`${API_BASE}/admin/attachments/${attachmentId}/download`, {
+      credentials: "include",
+    });
+    if (!res.ok) throw new ApiError(`Download failed (HTTP ${res.status})`, res.status);
+    return res.blob();
+  },
   listLeadContacts: (id: number) =>
     request<{ contacts: LeadContactRow[] }>(`/admin/leads/${id}/contacts`),
   addLeadContact: (id: number, contact: { kind: "phone" | "email"; value: string; isPrimary?: boolean; label?: string }) =>
