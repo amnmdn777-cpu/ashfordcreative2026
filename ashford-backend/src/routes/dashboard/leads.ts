@@ -31,16 +31,21 @@ import {
 import { dateToIso } from "../../lib/serialize";
 import { sendSms } from "../../integrations/dialpad";
 import { sendEmail } from "../../integrations/resend";
-import { uploadObject } from "../../integrations/audioStorage";
+import { uploadObject, streamAudioObject } from "../../integrations/audioStorage";
 import {
   db,
   leads as leadsTbl,
+  leadContacts,
+  leadAttachments,
+  leadFieldLocks,
+  adminAuditLog,
+  salesReps,
   prospectLinks as prospectLinksTbl,
   prospectPortals,
 } from "@workspace/db";
 import { rateLimit } from "../../middleware/rateLimit";
-import { writeAudit } from "../../services/auditLog";
-import { eq } from "drizzle-orm";
+import { writeAudit, snapshotKeys } from "../../services/auditLog";
+import { eq, and, desc, asc, inArray } from "drizzle-orm";
 import { badRequest, notFound } from "../../lib/errors";
 import {
   createPreviewLink,
@@ -219,6 +224,327 @@ router.patch(
     const patch = UpdateLeadRequest.parse(req.body);
     const updated = await updateLeadByRep(req.user!.id, id, patch, req);
     res.json({ lead: dateToIso(updated) });
+  }),
+);
+
+// ════════════════════════════════════════════════════════════════════════
+// M8 — admin lead-dashboard capabilities, brought to the rep (owner-gated).
+// Mirrors the /admin equivalents but every route is restricted to the lead's
+// owner via loadOwnedLead. Status + temperature keep their existing dedicated
+// endpoints (side-effects preserved); this `/fields` path edits the rest.
+// ════════════════════════════════════════════════════════════════════════
+
+const RepPatchLeadFields = z
+  .object({
+    name: z.string().min(1).max(128).optional(),
+    practice: z.string().min(1).max(192).optional(),
+    specialty: z.string().min(1).max(96).optional(),
+    city: z.string().min(1).max(64).optional(),
+    state: z.string().length(2).optional(),
+    phone: z.string().min(3).max(32).optional(),
+    email: z.string().email().max(192).nullable().optional(),
+    locale: z.enum(["en", "es"]).optional(),
+    currentWebsite: z.string().max(256).nullable().optional(),
+    profileBlurb: z.string().max(5000).nullable().optional(),
+    disqualifyNote: z.string().max(2000).nullable().optional(),
+    calendlyUrl: z.string().max(256).nullable().optional(),
+    doxyUrl: z.string().max(256).nullable().optional(),
+  })
+  .strict();
+
+const camelToSnake = (s: string): string =>
+  s.replace(/[A-Z]/g, (m) => "_" + m.toLowerCase());
+
+router.patch(
+  "/dashboard/leads/:id/fields",
+  asyncHandler(async (req, res) => {
+    const id = z.coerce.number().int().parse(req.params.id);
+    await loadOwnedLead(id, req.user!);
+    const patch = RepPatchLeadFields.parse(req.body ?? {});
+    const keys = Object.keys(patch) as (keyof typeof patch)[];
+    if (keys.length === 0) throw badRequest("No fields to update.");
+
+    const locks = await db
+      .select({ fieldName: leadFieldLocks.fieldName })
+      .from(leadFieldLocks)
+      .where(eq(leadFieldLocks.leadId, id));
+    if (locks.length) {
+      const locked = new Set(locks.map((l) => l.fieldName));
+      const violated = keys.filter(
+        (k) => locked.has(camelToSnake(k as string)) || locked.has(k as string),
+      );
+      if (violated.length)
+        throw badRequest(`Field(s) locked by QC: ${violated.join(", ")}`, {
+          code: "field_locked",
+          fields: violated,
+        });
+    }
+
+    const [prev] = await db.select().from(leadsTbl).where(eq(leadsTbl.id, id)).limit(1);
+    const [row] = await db
+      .update(leadsTbl)
+      .set({ ...patch, lastActivityAt: new Date(), updatedAt: new Date() })
+      .where(eq(leadsTbl.id, id))
+      .returning();
+    await writeAudit(req, {
+      action: "lead.update",
+      targetType: "lead",
+      targetId: id,
+      before: snapshotKeys(prev, keys as (keyof typeof prev)[]),
+      after: snapshotKeys(row, keys as (keyof typeof row)[]),
+    });
+    res.json({ lead: dateToIso(row) });
+  }),
+);
+
+router.get(
+  "/dashboard/leads/:id/history",
+  asyncHandler(async (req, res) => {
+    const id = z.coerce.number().int().parse(req.params.id);
+    await loadOwnedLead(id, req.user!);
+    const rows = await db
+      .select({
+        id: adminAuditLog.id,
+        action: adminAuditLog.action,
+        before: adminAuditLog.before,
+        after: adminAuditLog.after,
+        actorRepId: adminAuditLog.actorRepId,
+        actorRole: adminAuditLog.actorRole,
+        occurredAt: adminAuditLog.occurredAt,
+      })
+      .from(adminAuditLog)
+      .where(and(eq(adminAuditLog.targetType, "lead"), eq(adminAuditLog.targetId, String(id))))
+      .orderBy(desc(adminAuditLog.occurredAt))
+      .limit(200);
+    const repIds = [...new Set(rows.map((r) => r.actorRepId).filter((x): x is number => x != null))];
+    const names = new Map<number, string>();
+    if (repIds.length) {
+      const reps = await db
+        .select({ id: salesReps.id, displayName: salesReps.displayName })
+        .from(salesReps)
+        .where(inArray(salesReps.id, repIds));
+      for (const r of reps) names.set(r.id, r.displayName);
+    }
+    const history = rows.map((r) => ({
+      id: r.id,
+      action: r.action,
+      at: r.occurredAt,
+      actor: r.actorRepId ? (names.get(r.actorRepId) ?? `Rep #${r.actorRepId}`) : (r.actorRole ?? "system"),
+      before: r.before,
+      after: r.after,
+    }));
+    res.json({ history: dateToIso(history) });
+  }),
+);
+
+// ── Contacts (multiple phones/emails) ───────────────────────────────────
+const RepCreateContact = z.object({
+  kind: z.enum(["phone", "email"]),
+  value: z.string().min(3).max(256),
+  label: z.string().max(64).nullable().optional(),
+  isPrimary: z.boolean().optional(),
+});
+const RepPatchContact = z.object({
+  value: z.string().min(3).max(256).optional(),
+  label: z.string().max(64).nullable().optional(),
+  isPrimary: z.boolean().optional(),
+});
+
+router.get(
+  "/dashboard/leads/:id/contacts",
+  asyncHandler(async (req, res) => {
+    const id = z.coerce.number().int().parse(req.params.id);
+    await loadOwnedLead(id, req.user!);
+    const rows = await db
+      .select()
+      .from(leadContacts)
+      .where(eq(leadContacts.leadId, id))
+      .orderBy(asc(leadContacts.createdAt));
+    res.json({ contacts: dateToIso(rows) });
+  }),
+);
+
+router.post(
+  "/dashboard/leads/:id/contacts",
+  asyncHandler(async (req, res) => {
+    const id = z.coerce.number().int().parse(req.params.id);
+    await loadOwnedLead(id, req.user!);
+    const body = RepCreateContact.parse(req.body);
+    if (body.isPrimary) {
+      await db
+        .update(leadContacts)
+        .set({ isPrimary: false })
+        .where(and(eq(leadContacts.leadId, id), eq(leadContacts.kind, body.kind)));
+    }
+    const [row] = await db
+      .insert(leadContacts)
+      .values({ leadId: id, kind: body.kind, value: body.value, label: body.label ?? null, isPrimary: body.isPrimary ?? false })
+      .returning();
+    res.json({ contact: dateToIso(row) });
+  }),
+);
+
+router.patch(
+  "/dashboard/leads/:id/contacts/:contactId",
+  asyncHandler(async (req, res) => {
+    const id = z.coerce.number().int().parse(req.params.id);
+    const contactId = z.coerce.number().int().parse(req.params.contactId);
+    await loadOwnedLead(id, req.user!);
+    const body = RepPatchContact.parse(req.body);
+    const [existing] = await db
+      .select()
+      .from(leadContacts)
+      .where(and(eq(leadContacts.id, contactId), eq(leadContacts.leadId, id)))
+      .limit(1);
+    if (!existing) throw notFound("Contact not found");
+    if (body.isPrimary) {
+      await db
+        .update(leadContacts)
+        .set({ isPrimary: false })
+        .where(and(eq(leadContacts.leadId, id), eq(leadContacts.kind, existing.kind)));
+    }
+    const [row] = await db
+      .update(leadContacts)
+      .set({
+        value: body.value ?? existing.value,
+        label: body.label !== undefined ? body.label : existing.label,
+        isPrimary: body.isPrimary ?? existing.isPrimary,
+      })
+      .where(eq(leadContacts.id, contactId))
+      .returning();
+    res.json({ contact: dateToIso(row) });
+  }),
+);
+
+router.delete(
+  "/dashboard/leads/:id/contacts/:contactId",
+  asyncHandler(async (req, res) => {
+    const id = z.coerce.number().int().parse(req.params.id);
+    const contactId = z.coerce.number().int().parse(req.params.contactId);
+    await loadOwnedLead(id, req.user!);
+    await db
+      .delete(leadContacts)
+      .where(and(eq(leadContacts.id, contactId), eq(leadContacts.leadId, id)));
+    res.json({ deleted: true });
+  }),
+);
+
+// ── File attachments (Cloudflare R2) ────────────────────────────────────
+const REP_ATTACH_MAX = 10 * 1024 * 1024;
+const REP_ATTACH_TYPES = new Set<string>([
+  "application/pdf", "image/png", "image/jpeg", "image/webp", "image/gif",
+  "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain", "text/csv", "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+]);
+const RepUploadAttachment = z.object({
+  filename: z.string().min(1).max(256),
+  dataUrl: z.string().regex(/^data:[^;]+;base64,/i, "Must be a base64 data URL"),
+});
+
+router.get(
+  "/dashboard/leads/:id/attachments",
+  asyncHandler(async (req, res) => {
+    const id = z.coerce.number().int().parse(req.params.id);
+    await loadOwnedLead(id, req.user!);
+    const rows = await db
+      .select({
+        id: leadAttachments.id,
+        filename: leadAttachments.filename,
+        contentType: leadAttachments.contentType,
+        sizeBytes: leadAttachments.sizeBytes,
+        uploadedByRepId: leadAttachments.uploadedByRepId,
+        createdAt: leadAttachments.createdAt,
+      })
+      .from(leadAttachments)
+      .where(eq(leadAttachments.leadId, id))
+      .orderBy(desc(leadAttachments.createdAt));
+    res.json({ attachments: dateToIso(rows) });
+  }),
+);
+
+router.post(
+  "/dashboard/leads/:id/attachments",
+  asyncHandler(async (req, res) => {
+    const id = z.coerce.number().int().parse(req.params.id);
+    await loadOwnedLead(id, req.user!);
+    const body = RepUploadAttachment.parse(req.body);
+    const match = /^data:([^;]+);base64,(.+)$/i.exec(body.dataUrl);
+    if (!match) throw badRequest("Invalid file data.");
+    const contentType = match[1].toLowerCase();
+    if (!REP_ATTACH_TYPES.has(contentType))
+      throw badRequest(`File type not allowed: ${contentType}`, { code: "type_not_allowed" });
+    const buffer = Buffer.from(match[2], "base64");
+    if (buffer.length === 0) throw badRequest("Empty file.");
+    if (buffer.length > REP_ATTACH_MAX) throw badRequest("File too large (max 10 MB).");
+    const safeName = body.filename.replace(/[^\w.\-]+/g, "_").slice(0, 200);
+    const key = `lead-attachments/${id}/${Date.now()}-${safeName}`;
+    const stored = await uploadObject(key, buffer, contentType);
+    if (!stored) throw badRequest("File storage is not available right now.");
+    const [row] = await db
+      .insert(leadAttachments)
+      .values({
+        leadId: id,
+        storageKey: key,
+        filename: body.filename.slice(0, 256),
+        contentType,
+        sizeBytes: buffer.length,
+        uploadedByRepId: req.user?.id ?? null,
+      })
+      .returning();
+    await writeAudit(req, {
+      action: "lead.attachment_added",
+      targetType: "lead",
+      targetId: id,
+      before: null,
+      after: { attachmentId: row.id, filename: row.filename, sizeBytes: row.sizeBytes },
+    });
+    res.json({ attachment: dateToIso(row) });
+  }),
+);
+
+router.get(
+  "/dashboard/leads/:id/attachments/:attId/download",
+  asyncHandler(async (req, res) => {
+    const id = z.coerce.number().int().parse(req.params.id);
+    const attId = z.coerce.number().int().parse(req.params.attId);
+    await loadOwnedLead(id, req.user!);
+    const [row] = await db
+      .select()
+      .from(leadAttachments)
+      .where(and(eq(leadAttachments.id, attId), eq(leadAttachments.leadId, id)))
+      .limit(1);
+    if (!row) throw notFound("Attachment not found");
+    const obj = await streamAudioObject(row.storageKey);
+    if (!obj) throw notFound("File is no longer available in storage.");
+    res
+      .type(row.contentType || obj.contentType || "application/octet-stream")
+      .header("Content-Disposition", `attachment; filename="${row.filename.replace(/"/g, "")}"`)
+      .send(obj.buffer);
+  }),
+);
+
+router.delete(
+  "/dashboard/leads/:id/attachments/:attId",
+  asyncHandler(async (req, res) => {
+    const id = z.coerce.number().int().parse(req.params.id);
+    const attId = z.coerce.number().int().parse(req.params.attId);
+    await loadOwnedLead(id, req.user!);
+    const [row] = await db
+      .select()
+      .from(leadAttachments)
+      .where(and(eq(leadAttachments.id, attId), eq(leadAttachments.leadId, id)))
+      .limit(1);
+    if (!row) throw notFound("Attachment not found");
+    await db.delete(leadAttachments).where(eq(leadAttachments.id, attId));
+    await writeAudit(req, {
+      action: "lead.attachment_deleted",
+      targetType: "lead",
+      targetId: id,
+      before: { attachmentId: row.id, filename: row.filename },
+      after: null,
+    });
+    res.json({ deleted: true });
   }),
 );
 

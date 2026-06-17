@@ -24,6 +24,33 @@ const API_BASE =
 // production rather than dead-ending same-origin (same class of bug as ASH-9).
 export const apiUrl = (path: string): string => `${API_BASE}${path}`;
 
+// ── M8: types for the admin lead-dashboard capabilities on the rep side ──
+export interface RepLeadHistoryEntry {
+  id: number;
+  action: string;
+  at: string;
+  actor: string;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+}
+export interface RepLeadContact {
+  id: number;
+  leadId: number;
+  kind: "phone" | "email";
+  value: string;
+  label: string | null;
+  isPrimary: boolean;
+  createdAt: string;
+}
+export interface RepLeadAttachment {
+  id: number;
+  filename: string;
+  contentType: string;
+  sizeBytes: number;
+  uploadedByRepId: number | null;
+  createdAt: string;
+}
+
 export class ApiError extends Error {
   status: number;
   constructor(message: string, status: number) {
@@ -492,6 +519,50 @@ export const api = {
       `/dashboard/leads/${id}/hero-image/upload`,
       { method: "POST", body: JSON.stringify({ dataUrl }) },
     ),
+  // ── M8: admin lead-dashboard capabilities on the rep side (owner-gated) ──
+  updateLeadFields: (id: number, patch: Record<string, unknown>) =>
+    request<{ lead: unknown }>(`/dashboard/leads/${id}/fields`, {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    }),
+  leadHistory: (id: number) =>
+    request<{ history: RepLeadHistoryEntry[] }>(`/dashboard/leads/${id}/history`),
+  listLeadContacts: (id: number) =>
+    request<{ contacts: RepLeadContact[] }>(`/dashboard/leads/${id}/contacts`),
+  addLeadContact: (
+    id: number,
+    body: { kind: "phone" | "email"; value: string; label?: string | null; isPrimary?: boolean },
+  ) =>
+    request<{ contact: RepLeadContact }>(`/dashboard/leads/${id}/contacts`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  updateLeadContact: (
+    id: number,
+    contactId: number,
+    body: { value?: string; label?: string | null; isPrimary?: boolean },
+  ) =>
+    request<{ contact: RepLeadContact }>(
+      `/dashboard/leads/${id}/contacts/${contactId}`,
+      { method: "PATCH", body: JSON.stringify(body) },
+    ),
+  deleteLeadContact: (id: number, contactId: number) =>
+    request<{ deleted: boolean }>(`/dashboard/leads/${id}/contacts/${contactId}`, {
+      method: "DELETE",
+    }),
+  listLeadAttachments: (id: number) =>
+    request<{ attachments: RepLeadAttachment[] }>(`/dashboard/leads/${id}/attachments`),
+  uploadLeadAttachment: (id: number, body: { filename: string; dataUrl: string }) =>
+    request<{ attachment: RepLeadAttachment }>(`/dashboard/leads/${id}/attachments`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  deleteLeadAttachment: (id: number, attId: number) =>
+    request<{ deleted: boolean }>(`/dashboard/leads/${id}/attachments/${attId}`, {
+      method: "DELETE",
+    }),
+  attachmentDownloadUrl: (id: number, attId: number) =>
+    `${API_BASE}/dashboard/leads/${id}/attachments/${attId}/download`,
   setLeadPricingPlan: (
     id: number,
     plan: "boutique" | "boutique_pro" | "boutique_concierge",

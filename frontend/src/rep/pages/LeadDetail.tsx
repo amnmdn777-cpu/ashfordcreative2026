@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { LeadAdminPanel } from "@rep/components/LeadAdminPanel";
 import {
   Mail,
   MessageSquare,
@@ -642,6 +643,9 @@ export default function LeadDetailPage() {
             onError={onErr}
             onSuccess={() => onSuccess("Temperature updated.")}
           />
+          {/* M8 — admin lead-dashboard capabilities (inline edit, contacts,
+              files, history), owner-gated. Purely additive. */}
+          <LeadAdminPanel leadId={id} lead={l} />
           {/* 2026-05-20 — Badge "Avis d'aperçu" sur les 17 leads avec
               reviews génériques. Le portail affiche déjà une bannière au
               prospect; ce badge prévient la REP pour qu'elle ne pitche
