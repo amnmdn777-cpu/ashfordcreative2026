@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
-import { ExternalLink, ArrowLeft } from "lucide-react";
+import { ExternalLink, ArrowLeft, Upload, FileDown, Trash2, Paperclip } from "lucide-react";
 import {
   api,
   fmtDateTime,
   type LeadPortalDto,
   type LeadRow,
   type LeadHistoryEntry,
+  type LeadAttachment,
 } from "@admin/lib/api";
 import { PageHeader } from "@admin/components/AdminLayout";
 
@@ -18,7 +19,7 @@ import { PageHeader } from "@admin/components/AdminLayout";
  * open count, and enrichment completeness without claiming the lead.
  */
 export default function LeadDetailPage() {
-  const [, params] = useRoute("/leads/:id");
+  const [, params] = useRoute<{ id: string }>("/leads/:id");
   const id = params ? Number(params.id) : 0;
 
   const leadQuery = useQuery({
@@ -88,6 +89,8 @@ export default function LeadDetailPage() {
       <BookingUrlsCard leadId={id} lead={lead} />
 
       <CustomerPortalCard leadId={id} />
+
+      <FilesCard leadId={id} />
 
       <HistoryCard leadId={id} />
     </div>
@@ -561,6 +564,168 @@ function ContactsCard({ leadId }: { leadId: number }) {
         </div>
         {formError && <p className="text-xs text-destructive mt-2">{formError}</p>}
       </form>
+    </section>
+  );
+}
+
+// ── Bundle 3 — file attachments ─────────────────────────────────────────────
+const ATTACH_ACCEPT =
+  ".pdf,.png,.jpg,.jpeg,.webp,.gif,.doc,.docx,.txt,.csv,.xls,.xlsx";
+const ATTACH_MAX_BYTES = 10 * 1024 * 1024;
+
+const fmtBytes = (n: number): string => {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
+};
+
+function FilesCard({ leadId }: { leadId: number }) {
+  const qc = useQueryClient();
+  const q = useQuery({
+    queryKey: ["admin", "lead", leadId, "attachments"],
+    queryFn: () => api.listLeadAttachments(leadId),
+  });
+  const files = q.data?.attachments ?? [];
+  const [uploading, setUploading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+
+  const upload = async (file: File) => {
+    setErr(null);
+    if (file.size > ATTACH_MAX_BYTES) {
+      setErr("File too large (max 10 MB).");
+      return;
+    }
+    setUploading(true);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(String(fr.result));
+        fr.onerror = () => reject(new Error("Could not read file"));
+        fr.readAsDataURL(file);
+      });
+      await api.uploadLeadAttachment(leadId, { filename: file.name, dataUrl });
+      qc.invalidateQueries({
+        queryKey: ["admin", "lead", leadId, "attachments"],
+      });
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const onDownload = async (att: LeadAttachment) => {
+    try {
+      const blob = await api.downloadAttachmentBlob(att.id);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = att.filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Download failed");
+    }
+  };
+
+  const onDelete = async (att: LeadAttachment) => {
+    if (!window.confirm(`Delete "${att.filename}"?`)) return;
+    try {
+      await api.deleteLeadAttachment(att.id);
+      qc.invalidateQueries({
+        queryKey: ["admin", "lead", leadId, "attachments"],
+      });
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Delete failed");
+    }
+  };
+
+  return (
+    <section className="bg-card border border-card-border rounded-xl p-6 shadow-sm">
+      <h2 className="font-serif text-lg mb-1 flex items-center gap-2">
+        <Paperclip size={16} /> Files
+      </h2>
+      <p className="text-xs text-muted-foreground mb-4">
+        PDF, images, Word/Excel, CSV or text · max 10 MB each.
+      </p>
+
+      <label
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+          const f = e.dataTransfer.files?.[0];
+          if (f) upload(f);
+        }}
+        className={`flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-4 py-6 text-sm cursor-pointer transition-colors ${
+          dragOver ? "border-accent bg-accent/10" : "border-input hover:bg-muted/40"
+        }`}
+      >
+        <Upload size={18} className="text-muted-foreground" />
+        <span className="text-muted-foreground">
+          {uploading ? "Uploading…" : "Drag a file here, or click to choose"}
+        </span>
+        <input
+          type="file"
+          accept={ATTACH_ACCEPT}
+          className="hidden"
+          disabled={uploading}
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) upload(f);
+            e.target.value = "";
+          }}
+        />
+      </label>
+
+      {err && <div className="text-xs text-destructive mt-2">{err}</div>}
+
+      <div className="mt-4">
+        {q.isLoading ? (
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        ) : files.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No files attached yet.</p>
+        ) : (
+          <ul className="divide-y divide-border/60">
+            {files.map((f) => (
+              <li
+                key={f.id}
+                className="flex items-center justify-between gap-3 py-2"
+              >
+                <div className="min-w-0">
+                  <div className="font-medium truncate">{f.filename}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {fmtBytes(f.sizeBytes)} · {fmtDateTime(f.createdAt)}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => onDownload(f)}
+                    title="Download"
+                    className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                  >
+                    <FileDown size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDelete(f)}
+                    title="Delete"
+                    className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </section>
   );
 }
