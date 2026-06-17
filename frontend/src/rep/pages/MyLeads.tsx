@@ -66,6 +66,10 @@ export default function MyLeadsPage() {
   const [hasWebsite, setHasWebsite] = useState<"" | "yes" | "no">("");
   // B7 (founder 2026-05-19) — filter by QC status.
   const [qcFilter, setQcFilter] = useState<"" | "validated" | "stale" | "none">("");
+  // Admin-parity filters: temperature + date range (over `lastActivityAt`).
+  const [temp, setTemp] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const { data, isLoading } = useQuery({
     queryKey: ["leads", "mine", tab, name],
     queryFn: () => api.myLeads(tab, name || undefined),
@@ -76,6 +80,10 @@ export default function MyLeadsPage() {
     if (hasWebsite === "yes" && !lead.currentWebsite) return false;
     if (hasWebsite === "no" && lead.currentWebsite) return false;
     if (qcFilter && (lead.qcStatus ?? "none") !== qcFilter) return false;
+    if (temp && (lead.temperature ?? "") !== temp) return false;
+    const activity = lead.lastActivityAt ? new Date(lead.lastActivityAt) : null;
+    if (dateFrom && (!activity || activity < new Date(dateFrom))) return false;
+    if (dateTo && (!activity || activity > new Date(`${dateTo}T23:59:59`))) return false;
     return true;
   });
 
@@ -116,8 +124,26 @@ export default function MyLeadsPage() {
             <option value="none">No QC</option>
           </select>
         </label>
-        {(city || specialty || hasWebsite || qcFilter) && (
-          <button type="button" onClick={() => { setCity(""); setSpecialty(""); setHasWebsite(""); setQcFilter(""); }} className="text-xs text-muted-foreground hover:text-foreground underline">Clear filters</button>
+        <label className="block min-w-[140px]">
+          <span className="text-xs text-muted-foreground">Temperature</span>
+          <select value={temp} onChange={(e) => setTemp(e.target.value)} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+            <option value="">All</option>
+            <option value="hot">Hot</option>
+            <option value="lukewarm">Lukewarm</option>
+            <option value="cold">Cold</option>
+            <option value="disqualifier">Disqualified</option>
+          </select>
+        </label>
+        <label className="block min-w-[150px]">
+          <span className="text-xs text-muted-foreground">Active from</span>
+          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+        </label>
+        <label className="block min-w-[150px]">
+          <span className="text-xs text-muted-foreground">Active to</span>
+          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+        </label>
+        {(city || specialty || hasWebsite || qcFilter || temp || dateFrom || dateTo) && (
+          <button type="button" onClick={() => { setCity(""); setSpecialty(""); setHasWebsite(""); setQcFilter(""); setTemp(""); setDateFrom(""); setDateTo(""); }} className="text-xs text-muted-foreground hover:text-foreground underline">Clear filters</button>
         )}
       </div>
 
@@ -159,6 +185,7 @@ export default function MyLeadsPage() {
                 <th className="text-left px-4 py-3">Phone</th>
                 <th className="text-left px-4 py-3">Email</th>
                 <th className="text-left px-4 py-3">Status</th>
+                <th className="text-left px-4 py-3">Temp</th>
                 <th className="text-left px-4 py-3">Last activity</th>
               </tr>
             </thead>
@@ -166,7 +193,7 @@ export default function MyLeadsPage() {
               {isLoading && (
                 <tr>
                   <td
-                    colSpan={9}
+                    colSpan={10}
                     className="px-4 py-10 text-center text-muted-foreground"
                   >
                     Loading…
@@ -176,7 +203,7 @@ export default function MyLeadsPage() {
               {data && filteredData.length === 0 && (
                 <tr>
                   <td
-                    colSpan={9}
+                    colSpan={10}
                     className="px-4 py-10 text-center text-muted-foreground"
                   >
                     No leads in this view.
@@ -234,6 +261,9 @@ export default function MyLeadsPage() {
                         </span>
                       )}
                     </div>
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground capitalize">
+                    {(l as any).temperature ?? "—"}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {fmtDate(l.lastActivityAt)}
