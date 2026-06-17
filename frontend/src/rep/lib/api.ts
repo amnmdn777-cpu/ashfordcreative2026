@@ -485,6 +485,13 @@ export const api = {
       `/dashboard/leads/${id}/hero-image`,
       { method: "PATCH", body: JSON.stringify({ heroImageUrl }) },
     ),
+  // Upload a new hero photo (base64 data URL). Stores in R2 and points the
+  // preview at it. Same endpoint the admin uses; gated to the lead's owner.
+  uploadLeadHeroImage: (id: number, dataUrl: string) =>
+    request<{ heroImageUrl: string | null }>(
+      `/dashboard/leads/${id}/hero-image/upload`,
+      { method: "POST", body: JSON.stringify({ dataUrl }) },
+    ),
   setLeadPricingPlan: (
     id: number,
     plan: "boutique" | "boutique_pro" | "boutique_concierge",

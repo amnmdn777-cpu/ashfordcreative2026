@@ -2446,6 +2446,31 @@ function PreviewModal({
     setDefaultsLoaded(true);
   }, [portalQuery.data, defaultsLoaded]);
 
+  // Rep self-serve hero photo (Candice can change the preview image herself).
+  const heroQc = useQueryClient();
+  const [heroError, setHeroError] = useState<string | null>(null);
+  const uploadHero = useMutation({
+    mutationFn: (dataUrl: string) => api.uploadLeadHeroImage(leadId, dataUrl),
+    onSuccess: () => {
+      setHeroError(null);
+      heroQc.invalidateQueries({ queryKey: ["lead-portal", leadId] });
+    },
+    onError: (e: unknown) =>
+      setHeroError(e instanceof Error ? e.message : "Upload failed"),
+  });
+  const onHeroFile = (file: File | undefined) => {
+    if (!file) return;
+    if (file.size > 4 * 1024 * 1024) {
+      setHeroError("Image too large (max 4 MB).");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") uploadHero.mutate(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const [phone, setPhone] = useState(defaultPhone);
   const [email, setEmail] = useState(defaultEmail ?? "");
   // SMS path is gated off until the carrier finishes verifying the
@@ -2678,6 +2703,41 @@ function PreviewModal({
               </div>
             )}
           </fieldset>
+
+          {/* Rep self-serve hero photo — change the preview image before sending. */}
+          <div className="mb-3 rounded-md border border-input bg-background/60 px-3 py-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                Hero photo
+              </span>
+              {portalQuery.data?.heroImageUrl ? (
+                <span className="text-[11px] text-accent">Set ✓</span>
+              ) : null}
+            </div>
+            {portalQuery.data?.heroImageUrl ? (
+              <img
+                src={portalQuery.data.heroImageUrl}
+                alt="Lead hero"
+                className="mt-2 h-16 w-16 rounded-md object-cover border border-input"
+              />
+            ) : null}
+            <input
+              type="file"
+              accept="image/*"
+              disabled={uploadHero.isPending}
+              onChange={(e) => onHeroFile(e.target.files?.[0])}
+              className="mt-2 w-full text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-muted file:text-foreground hover:file:bg-muted/80"
+            />
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              {uploadHero.isPending
+                ? "Uploading…"
+                : "JPG/PNG/WebP, up to 4 MB. Replaces the preview photo."}
+            </p>
+            {heroError ? (
+              <p className="mt-1 text-[11px] text-destructive">{heroError}</p>
+            ) : null}
+          </div>
+
           <div className="flex gap-2 justify-end">
             <button
               onClick={onClose}
