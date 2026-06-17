@@ -34,6 +34,17 @@ const STATUS_LABELS: Record<string, string> = {
   claimed: "Work in progress",
 };
 
+// Normalize US phone formatting at render so the table isn't a mix of raw
+// import formats (mirrors AvailableLeads.formatPhoneCell).
+function formatPhoneCell(raw: string | null | undefined): string {
+  if (!raw) return "";
+  const digits = raw.replace(/\D/g, "");
+  const ten =
+    digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
+  if (ten.length !== 10) return raw;
+  return `(${ten.slice(0, 3)}) ${ten.slice(3, 6)}-${ten.slice(6)}`;
+}
+
 export default function MyLeadsPage() {
   // Allow deep-linking via /my-leads/<tab> (e.g. the sidebar's Cold leads
   // entry). Unknown segments fall back to "active".
@@ -140,7 +151,10 @@ export default function MyLeadsPage() {
                 <th className="text-left px-4 py-3">Score</th>
                 <th className="text-left px-4 py-3">Name</th>
                 <th className="text-left px-4 py-3">Practice</th>
+                <th className="text-left px-4 py-3">Specialty</th>
                 <th className="text-left px-4 py-3">City</th>
+                <th className="text-left px-4 py-3">Phone</th>
+                <th className="text-left px-4 py-3">Email</th>
                 <th className="text-left px-4 py-3">Status</th>
                 <th className="text-left px-4 py-3">Last activity</th>
               </tr>
@@ -149,7 +163,7 @@ export default function MyLeadsPage() {
               {isLoading && (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={9}
                     className="px-4 py-10 text-center text-muted-foreground"
                   >
                     Loading…
@@ -159,7 +173,7 @@ export default function MyLeadsPage() {
               {data && filteredData.length === 0 && (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={9}
                     className="px-4 py-10 text-center text-muted-foreground"
                   >
                     No leads in this view.
@@ -185,7 +199,16 @@ export default function MyLeadsPage() {
                   </td>
                   <td className="px-4 py-3">{l.practice}</td>
                   <td className="px-4 py-3 text-muted-foreground">
+                    {l.specialty}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">
                     {l.city}, {l.state}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                    {formatPhoneCell(l.phone)}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground max-w-[200px] truncate">
+                    {l.email ?? ""}
                   </td>
                   <td className="px-4 py-3">
                     <div className="inline-flex flex-wrap items-center gap-1.5">
