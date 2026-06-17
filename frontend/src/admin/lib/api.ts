@@ -148,6 +148,17 @@ export interface LeadRow {
   updatedAt?: string;
 }
 
+export interface LeadContactRow {
+  id: number;
+  leadId: number;
+  kind: "phone" | "email";
+  value: string;
+  isPrimary: boolean;
+  label: string | null;
+  createdAt: string;
+}
+
+
 /** Bundle 1.4 — one entry in a lead's change history (from the audit log). */
 export interface LeadHistoryEntry {
   id: number;
@@ -460,6 +471,23 @@ export const api = {
   // Bundle 1.4 — lead change history (read-only).
   leadHistory: (id: number) =>
     request<{ history: LeadHistoryEntry[] }>(`/admin/leads/${id}/history`),
+  listLeadContacts: (id: number) =>
+    request<{ contacts: LeadContactRow[] }>(`/admin/leads/${id}/contacts`),
+  addLeadContact: (id: number, contact: { kind: "phone" | "email"; value: string; isPrimary?: boolean; label?: string }) =>
+    request<{ contact: LeadContactRow }>(`/admin/leads/${id}/contacts`, {
+      method: "POST",
+      body: JSON.stringify(contact),
+    }),
+  updateLeadContact: (id: number, contactId: number, patch: Partial<{ value: string; isPrimary: boolean; label: string | null }>) =>
+    request<{ contact: LeadContactRow }>(`/admin/leads/${id}/contacts/${contactId}`, {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    }),
+  deleteLeadContact: (id: number, contactId: number) =>
+    request<{ deleted: true }>(`/admin/leads/${id}/contacts/${contactId}`, {
+      method: "DELETE",
+    }),
+
   // Bundle 1.3 — export the current view to CSV (fetched as a blob so the
   // session cookie is sent and the download respects active filters).
   exportLeadsBlob: async (

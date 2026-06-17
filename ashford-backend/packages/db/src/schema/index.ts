@@ -25,3 +25,4 @@ export * from "./funnelEvents";
 export * from "./repDialpadCredentials";
 export * from "./editorial";
 export * from "./whatsappClicks";
+export * from "./leadContacts";

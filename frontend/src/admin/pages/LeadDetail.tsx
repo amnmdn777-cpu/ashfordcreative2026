@@ -19,7 +19,7 @@ import { PageHeader } from "@admin/components/AdminLayout";
  */
 export default function LeadDetailPage() {
   const [, params] = useRoute("/leads/:id");
-  const id = Number(params?.id);
+  const id = params ? Number(params.id) : 0;
 
   const leadQuery = useQuery({
     queryKey: ["admin", "lead", id],
@@ -81,7 +81,9 @@ export default function LeadDetailPage() {
 
       <EditableFieldsCard leadId={id} lead={lead} />
 
-      <QualityCheckCard leadId={id} lead={lead} />
+      <ContactsCard leadId={id} />
+
+      <QualityCheckCard leadId={id} lead={lead as any} />
 
       <BookingUrlsCard leadId={id} lead={lead} />
 
@@ -265,8 +267,6 @@ function EditableFieldsCard({
         <EditableField label="Specialty" value={lead.specialty} onSave={(v) => save({ specialty: v })} />
         <EditableField label="City" value={lead.city} onSave={(v) => save({ city: v })} />
         <EditableField label="State" value={lead.state} onSave={(v) => save({ state: v })} />
-        <EditableField label="Phone" value={lead.phone} onSave={(v) => save({ phone: v })} />
-        <EditableField label="Email" value={lead.email} onSave={(v) => save({ email: v })} />
         <EditableField label="Locale" type="select" options={LOCALE_OPTIONS} value={lead.locale} onSave={(v) => save({ locale: (v as "en" | "es") ?? "en" })} />
         <EditableField label="Status" type="select" options={STATUS_OPTIONS} value={lead.status} onSave={(v) => save({ status: v ?? "available" })} />
         <EditableField label="Temperature" type="select" options={TEMP_OPTIONS} value={lead.temperature} onSave={(v) => save({ temperature: v })} />
@@ -284,6 +284,283 @@ function EditableFieldsCard({
           <EditableField label="Profile blurb" multiline value={lead.profileBlurb} onSave={(v) => save({ profileBlurb: v })} />
         </div>
       </dl>
+    </section>
+  );
+}
+
+function ContactsCard({ leadId }: { leadId: number }) {
+  const qc = useQueryClient();
+
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["admin", "lead", leadId, "contacts"],
+    queryFn: () => api.listLeadContacts(leadId),
+  });
+
+  const contacts = data?.contacts ?? [];
+
+  const addContact = useMutation({
+    mutationFn: (contact: { kind: "phone" | "email"; value: string; label?: string; isPrimary?: boolean }) =>
+      api.addLeadContact(leadId, contact),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "lead", leadId, "contacts"] });
+      qc.invalidateQueries({ queryKey: ["admin", "lead", leadId] });
+      qc.invalidateQueries({ queryKey: ["admin", "lead", leadId, "history"] });
+      qc.invalidateQueries({ queryKey: ["admin-leads"] });
+    },
+  });
+
+  const updateContact = useMutation({
+    mutationFn: ({ contactId, patch }: { contactId: number; patch: Partial<{ value: string; isPrimary: boolean; label: string | null }> }) =>
+      api.updateLeadContact(leadId, contactId, patch),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "lead", leadId, "contacts"] });
+      qc.invalidateQueries({ queryKey: ["admin", "lead", leadId] });
+      qc.invalidateQueries({ queryKey: ["admin", "lead", leadId, "history"] });
+      qc.invalidateQueries({ queryKey: ["admin-leads"] });
+    },
+  });
+
+  const deleteContact = useMutation({
+    mutationFn: (contactId: number) => api.deleteLeadContact(leadId, contactId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "lead", leadId, "contacts"] });
+      qc.invalidateQueries({ queryKey: ["admin", "lead", leadId] });
+      qc.invalidateQueries({ queryKey: ["admin", "lead", leadId, "history"] });
+      qc.invalidateQueries({ queryKey: ["admin-leads"] });
+    },
+  });
+
+  const [newKind, setNewKind] = useState<"phone" | "email">("phone");
+  const [newValue, setNewValue] = useState("");
+  const [newLabel, setNewLabel] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const [editLabel, setEditLabel] = useState("");
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError(null);
+    if (!newValue.trim()) {
+      setFormError("Value is required");
+      return;
+    }
+    try {
+      await addContact.mutateAsync({
+        kind: newKind,
+        value: newValue.trim(),
+        label: newLabel.trim() || undefined,
+        isPrimary: false,
+      });
+      setNewValue("");
+      setNewLabel("");
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Failed to add contact");
+    }
+  };
+
+  const handleStartEdit = (c: any) => {
+    setEditingId(c.id);
+    setEditValue(c.value);
+    setEditLabel(c.label ?? "");
+  };
+
+  const handleSaveEdit = async (contactId: number) => {
+    if (!editValue.trim()) return;
+    try {
+      await updateContact.mutateAsync({
+        contactId,
+        patch: {
+          value: editValue.trim(),
+          label: editLabel.trim() || null,
+        },
+      });
+      setEditingId(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to save contact");
+    }
+  };
+
+  const handleSetPrimary = async (contactId: number) => {
+    try {
+      await updateContact.mutateAsync({
+        contactId,
+        patch: { isPrimary: true },
+      });
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to set primary");
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <section className="bg-card border border-card-border rounded-xl p-6 shadow-sm">
+        <h2 className="font-serif text-lg mb-2">Contacts</h2>
+        <p className="text-sm text-muted-foreground">Loading contacts…</p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="bg-card border border-card-border rounded-xl p-6 shadow-sm">
+      <h2 className="font-serif text-lg mb-1">Contacts</h2>
+      <p className="text-xs text-muted-foreground mb-4">
+        Manage multiple phone numbers and email addresses. Mark one of each as primary.
+      </p>
+
+      {isError && (
+        <div className="text-sm text-destructive mb-4">
+          Error: {error instanceof Error ? error.message : "Failed to load contacts"}
+        </div>
+      )}
+
+      <div className="space-y-4 mb-6">
+        {(["phone", "email"] as const).map((kind) => {
+          const filtered = contacts.filter((c) => c.kind === kind);
+          return (
+            <div key={kind} className="space-y-2">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                {kind === "phone" ? "Phone Numbers" : "Email Addresses"}
+              </h3>
+              {filtered.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic pl-2">No {kind}s added yet.</p>
+              ) : (
+                <div className="divide-y divide-border/60">
+                  {filtered.map((c) => {
+                    const isEditing = editingId === c.id;
+                    return (
+                      <div key={c.id} className="flex items-center justify-between py-2 pl-2 hover:bg-muted/40 rounded transition-colors text-sm">
+                        <div className="flex-1 min-w-0 pr-4">
+                          {isEditing ? (
+                            <div className="flex flex-col sm:flex-row gap-2">
+                              <input
+                                type="text"
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                className="flex-1 rounded border border-input bg-background px-2 py-1 text-xs"
+                                placeholder={kind === "phone" ? "Phone" : "Email"}
+                              />
+                              <input
+                                type="text"
+                                value={editLabel}
+                                onChange={(e) => setEditLabel(e.target.value)}
+                                className="w-24 rounded border border-input bg-background px-2 py-1 text-xs"
+                                placeholder="Label (e.g. Work)"
+                              />
+                              <div className="flex gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleSaveEdit(c.id)}
+                                  className="px-2 py-1 bg-primary text-primary-foreground rounded text-[10px]"
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingId(null)}
+                                  className="px-2 py-1 border border-border rounded text-[10px]"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono">{c.value}</span>
+                              {c.label && (
+                                <span className="bg-muted text-muted-foreground text-[10px] px-1.5 py-0.5 rounded uppercase font-semibold">
+                                  {c.label}
+                                </span>
+                              )}
+                              {c.isPrimary && (
+                                <span className="bg-amber-100 text-amber-800 text-[10px] px-1.5 py-0.5 rounded font-semibold flex items-center gap-0.5">
+                                  ⭐ Primary
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {!isEditing && (
+                          <div className="flex items-center gap-2">
+                            {!c.isPrimary && (
+                              <button
+                                type="button"
+                                onClick={() => handleSetPrimary(c.id)}
+                                className="text-xs text-accent hover:underline"
+                              >
+                                Make Primary
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleStartEdit(c)}
+                              className="text-xs text-muted-foreground hover:text-foreground"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm("Are you sure you want to delete this contact?")) {
+                                  deleteContact.mutate(c.id);
+                                }
+                              }}
+                              disabled={deleteContact.isPending}
+                              className="text-xs text-destructive hover:underline"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <form onSubmit={handleAdd} className="border-t border-border pt-4">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
+          Add Contact
+        </h3>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <select
+            value={newKind}
+            onChange={(e) => setNewKind(e.target.value as "phone" | "email")}
+            className="rounded border border-input bg-background px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <option value="phone">Phone</option>
+            <option value="email">Email</option>
+          </select>
+          <input
+            type="text"
+            value={newValue}
+            onChange={(e) => setNewValue(e.target.value)}
+            placeholder={newKind === "phone" ? "e.g. +1 512-555-0199" : "e.g. therapist@example.com"}
+            className="flex-1 rounded border border-input bg-background px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+          <input
+            type="text"
+            value={newLabel}
+            onChange={(e) => setNewLabel(e.target.value)}
+            placeholder="Label (e.g. Work, Cell)"
+            className="w-40 rounded border border-input bg-background px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+          <button
+            type="submit"
+            disabled={addContact.isPending}
+            className="rounded bg-accent text-accent-foreground px-4 py-1.5 text-xs font-medium hover:opacity-90 disabled:opacity-50"
+          >
+            {addContact.isPending ? "Adding…" : "Add"}
+          </button>
+        </div>
+        {formError && <p className="text-xs text-destructive mt-2">{formError}</p>}
+      </form>
     </section>
   );
 }

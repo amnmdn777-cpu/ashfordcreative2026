@@ -20,24 +20,73 @@ export default function LeadsPage() {
     restorable: boolean;
   } | null>(null);
   const [releaseResult, setReleaseResult] = useState<{ released: number } | null>(null);
-  // LOT 1.6 — per-form confirmation inputs. Distinct state per
-  // section so what you type into the release form never satisfies
-  // the wipe form (and vice versa). Server-side zod.literal is the
-  // real security boundary; this UI gate just prevents the misclick.
   const [releaseConfirmation, setReleaseConfirmation] = useState("");
   const [wipeConfirmation, setWipeConfirmation] = useState("");
 
-  // #230 (2026-05-13) — scoped wipe refactor is mid-flight: the JSX
-  // below references state and API calls (scope-preview query, scoped
-  // mutation, restore mutation) that haven't been wired up yet. These
-  // stubs keep the page compiling and the destructive button DISABLED
-  // (`scopeMatches=false`) until the refactor lands. Do not enable any
-  // of these without also wiring the matching server endpoints; the
-  // production server will reject unscoped wipes with a 400.
+  // Search & Filters state (Bundle 2)
+  const [q, setQ] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
+  const [status, setStatus] = useState("");
+  const [temperature, setTemperature] = useState("");
+  const [repId, setRepId] = useState<number | "">("");
+  const [dateField, setDateField] = useState<"created" | "updated">("created");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [source, setSource] = useState("");
+  const [sortBy, setSortBy] = useState<string>("updated");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  // Load reps for the dropdown filter
+  const repsQuery = useQuery({
+    queryKey: ["admin-reps"],
+    queryFn: () => api.listReps(),
+  });
+  const repsList = repsQuery.data?.reps ?? [];
+
+  // Debounce search query
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedQ(q);
+      setPage(0);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [q]);
+
+  const handleFilterChange = (setter: (v: any) => void, val: any) => {
+    setter(val);
+    setPage(0);
+  };
+
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(field);
+      setSortDir("desc");
+    }
+    setPage(0);
+  };
+
+  const renderHeader = (label: string, field: string) => {
+    const active = sortBy === field;
+    return (
+      <th
+        onClick={() => handleSort(field)}
+        className="py-2 pr-3 font-medium cursor-pointer hover:text-foreground select-none"
+      >
+        <span className="flex items-center gap-1">
+          {label}
+          {active ? (sortDir === "asc" ? " ▲" : " ▼") : ""}
+        </span>
+      </th>
+    );
+  };
+
+  // #230 (2026-05-13) — scoped wipe refactor
   const [wipeScope, setWipeScope] = useState<number | "" | "ALL">("");
   const [wipeScopeConfirmation, setWipeScopeConfirmation] = useState("");
   const [wipeForce, setWipeForce] = useState(false);
-  const [reps] = useState<{ id: number; displayName: string }[]>([]);
+  const reps = repsList;
   const [preview] = useState<
     { total: number; last7d: number; latestAt: string | null } | null
   >(null);
@@ -95,8 +144,35 @@ export default function LeadsPage() {
 
   // Bundle 1.1 — leads table (paginated).
   const leadsQuery = useQuery({
-    queryKey: ["admin-leads", page],
-    queryFn: () => api.listLeads({ limit: PAGE_SIZE, offset: page * PAGE_SIZE }),
+    queryKey: [
+      "admin-leads",
+      page,
+      debouncedQ,
+      status,
+      temperature,
+      repId,
+      dateField,
+      dateFrom,
+      dateTo,
+      source,
+      sortBy,
+      sortDir,
+    ],
+    queryFn: () =>
+      api.listLeads({
+        limit: PAGE_SIZE,
+        offset: page * PAGE_SIZE,
+        q: debouncedQ || undefined,
+        status: status || undefined,
+        temperature: temperature || undefined,
+        repId: repId !== "" ? repId : undefined,
+        dateField,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
+        source: source || undefined,
+        sort: sortBy,
+        order: sortDir,
+      }),
   });
   const leadRows = leadsQuery.data?.leads ?? [];
   const total = leadsQuery.data?.total ?? 0;
@@ -105,7 +181,18 @@ export default function LeadsPage() {
   const onExport = async () => {
     setExporting(true);
     try {
-      const blob = await api.exportLeadsBlob();
+      const blob = await api.exportLeadsBlob({
+        q: debouncedQ || undefined,
+        status: status || undefined,
+        temperature: temperature || undefined,
+        repId: repId !== "" ? repId : undefined,
+        dateField,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
+        source: source || undefined,
+        sort: sortBy,
+        order: sortDir,
+      });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -150,6 +237,141 @@ export default function LeadsPage() {
           </button>
         </div>
 
+        {/* Filter bar (Bundle 2) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mb-5 p-4 bg-muted/20 border border-border/60 rounded-md text-xs">
+          <div className="flex flex-col gap-1 sm:col-span-2">
+            <label className="font-semibold text-muted-foreground uppercase tracking-wider">Search</label>
+            <input
+              type="text"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Name, phone, email..."
+              className="w-full rounded-md border border-input bg-background px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="font-semibold text-muted-foreground uppercase tracking-wider">Status</label>
+            <select
+              value={status}
+              onChange={(e) => handleFilterChange(setStatus, e.target.value)}
+              className="w-full rounded-md border border-input bg-background px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="">All Statuses</option>
+              <option value="available">Available</option>
+              <option value="claimed">Claimed</option>
+              <option value="nurturing">Nurturing</option>
+              <option value="won">Won</option>
+              <option value="disqualified">Disqualified</option>
+              <option value="recycled">Recycled</option>
+              <option value="cold">Cold</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="font-semibold text-muted-foreground uppercase tracking-wider">Temp</label>
+            <select
+              value={temperature}
+              onChange={(e) => handleFilterChange(setTemperature, e.target.value)}
+              className="w-full rounded-md border border-input bg-background px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="">All Temps</option>
+              <option value="hot">🔥 Hot</option>
+              <option value="lukewarm">☀️ Lukewarm</option>
+              <option value="cold">❄️ Cold</option>
+              <option value="disqualifier">🚫 Disqualifier</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="font-semibold text-muted-foreground uppercase tracking-wider">Owner</label>
+            <select
+              value={repId}
+              onChange={(e) => handleFilterChange(setRepId, e.target.value === "" ? "" : Number(e.target.value))}
+              className="w-full rounded-md border border-input bg-background px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="">All Reps</option>
+              {repsList.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.displayName}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="font-semibold text-muted-foreground uppercase tracking-wider">Lead Type</label>
+            <select
+              value={source}
+              onChange={(e) => handleFilterChange(setSource, e.target.value)}
+              className="w-full rounded-md border border-input bg-background px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="">All Types</option>
+              <option value="apify_import">Apify Scrape</option>
+              <option value="rep_manual">Rep Manual</option>
+              <option value="self_serve_template">Self-Serve Plan A</option>
+              <option value="contact_form">Contact Form</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1 sm:col-span-2">
+            <div className="flex items-center justify-between">
+              <label className="font-semibold text-muted-foreground uppercase tracking-wider">Date Range</label>
+              <div className="flex gap-2 text-[10px]">
+                <button
+                  type="button"
+                  onClick={() => handleFilterChange(setDateField, "created")}
+                  className={`px-1 rounded-sm ${dateField === "created" ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:bg-muted"}`}
+                >
+                  Created
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleFilterChange(setDateField, "updated")}
+                  className={`px-1 rounded-sm ${dateField === "updated" ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:bg-muted"}`}
+                >
+                  Updated
+                </button>
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => handleFilterChange(setDateFrom, e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-2 py-1 focus:outline-none"
+              />
+              <span className="text-muted-foreground">to</span>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => handleFilterChange(setDateTo, e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-2 py-1 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-end">
+            <button
+              type="button"
+              onClick={() => {
+                setQ("");
+                setStatus("");
+                setTemperature("");
+                setRepId("");
+                setDateField("created");
+                setDateFrom("");
+                setDateTo("");
+                setSource("");
+                setPage(0);
+              }}
+              className="w-full rounded-md border border-border bg-card px-2 py-1.5 hover:bg-muted transition-colors text-center font-medium"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+
         {leadsQuery.isLoading ? (
           <p className="text-sm text-muted-foreground py-6">Loading leads…</p>
         ) : leadRows.length === 0 ? (
@@ -159,13 +381,13 @@ export default function LeadsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground border-b border-border">
-                  <th className="py-2 pr-3 font-medium">Name</th>
-                  <th className="py-2 pr-3 font-medium">Practice</th>
-                  <th className="py-2 pr-3 font-medium">City</th>
-                  <th className="py-2 pr-3 font-medium">Status</th>
-                  <th className="py-2 pr-3 font-medium">Temp</th>
+                  {renderHeader("Name", "name")}
+                  {renderHeader("Practice", "practice")}
+                  {renderHeader("City", "city")}
+                  {renderHeader("Status", "status")}
+                  {renderHeader("Temp", "temperature")}
                   <th className="py-2 pr-3 font-medium">Owner</th>
-                  <th className="py-2 pr-3 font-medium">Updated</th>
+                  {renderHeader("Updated", "updated")}
                 </tr>
               </thead>
               <tbody>

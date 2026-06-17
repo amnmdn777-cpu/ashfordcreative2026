@@ -3,7 +3,7 @@ import qcRouter from "./qc";
 import portalRequestsRouter from "./portalRequests";
 import { z } from "zod";
 // 2026-05-21 — `clientOnboardings` table dropped (Sprint 2 streamline).
-import { db, salesReps, leads, leadRepNotes, leadFieldLocks, sales, subscriptions, contactRequests, customDevQuotes, adminAuditLog, emailMessages, funnelEvents, calls, callTranscripts, adminNotifications } from "@workspace/db";
+import { db, salesReps, leads, leadContacts, leadRepNotes, leadFieldLocks, sales, subscriptions, contactRequests, customDevQuotes, adminAuditLog, emailMessages, funnelEvents, calls, callTranscripts, adminNotifications } from "@workspace/db";
 import { TEMPLATES, PALETTES, CAPABILITIES, normalizeTemplateKey } from "@workspace/api-zod";
 import { eq, sql, desc, asc, isNotNull, and, or, ilike, gte, lte, inArray } from "drizzle-orm";
 import { asyncHandler } from "../../middleware/asyncHandler";
@@ -628,9 +628,15 @@ const LeadsQuery = z.object({
   status: z.string().optional(), // comma-separated lead_status values
   temperature: z.string().optional(), // comma-separated
   repId: z.coerce.number().int().optional(),
-  createdFrom: z.string().optional(),
-  createdTo: z.string().optional(),
-  sort: z.enum(["updated", "created", "name", "score"]).optional(),
+  createdFrom: z.string().optional(), // backward compatibility
+  createdTo: z.string().optional(), // backward compatibility
+  dateField: z.enum(["created", "updated"]).optional(),
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
+  source: z.string().optional(), // comma-separated sources (Bundle 2 lead type filter)
+  sort: z
+    .enum(["updated", "created", "name", "score", "practice", "city", "status", "temperature"])
+    .optional(),
   order: z.enum(["asc", "desc"]).optional(),
   limit: z.coerce.number().int().min(1).max(500).optional(),
   offset: z.coerce.number().int().min(0).optional(),
@@ -646,6 +652,10 @@ const buildLeadsWhere = (q: z.infer<typeof LeadsQuery>) => {
         ilike(leads.practice, like),
         ilike(leads.email, like),
         ilike(leads.phone, like),
+        sql`EXISTS (
+          SELECT 1 FROM lead_contacts lc
+          WHERE lc.lead_id = ${leads.id} AND lc.value ILIKE ${like}
+        )`
       ),
     );
   }
@@ -658,23 +668,58 @@ const buildLeadsWhere = (q: z.infer<typeof LeadsQuery>) => {
     if (vals.length) conds.push(inArray(leads.temperature, vals as never[]));
   }
   if (q.repId !== undefined) conds.push(eq(leads.claimedByRepId, q.repId));
+
+  // Date range filtering
+  const dateCol = q.dateField === "updated" ? leads.updatedAt : leads.createdAt;
+  if (q.dateFrom) conds.push(gte(dateCol, new Date(q.dateFrom)));
+  if (q.dateTo) conds.push(lte(dateCol, new Date(q.dateTo)));
+
+  // Keep createdFrom/createdTo active for backward compatibility
   if (q.createdFrom) conds.push(gte(leads.createdAt, new Date(q.createdFrom)));
   if (q.createdTo) conds.push(lte(leads.createdAt, new Date(q.createdTo)));
+
+  // Source (lead type) filter
+  if (q.source) {
+    const vals = q.source.split(",").map((s) => s.trim()).filter(Boolean);
+    if (vals.length) conds.push(inArray(leads.source, vals));
+  }
+
   return conds.length ? and(...conds) : undefined;
 };
 
 const leadsOrderBy = (q: z.infer<typeof LeadsQuery>) => {
   const dir = q.order === "asc" ? asc : desc;
-  switch (q.sort) {
-    case "created":
-      return dir(leads.createdAt);
-    case "name":
-      return dir(leads.name);
-    case "score":
-      return dir(leads.leadScore);
-    default:
-      return dir(leads.updatedAt);
+  if (q.sort) {
+    switch (q.sort) {
+      case "created":
+        return [dir(leads.createdAt)];
+      case "name":
+        return [dir(leads.name)];
+      case "score":
+        return [dir(leads.leadScore)];
+      case "practice":
+        return [dir(leads.practice)];
+      case "city":
+        return [dir(leads.city)];
+      case "status":
+        return [dir(leads.status)];
+      case "temperature":
+        return [dir(leads.temperature)];
+      case "updated":
+      default:
+        return [dir(leads.updatedAt)];
+    }
   }
+  // Default sort: status priority (Hot -> Warm -> Cold), then most recently updated
+  return [
+    sql`CASE 
+      WHEN ${leads.temperature} = 'hot' THEN 0 
+      WHEN ${leads.temperature} = 'lukewarm' THEN 1 
+      WHEN ${leads.temperature} = 'cold' THEN 2 
+      ELSE 3 
+    END ASC`,
+    desc(leads.updatedAt),
+  ];
 };
 
 router.get(
@@ -688,7 +733,7 @@ router.get(
       .select()
       .from(leads)
       .where(where)
-      .orderBy(leadsOrderBy(q))
+      .orderBy(...leadsOrderBy(q))
       .limit(limit)
       .offset(offset);
     const [{ count }] = await db
@@ -716,7 +761,7 @@ router.get(
       .select()
       .from(leads)
       .where(where)
-      .orderBy(leadsOrderBy(q))
+      .orderBy(...leadsOrderBy(q))
       .limit(10000);
     const esc = (v: unknown): string => {
       if (v === null || v === undefined) return "";
@@ -733,6 +778,7 @@ router.get(
       .send("﻿" + out.join("\n"));
   }),
 );
+
 
 // PATCH /admin/reps/:id — disable/update a rep.
 const PatchRepRequest = z.object({
@@ -981,6 +1027,226 @@ router.get(
     res.json({ lead: dateToIso(row) });
   }),
 );
+
+// ── Bundle 2.1 — Contacts CRUD Endpoints ─────────────────────────────────────
+const CreateContactRequest = z.object({
+  kind: z.enum(["phone", "email"]),
+  value: z.string().min(1).max(256),
+  isPrimary: z.boolean().optional(),
+  label: z.string().max(64).optional(),
+});
+
+const PatchContactRequest = z.object({
+  value: z.string().min(1).max(256).optional(),
+  isPrimary: z.boolean().optional(),
+  label: z.string().max(64).nullable().optional(),
+});
+
+router.get(
+  "/admin/leads/:id/contacts",
+  asyncHandler(async (req, res) => {
+    const id = z.coerce.number().int().parse(req.params.id);
+    const rows = await db
+      .select()
+      .from(leadContacts)
+      .where(eq(leadContacts.leadId, id))
+      .orderBy(asc(leadContacts.createdAt));
+    res.json({ contacts: dateToIso(rows) });
+  }),
+);
+
+router.post(
+  "/admin/leads/:id/contacts",
+  asyncHandler(async (req, res) => {
+    const id = z.coerce.number().int().parse(req.params.id);
+    const body = CreateContactRequest.parse(req.body);
+
+    const [lead] = await db.select().from(leads).where(eq(leads.id, id)).limit(1);
+    if (!lead) throw notFound("Lead not found");
+
+    const inserted = await db.transaction(async (tx) => {
+      const [existingPrimary] = await tx
+        .select()
+        .from(leadContacts)
+        .where(
+          and(
+            eq(leadContacts.leadId, id),
+            eq(leadContacts.kind, body.kind),
+            eq(leadContacts.isPrimary, true),
+          ),
+        )
+        .limit(1);
+
+      const makePrimary = body.isPrimary || !existingPrimary;
+
+      if (makePrimary) {
+        await tx
+          .update(leadContacts)
+          .set({ isPrimary: false })
+          .where(
+            and(
+              eq(leadContacts.leadId, id),
+              eq(leadContacts.kind, body.kind),
+            ),
+          );
+      }
+
+      const [row] = await tx
+        .insert(leadContacts)
+        .values({
+          leadId: id,
+          kind: body.kind,
+          value: body.value,
+          isPrimary: makePrimary,
+          label: body.label || null,
+        })
+        .returning();
+
+      if (makePrimary) {
+        await tx
+          .update(leads)
+          .set({
+            [body.kind]: body.value,
+            updatedAt: new Date(),
+          })
+          .where(eq(leads.id, id));
+      }
+
+      return row;
+    });
+
+    res.json({ contact: dateToIso(inserted) });
+  }),
+);
+
+router.patch(
+  "/admin/leads/:id/contacts/:contactId",
+  asyncHandler(async (req, res) => {
+    const leadId = z.coerce.number().int().parse(req.params.id);
+    const contactId = z.coerce.number().int().parse(req.params.contactId);
+    const body = PatchContactRequest.parse(req.body);
+
+    const [existing] = await db
+      .select()
+      .from(leadContacts)
+      .where(
+        and(
+          eq(leadContacts.id, contactId),
+          eq(leadContacts.leadId, leadId),
+        ),
+      )
+      .limit(1);
+    if (!existing) throw notFound("Contact not found");
+
+    const updated = await db.transaction(async (tx) => {
+      const isPrimaryRequested = body.isPrimary !== undefined ? body.isPrimary : existing.isPrimary;
+
+      if (isPrimaryRequested && !existing.isPrimary) {
+        await tx
+          .update(leadContacts)
+          .set({ isPrimary: false })
+          .where(
+            and(
+              eq(leadContacts.leadId, leadId),
+              eq(leadContacts.kind, existing.kind),
+            ),
+          );
+      } else if (!isPrimaryRequested && existing.isPrimary) {
+        throw badRequest("Cannot unset primary contact. Mark another contact as primary instead.");
+      }
+
+      const [row] = await tx
+        .update(leadContacts)
+        .set({
+          value: body.value !== undefined ? body.value : existing.value,
+          isPrimary: isPrimaryRequested,
+          label: body.label !== undefined ? body.label : existing.label,
+        })
+        .where(eq(leadContacts.id, contactId))
+        .returning();
+
+      if (row.isPrimary) {
+        await tx
+          .update(leads)
+          .set({
+            [existing.kind]: row.value,
+            updatedAt: new Date(),
+          })
+          .where(eq(leads.id, leadId));
+      }
+
+      return row;
+    });
+
+    res.json({ contact: dateToIso(updated) });
+  }),
+);
+
+router.delete(
+  "/admin/leads/:id/contacts/:contactId",
+  asyncHandler(async (req, res) => {
+    const leadId = z.coerce.number().int().parse(req.params.id);
+    const contactId = z.coerce.number().int().parse(req.params.contactId);
+
+    const [existing] = await db
+      .select()
+      .from(leadContacts)
+      .where(
+        and(
+          eq(leadContacts.id, contactId),
+          eq(leadContacts.leadId, leadId),
+        ),
+      )
+      .limit(1);
+    if (!existing) throw notFound("Contact not found");
+
+    await db.transaction(async (tx) => {
+      if (existing.isPrimary) {
+        const siblings = await tx
+          .select()
+          .from(leadContacts)
+          .where(
+            and(
+              eq(leadContacts.leadId, leadId),
+              eq(leadContacts.kind, existing.kind),
+            ),
+          );
+        const nextPrimary = siblings.find((c) => c.id !== contactId);
+
+        if (nextPrimary) {
+          await tx
+            .update(leadContacts)
+            .set({ isPrimary: true })
+            .where(eq(leadContacts.id, nextPrimary.id));
+
+          await tx
+            .update(leads)
+            .set({
+              [existing.kind]: nextPrimary.value,
+              updatedAt: new Date(),
+            })
+            .where(eq(leads.id, leadId));
+        } else {
+          if (existing.kind === "phone") {
+            throw badRequest("A lead must have at least one phone number.");
+          }
+          await tx
+            .update(leads)
+            .set({
+              email: null,
+              updatedAt: new Date(),
+            })
+            .where(eq(leads.id, leadId));
+        }
+      }
+
+      await tx.delete(leadContacts).where(eq(leadContacts.id, contactId));
+    });
+
+    res.json({ deleted: true });
+  }),
+);
+
 
 // ── Bundle 1.1 — inline edit: general field update (validated + audited) ────
 // Reuses the existing lead columns/validation; no new fields. QC-locked fields

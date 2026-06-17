@@ -1810,13 +1810,13 @@ function WorkflowStepList({
         pending={enrichPending}
         disabled={!portal || enrichPending}
       />
-      {previewReady && portal ? (
+      {portal ? (
         <div className="flex flex-col sm:flex-row gap-2 -mt-1">
           <button
             type="button"
             data-testid="download-preview-video"
             onClick={onDownloadVideo}
-            disabled={downloadingVideo}
+            disabled={downloadingVideo || enrichPending}
             className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md border border-input bg-background hover:bg-muted text-xs text-foreground/80 disabled:opacity-50 disabled:cursor-wait"
           >
             {downloadingVideo ? (
@@ -1834,7 +1834,7 @@ function WorkflowStepList({
             type="button"
             data-testid="download-preview-pdf"
             onClick={onDownloadPdf}
-            disabled={downloadingPdf}
+            disabled={downloadingPdf || enrichPending}
             className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md border border-input bg-background hover:bg-muted text-xs text-foreground/80 disabled:opacity-50 disabled:cursor-wait"
           >
             {downloadingPdf ? (

@@ -85,4 +85,71 @@ export async function ensureSchemaIntegrity(): Promise<void> {
       "ensureSchemaIntegrity failed — portal_requests may be unavailable",
     );
   }
+
+  // lead_contacts (Bundle 2 — multiple contacts per lead, migration 0040)
+  try {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS "lead_contacts" (
+        "id" serial PRIMARY KEY NOT NULL,
+        "lead_id" integer NOT NULL REFERENCES "leads"("id") ON DELETE CASCADE,
+        "kind" varchar(8) NOT NULL CHECK (kind IN ('phone', 'email')),
+        "value" varchar(256) NOT NULL,
+        "is_primary" boolean NOT NULL DEFAULT false,
+        "label" varchar(64),
+        "created_at" timestamp with time zone NOT NULL DEFAULT now()
+      );
+    `);
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS "lead_contacts_lead_id_idx"
+        ON "lead_contacts" ("lead_id");
+    `);
+    await db.execute(sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS "lead_contacts_primary_idx"
+        ON "lead_contacts" ("lead_id", "kind") WHERE is_primary = true;
+    `);
+    
+    // Backfill logic for safety
+    await db.execute(sql`
+      INSERT INTO "lead_contacts" ("lead_id", "kind", "value", "is_primary", "label", "created_at")
+      SELECT l."id", 'phone', l."phone", true, 'primary', l."created_at"
+      FROM "leads" l
+      WHERE l."phone" IS NOT NULL AND l."phone" <> ''
+        AND NOT EXISTS (
+          SELECT 1 FROM "lead_contacts" lc WHERE lc."lead_id" = l."id" AND lc."kind" = 'phone'
+        )
+      ON CONFLICT DO NOTHING;
+    `);
+    await db.execute(sql`
+      INSERT INTO "lead_contacts" ("lead_id", "kind", "value", "is_primary", "label", "created_at")
+      SELECT l."id", 'email', l."email", true, 'primary', l."created_at"
+      FROM "leads" l
+      WHERE l."email" IS NOT NULL AND l."email" <> ''
+        AND NOT EXISTS (
+          SELECT 1 FROM "lead_contacts" lc WHERE lc."lead_id" = l."id" AND lc."kind" = 'email'
+        )
+      ON CONFLICT DO NOTHING;
+    `);
+
+    logger.info("ensureSchemaIntegrity: lead_contacts OK");
+  } catch (err) {
+    logger.error(
+      { err },
+      "ensureSchemaIntegrity failed — lead_contacts may be unavailable",
+    );
+  }
+
+  // pg_trgm GIN Search indexes (Bundle 2 search optimization, migration 0040)
+  try {
+    await db.execute(sql`CREATE EXTENSION IF NOT EXISTS pg_trgm;`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS "leads_name_trgm_idx" ON "leads" USING gin("name" gin_trgm_ops);`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS "leads_email_trgm_idx" ON "leads" USING gin("email" gin_trgm_ops);`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS "leads_phone_trgm_idx" ON "leads" USING gin("phone" gin_trgm_ops);`);
+    logger.info("ensureSchemaIntegrity: pg_trgm and search indexes OK");
+  } catch (err) {
+    logger.error(
+      { err },
+      "ensureSchemaIntegrity failed — search indexes may be unavailable",
+    );
+  }
 }
+
