@@ -3,7 +3,7 @@ import qcRouter from "./qc";
 import portalRequestsRouter from "./portalRequests";
 import { z } from "zod";
 // 2026-05-21 — `clientOnboardings` table dropped (Sprint 2 streamline).
-import { db, salesReps, leads, leadContacts, leadAttachments, leadRepNotes, leadFieldLocks, sales, subscriptions, contactRequests, customDevQuotes, adminAuditLog, emailMessages, funnelEvents, calls, callTranscripts, adminNotifications } from "@workspace/db";
+import { db, salesReps, leads, leadContacts, leadAttachments, leadRepNotes, leadFieldLocks, prospectPortals, sales, subscriptions, contactRequests, customDevQuotes, adminAuditLog, emailMessages, funnelEvents, calls, callTranscripts, adminNotifications } from "@workspace/db";
 import { TEMPLATES, PALETTES, CAPABILITIES, normalizeTemplateKey } from "@workspace/api-zod";
 import { eq, sql, desc, asc, isNotNull, and, or, ilike, gte, lte, inArray } from "drizzle-orm";
 import { asyncHandler } from "../../middleware/asyncHandler";
@@ -764,14 +764,39 @@ router.get(
       .where(where)
       .orderBy(...leadsOrderBy(q))
       .limit(10000);
+
+    // Portal preview link per lead — so the CSV carries each prospect's portal
+    // URL (edit locally + re-import to drive portal generation).
+    const ids = rows.map((r) => r.id);
+    const portalMap = new Map<number, string>();
+    if (ids.length) {
+      const portals = await db
+        .select({
+          leadId: prospectPortals.leadId,
+          slug: prospectPortals.slug,
+          token: prospectPortals.accessToken,
+        })
+        .from(prospectPortals)
+        .where(inArray(prospectPortals.leadId, ids));
+      for (const p of portals) {
+        portalMap.set(
+          p.leadId,
+          `${env.publicBaseUrl}/preview/${p.slug}?t=${encodeURIComponent(p.token)}`,
+        );
+      }
+    }
+
     const esc = (v: unknown): string => {
       if (v === null || v === undefined) return "";
       const s = v instanceof Date ? v.toISOString() : String(v);
       return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
-    const out: string[] = [EXPORT_COLS.join(",")];
+    const header = [...EXPORT_COLS, "portal_url"].join(",");
+    const out: string[] = [header];
     for (const r of rows) {
-      out.push(EXPORT_COLS.map((c) => esc((r as Record<string, unknown>)[c])).join(","));
+      const cells = EXPORT_COLS.map((c) => esc((r as Record<string, unknown>)[c]));
+      cells.push(esc(portalMap.get((r as { id: number }).id) ?? ""));
+      out.push(cells.join(","));
     }
     res
       .type("text/csv")
