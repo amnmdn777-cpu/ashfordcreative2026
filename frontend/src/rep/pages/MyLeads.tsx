@@ -49,8 +49,11 @@ export default function MyLeadsPage() {
   // Allow deep-linking via /my-leads/<tab> (e.g. the sidebar's Cold leads
   // entry). Unknown segments fall back to "active".
   const [, params] = useRoute<{ tab?: string }>("/my-leads/:tab");
-
-  
+  // Default to "All" so the rep sees every lead she owns in one table — the
+  // same unified view as the admin leads dashboard (M8). A deep-link tab
+  // (/my-leads/<tab>) still wins when present.
+  const initialTab =
+    (TABS.find((t) => t.key === params?.tab)?.key) ?? "all";
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>(initialTab);
   // Typo-tolerant search box (server-side trigram match — see
   // services/leads.ts `getRepLeads`). Lets a rep type "Dolores" and find

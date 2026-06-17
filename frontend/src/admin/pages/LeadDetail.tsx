@@ -18,6 +18,7 @@ import { PageHeader } from "@admin/components/AdminLayout";
  * the pool, have a single place to inspect a prospect's portal URL,
  * open count, and enrichment completeness without claiming the lead.
  */
+
 export default function LeadDetailPage() {
   const [, params] = useRoute<{ id: string }>("/leads/:id");
   const id = params ? Number(params.id) : 0;
