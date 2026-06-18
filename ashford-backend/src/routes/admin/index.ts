@@ -747,10 +747,20 @@ router.get(
 
 // Export the current view to a UTF-8 CSV (BOM-prefixed for Excel). Respects
 // the same filters as the list; with no filters it exports all leads.
+// Lead columns + the portal CONTENT fields (so Candice can work the actual
+// portal data — photo, bio, tagline, niche, fees/approach, links — outside
+// the app). `profileBlurb` + `notes` carry the Psychology Today dump
+// (qualifications, approach, fees, insurance, languages) for scraped leads.
 const EXPORT_COLS = [
   "id", "name", "practice", "specialty", "city", "state", "phone", "email",
   "locale", "currentWebsite", "status", "temperature", "disqualifyReason",
-  "claimedByRepId", "leadScore", "createdAt", "updatedAt",
+  "claimedByRepId", "leadScore", "profileBlurb", "notes", "createdAt", "updatedAt",
+] as const;
+
+// Portal content columns assembled from prospect_portals.customizations.
+const PORTAL_COLS = [
+  "portal_url", "portal_photo_url", "portal_headline", "portal_tagline",
+  "portal_about", "portal_template", "portal_pricing_plan",
 ] as const;
 
 router.get(
@@ -765,24 +775,32 @@ router.get(
       .orderBy(...leadsOrderBy(q))
       .limit(10000);
 
-    // Portal preview link per lead — so the CSV carries each prospect's portal
-    // URL (edit locally + re-import to drive portal generation).
+    // Pull each lead's portal (URL + content fields) so the CSV carries the
+    // actual portal data, not just the link.
     const ids = rows.map((r) => r.id);
-    const portalMap = new Map<number, string>();
+    const portalMap = new Map<number, Record<string, string>>();
     if (ids.length) {
       const portals = await db
         .select({
           leadId: prospectPortals.leadId,
           slug: prospectPortals.slug,
           token: prospectPortals.accessToken,
+          template: prospectPortals.selectedTemplate,
+          customizations: prospectPortals.customizations,
         })
         .from(prospectPortals)
         .where(inArray(prospectPortals.leadId, ids));
       for (const p of portals) {
-        portalMap.set(
-          p.leadId,
-          `${env.publicBaseUrl}/preview/${p.slug}?t=${encodeURIComponent(p.token)}`,
-        );
+        const c = (p.customizations ?? {}) as Record<string, unknown>;
+        portalMap.set(p.leadId, {
+          portal_url: `${env.publicBaseUrl}/preview/${p.slug}?t=${encodeURIComponent(p.token)}`,
+          portal_photo_url: String(c.heroPhotoUrl ?? (c as { heroImageUrl?: string }).heroImageUrl ?? ""),
+          portal_headline: String(c.headline ?? ""),
+          portal_tagline: String(c.tagline ?? ""),
+          portal_about: String(c.about ?? ""),
+          portal_template: p.template ?? "",
+          portal_pricing_plan: String(c.pricingPlan ?? ""),
+        });
       }
     }
 
@@ -791,11 +809,12 @@ router.get(
       const s = v instanceof Date ? v.toISOString() : String(v);
       return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
-    const header = [...EXPORT_COLS, "portal_url"].join(",");
+    const header = [...EXPORT_COLS, ...PORTAL_COLS].join(",");
     const out: string[] = [header];
     for (const r of rows) {
       const cells = EXPORT_COLS.map((c) => esc((r as Record<string, unknown>)[c]));
-      cells.push(esc(portalMap.get((r as { id: number }).id) ?? ""));
+      const pm = portalMap.get((r as { id: number }).id) ?? {};
+      for (const pc of PORTAL_COLS) cells.push(esc(pm[pc] ?? ""));
       out.push(cells.join(","));
     }
     res

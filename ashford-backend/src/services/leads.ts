@@ -50,7 +50,12 @@ export const loadOwnedLead = async (
     .limit(1);
   if (!lead) throw notFound("Lead not found");
   const isAdmin = user.role === "admin" || user.role === "owner";
-  if (!isAdmin && lead.claimedByRepId !== user.id) {
+  // Unclaimed pool leads (Available Leads) may be worked by any rep — this is
+  // what lets the admin-parity capabilities (inline edit, contacts, files,
+  // history) apply to Available Leads too. A lead CLAIMED by another rep is
+  // still protected.
+  const isUnclaimedPool = lead.claimedByRepId == null;
+  if (!isAdmin && !isUnclaimedPool && lead.claimedByRepId !== user.id) {
     throw forbidden("You don't own this lead.");
   }
   return lead;

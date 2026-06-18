@@ -28,6 +28,10 @@ export default function AvailableLeadsPage() {
   const [topQualityOnly, setTopQualityOnly] = useState(false);
   // Website presence filter: "" = all, "yes" = has site, "no" = no site.
   const [hasWebsite, setHasWebsite] = useState<"" | "yes" | "no">("");
+  // Admin-parity filters (client-side over the current page).
+  const [temp, setTemp] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
   // #221 sortable headers. Default mirrors the historical server-side
   // ordering (score DESC) so existing reps see no surprise on first
@@ -72,6 +76,15 @@ export default function AvailableLeadsPage() {
         sortBy,
         sortDir,
       }),
+  });
+
+  // Admin-parity filters applied over the returned page.
+  const displayLeads = (data?.leads ?? []).filter((l: any) => {
+    if (temp && (l.temperature ?? "") !== temp) return false;
+    const created = l.createdAt ? new Date(l.createdAt) : null;
+    if (dateFrom && (!created || created < new Date(dateFrom))) return false;
+    if (dateTo && (!created || created > new Date(`${dateTo}T23:59:59`))) return false;
+    return true;
   });
 
   // Opening a lead from the available pool just navigates to the detail
@@ -163,7 +176,39 @@ export default function AvailableLeadsPage() {
             <option value="no">No website</option>
           </select>
         </label>
-        {(name || city || specialty || topQualityOnly || hasWebsite) && (
+        <label className="block min-w-[140px]">
+          <span className="text-xs text-muted-foreground">Temperature</span>
+          <select
+            value={temp}
+            onChange={(e) => setTemp(e.target.value)}
+            className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <option value="">All</option>
+            <option value="hot">Hot</option>
+            <option value="lukewarm">Lukewarm</option>
+            <option value="cold">Cold</option>
+            <option value="disqualifier">Disqualified</option>
+          </select>
+        </label>
+        <label className="block min-w-[150px]">
+          <span className="text-xs text-muted-foreground">Added from</span>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </label>
+        <label className="block min-w-[150px]">
+          <span className="text-xs text-muted-foreground">Added to</span>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </label>
+        {(name || city || specialty || topQualityOnly || hasWebsite || temp || dateFrom || dateTo) && (
           <button
             onClick={() => {
               setName("");
@@ -171,6 +216,9 @@ export default function AvailableLeadsPage() {
               setSpecialty("");
               setTopQualityOnly(false);
               setHasWebsite("");
+              setTemp("");
+              setDateFrom("");
+              setDateTo("");
               setPage(1);
             }}
             className="text-sm text-muted-foreground hover:text-foreground px-3 py-2"
@@ -209,7 +257,7 @@ export default function AvailableLeadsPage() {
                   </td>
                 </tr>
               )}
-              {data && data.leads.length === 0 && (
+              {data && displayLeads.length === 0 && (
                 <tr>
                   <td
                     colSpan={9}
@@ -219,7 +267,7 @@ export default function AvailableLeadsPage() {
                   </td>
                 </tr>
               )}
-              {data?.leads.map((l) => (
+              {displayLeads.map((l) => (
                 <tr key={l.id} className="hover:bg-muted/30">
                   <td className="px-4 py-3 whitespace-nowrap">
                     <ScoreBadge
