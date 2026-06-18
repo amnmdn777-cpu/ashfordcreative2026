@@ -2384,7 +2384,7 @@ function Modal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="bg-card border border-card-border rounded-xl shadow-xl w-full max-w-lg p-6"
+        className="bg-card border border-card-border rounded-xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <h3 id={titleId} className="font-serif text-xl mb-4">
