@@ -289,6 +289,10 @@ export const env = {
   outboundCc: readEnv("OUTBOUND_CC"),
 
   ownerNotificationEmail: readEnv("OWNER_NOTIFICATION_EMAIL"),
+  // Single address for @Ashford rep-tag mention alerts. Falls back to the
+  // hardcoded owner gmail when unset. Lets the owner redirect mention emails
+  // to a monitored inbox without a code change.
+  ownerMentionEmail: readEnv("OWNER_MENTION_EMAIL"),
   ownerNotificationSms: readEnv("OWNER_NOTIFICATION_SMS"),
   ownerNotificationTypes: (readEnv("OWNER_NOTIFICATION_TYPES") ??
     "sale.won,subscription.past_due,client_onboarding.ready_to_build,custom_dev.quote_requested,approval.requested,escalation.opened,health.degraded,health.recovered,whatsapp.click,call.summary")

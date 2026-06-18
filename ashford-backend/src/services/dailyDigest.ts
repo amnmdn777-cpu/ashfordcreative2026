@@ -236,8 +236,17 @@ const performDigestSend = async ({
   const { subject, text } = renderDigestEmail(summary);
 
   const fromAddr = env.resendFromEmail;
-  const toAddr = env.ownerNotificationEmail;
-  if (!toAddr) return { sent: false, reason: "no_owner_email" };
+  // OWNER_NOTIFICATION_EMAIL may be a comma-separated list (e.g. candice@ +
+  // amine@). Resend's `to` takes an array; passing the raw comma-string makes
+  // the send fail silently — which is what stopped the digest after the list
+  // was introduced for AI call summaries. Split here; keep a joined string
+  // for the email_messages.to_addr column.
+  const recipients = (env.ownerNotificationEmail ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (recipients.length === 0) return { sent: false, reason: "no_owner_email" };
+  const toAddr = recipients.join(", ");
 
   if (!env.resendApiKey) {
     logger.info({ label: summary.label }, "[daily-digest] dev-skipped (no RESEND_API_KEY)");
@@ -257,7 +266,7 @@ const performDigestSend = async ({
     const resend = new Resend(env.resendApiKey);
     const result = await resend.emails.send({
       from: fromAddr,
-      to: toAddr,
+      to: recipients,
       subject,
       text,
     });

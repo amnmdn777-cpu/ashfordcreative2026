@@ -85,8 +85,12 @@ export const backupRepNotesNow = async (): Promise<{ sent: boolean; reason: stri
     return { sent: false, reason: "no_changes_since_last_backup", count: rows.length };
   }
 
-  const owner = env.ownerNotificationEmail;
-  if (!owner) {
+  // OWNER_NOTIFICATION_EMAIL may be comma-separated — split for Resend's `to`.
+  const owner = (env.ownerNotificationEmail ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (owner.length === 0) {
     return { sent: false, reason: "no_owner_email_configured", count: rows.length };
   }
 

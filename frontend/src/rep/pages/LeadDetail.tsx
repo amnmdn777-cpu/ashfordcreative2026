@@ -1703,7 +1703,11 @@ function WorkflowStepList({
       ? { tone: "active", label: "Generating…" }
       : { tone: "neutral", label: "To do" };
 
-  const lastCall = calls?.[0]?.startedAt ?? null;
+  // Fall back to createdAt: in-app-dialer calls can land with a null
+  // startedAt (Dialpad doesn't always report date_started), but the call
+  // still happened — so "Called" must reflect ANY logged call, not just
+  // ones with a start timestamp.
+  const lastCall = calls?.[0]?.startedAt ?? calls?.[0]?.createdAt ?? null;
   const callStatus: StepStatus = lastCall
     ? { tone: "done", label: `Called ${relativeTime(lastCall)}` }
     : { tone: "neutral", label: "Not called yet" };

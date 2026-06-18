@@ -27,6 +27,7 @@ import {
 import { conflict, notFound, badRequest, forbidden } from "../lib/errors";
 import { normalizePersonName } from "../lib/normalizeName";
 import { logger } from "../lib/logger";
+import { env } from "../lib/env";
 import { sendEmail } from "../integrations/resend";
 import { notify } from "./notifications";
 import { tierForScore } from "./leadScoring";
@@ -435,7 +436,11 @@ export const addLeadRepNote = async (
   };
 };
 
-const ASHFORD_OWNER_EMAIL = "amnmdn777@gmail.com";
+// Owner's address for @Ashford mention alerts. Configurable via env so the
+// owner can point it at the inbox he actually monitors (the hardcoded gmail
+// is only the fallback). Single address — the mention is for the owner.
+const ASHFORD_OWNER_EMAIL =
+  (env.ownerMentionEmail ?? "").trim() || "amnmdn777@gmail.com";
 
 async function notifyAshfordMention(args: {
   leadId: number;
