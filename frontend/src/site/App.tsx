@@ -44,6 +44,7 @@ const ComparedPage = lazy(() => import("@site/pages/Compared"));
 const FindTherapist = lazy(() => import("@site/pages/FindTherapist"));
 const FindTherapistIndex = lazy(() => import("@site/pages/FindTherapistIndex"));
 const NotFound = lazy(() => import("@site/pages/not-found"));
+const ShortLinkRedirect = lazy(() => import("@site/pages/ShortLinkRedirect"));
 
 /** Cream-band loading fallback shown while a lazy-loaded page fetches.
  *  Deliberately minimal — anything heavier would defeat the bundle-
@@ -67,6 +68,7 @@ function isStandaloneRoute(path: string): boolean {
     path.startsWith("/p/") ||
     path === "/preview" ||
     path.startsWith("/preview/") ||
+    path.startsWith("/s/") ||
     // The Quiet Practice inquiry form is reached only from inside the
     // Quiet Practice template; the marketing header + chatbot widget
     // would fight the template's restraint, so it renders full-bleed.
@@ -155,6 +157,7 @@ function StandaloneRoutes() {
             Unknown slugs fall through to the site NotFound page. */}
         <Route path="/t/:key" component={TemplateGuard} />
         <Route path="/p/:token" component={ProspectPreview} />
+        <Route path="/s/:code" component={ShortLinkRedirect} />
         {/* Quiet Practice's inquiry form — full-bleed (no marketing
          *  chrome / chatbot) so the page reads as part of Catherine
          *  Whitfield's practice, not Ashford Creative's marketing site. */}
