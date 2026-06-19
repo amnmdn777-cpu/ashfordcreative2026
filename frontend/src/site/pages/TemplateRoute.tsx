@@ -23,6 +23,7 @@ import {
 } from "@workspace/api-zod";
 import { TEMPLATE_COMPONENTS, resolveTemplateKey } from "@site/templates";
 import { SAMPLES, pickSample } from "@site/templates/sampleContent";
+import { ClarityPagesDemo } from "@site/templates/clarity/PagesDemo";
 import { ALL_ADDONS, type AddonKey } from "@site/templates/types";
 import type { CSSProperties } from "react";
 import { cssVarsForPalette } from "@site/lib/palette";
@@ -52,7 +53,8 @@ import {
 // Canonical template list (all 9) imported from @workspace/api-zod so
 // adding a new TemplateKeyLiteral automatically flows into the popover
 // without a manual edit here.
-const ALL_TEMPLATE_KEYS: TemplateKey[] = TEMPLATE_KEYS as unknown as TemplateKey[];
+const ALL_TEMPLATE_KEYS: TemplateKey[] =
+  TEMPLATE_KEYS as unknown as TemplateKey[];
 
 const fmtUsd = fmtUsdFromCents;
 
@@ -127,7 +129,9 @@ const TemplateThumb = ({
       </div>
       <span
         className={`text-[11px] leading-tight ${
-          active ? "text-cream font-medium" : "text-cream/55 group-hover:text-cream"
+          active
+            ? "text-cream font-medium"
+            : "text-cream/55 group-hover:text-cream"
         }`}
       >
         {tpl.label}
@@ -179,7 +183,10 @@ const TierCard = ({
 
 const FeatureRow = ({ feature }: { feature: CapabilityFeature }) => (
   <li className="flex gap-2 items-start text-cream/85 text-[12px] leading-snug">
-    <Check className="w-3.5 h-3.5 mt-0.5 text-sage shrink-0" strokeWidth={2.5} />
+    <Check
+      className="w-3.5 h-3.5 mt-0.5 text-sage shrink-0"
+      strokeWidth={2.5}
+    />
     <span>{feature.label}</span>
   </li>
 );
@@ -225,9 +232,11 @@ export default function TemplateRoute() {
 
   // Initial template (with legacy alias resolution).
   const initialResolved = resolveTemplateKey(key ?? "");
-  const initialTplKey = (initialResolved ?? (key as TemplateKey)) as TemplateKey;
+  const initialTplKey = (initialResolved ??
+    (key as TemplateKey)) as TemplateKey;
 
-  const [activeTemplate, setActiveTemplate] = useState<TemplateKey>(initialTplKey);
+  const [activeTemplate, setActiveTemplate] =
+    useState<TemplateKey>(initialTplKey);
 
   // Keep activeTemplate in sync if the URL :key segment changes (e.g. browser back/forward).
   useEffect(() => {
@@ -266,7 +275,9 @@ export default function TemplateRoute() {
     const rawTier = params.get("tier");
     if (rawTier) {
       const normalized: TierKey | null =
-        rawTier === "boutique" || rawTier === "boutique_pro" || rawTier === "boutique_concierge"
+        rawTier === "boutique" ||
+        rawTier === "boutique_pro" ||
+        rawTier === "boutique_concierge"
           ? rawTier
           : rawTier === "pro"
             ? "boutique_pro"
@@ -300,7 +311,8 @@ export default function TemplateRoute() {
   // capabilities (insurance_sliding_scale, foundation features) are always
   // present because every tier's capability list includes them.
   const tierCapabilityKeys = useMemo(
-    () => new Set<string>(TIERS[selectedTier].capabilities as readonly string[]),
+    () =>
+      new Set<string>(TIERS[selectedTier].capabilities as readonly string[]),
     [selectedTier],
   );
 
@@ -331,14 +343,18 @@ export default function TemplateRoute() {
   // Design-template 3x3 grid is collapsed by default to reclaim vertical
   // space. State persists per-session so a rep who expanded it once
   // doesn't have to keep re-opening on every template switch.
-  const [designSectionExpanded, setDesignSectionExpanded] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      return window.sessionStorage.getItem("tpl-design-section-expanded") === "1";
-    } catch {
-      return false;
-    }
-  });
+  const [designSectionExpanded, setDesignSectionExpanded] = useState<boolean>(
+    () => {
+      if (typeof window === "undefined") return false;
+      try {
+        return (
+          window.sessionStorage.getItem("tpl-design-section-expanded") === "1"
+        );
+      } catch {
+        return false;
+      }
+    },
+  );
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
@@ -405,9 +421,11 @@ export default function TemplateRoute() {
       qs.set("primary", customizations.colorOverrides.primary);
     if (customizations.colorOverrides?.accent)
       qs.set("accent", customizations.colorOverrides.accent);
-    if (customizations.fontDisplay) qs.set("fontDisplay", customizations.fontDisplay);
+    if (customizations.fontDisplay)
+      qs.set("fontDisplay", customizations.fontDisplay);
     if (customizations.fontBody) qs.set("fontBody", customizations.fontBody);
-    if (customizations.chosenDomain) qs.set("domain", customizations.chosenDomain);
+    if (customizations.chosenDomain)
+      qs.set("domain", customizations.chosenDomain);
     if (bare) qs.set("bare", "1");
     const s = qs.toString();
     const target = `${routePrefix}/${k}${s ? `?${s}` : ""}`;
@@ -438,16 +456,21 @@ export default function TemplateRoute() {
   if (!tpl) {
     return (
       <div className="px-6 py-32 text-center">
-        <p className="font-display text-2xl text-ink mb-4">Template not found</p>
-        <Link href="/templates" className="text-sage underline">← Templates</Link>
+        <p className="font-display text-2xl text-ink mb-4">
+          Template not found
+        </p>
+        <Link href="/templates" className="text-sage underline">
+          ← Templates
+        </Link>
       </div>
     );
   }
 
-  const basePalette = palettes[Math.min(paletteIdx, palettes.length - 1)] ?? palettes[0];
+  const basePalette =
+    palettes[Math.min(paletteIdx, palettes.length - 1)] ?? palettes[0];
   const palette = overlayPalette(basePalette, customizations);
   const Component: ComponentType<{
-    content: typeof SAMPLES[TemplateKey];
+    content: (typeof SAMPLES)[TemplateKey];
     palette: PaletteDef;
     templateKey: TemplateKey;
     tail?: ReactNode;
@@ -457,21 +480,24 @@ export default function TemplateRoute() {
   // Templates render add-on-aware sections only for the typed AddonKey set.
   // Derive the slug list from the tier's capabilities ∩ ALL_ADDONS so the
   // template sees only what the chosen tier covers.
-  const tierAddonSlugs: AddonKey[] = (Array.from(tierCapabilityKeys) as string[])
-    .filter((s): s is AddonKey => (ALL_ADDONS as readonly string[]).includes(s));
+  const tierAddonSlugs: AddonKey[] = (
+    Array.from(tierCapabilityKeys) as string[]
+  ).filter((s): s is AddonKey => (ALL_ADDONS as readonly string[]).includes(s));
   const content = { ...sample, addons: tierAddonSlugs };
 
   // Inline demos under the template: render for every tier-enabled
   // capability that has a registered inline component, in capability-list
   // order. Free-bundled foundation features (sliding scale etc.) don't
   // have inline components so they're naturally excluded.
-  const inlineDemoKeys = (TIERS[selectedTier].capabilities as readonly string[]).filter(
-    (k) => ADDON_INLINE_COMPONENTS[k],
-  );
+  const inlineDemoKeys = (
+    TIERS[selectedTier].capabilities as readonly string[]
+  ).filter((k) => ADDON_INLINE_COMPONENTS[k]);
 
   // For the panel feature list: full capability set for the selected tier
   // hydrated to CapabilityFeature[].
-  const tierFeatures = TIERS[selectedTier].capabilities.map((k) => CAPABILITIES[k]);
+  const tierFeatures = TIERS[selectedTier].capabilities.map(
+    (k) => CAPABILITIES[k],
+  );
   // For "Everything in <prev> plus" headers in the panel feature list.
   const previousTierKey: TierKey | null =
     selectedTier === "boutique_pro"
@@ -482,13 +508,20 @@ export default function TemplateRoute() {
   const deltaFeatures = previousTierKey
     ? tierFeatures.filter(
         (f) =>
-          !(TIERS[previousTierKey].capabilities as readonly string[]).includes(f.key),
+          !(TIERS[previousTierKey].capabilities as readonly string[]).includes(
+            f.key,
+          ),
       )
     : tierFeatures;
-  const previousTierLabel = previousTierKey ? TIERS[previousTierKey].label : null;
+  const previousTierLabel = previousTierKey
+    ? TIERS[previousTierKey].label
+    : null;
 
   return (
-    <div style={fontVars(customizations)} className="min-h-screen flex flex-col bg-cream overflow-x-clip">
+    <div
+      style={fontVars(customizations)}
+      className="min-h-screen flex flex-col bg-cream overflow-x-clip"
+    >
       <Seo
         title={`${tpl.label} template demo`}
         description={tpl.description}
@@ -507,10 +540,7 @@ export default function TemplateRoute() {
        *  list stay in sync. Hidden on ?bare=1 (thumbnail capture).
        * ============================================================ */}
       {!bare && (
-        <LiveTierSwitcher
-          currentTier={selectedTier}
-          onChange={onSelectTier}
-        />
+        <LiveTierSwitcher currentTier={selectedTier} onChange={onSelectTier} />
       )}
 
       {/* === Floating demo bar. ====================================
@@ -545,7 +575,11 @@ export default function TemplateRoute() {
               className="inline-flex items-center gap-2 bg-ink text-cream text-xs font-medium px-4 py-2.5 rounded-full shadow-lg border border-cream/10 hover:bg-ink-deep transition-colors"
             >
               <Sparkles className="w-3.5 h-3.5 text-gold" />
-              <span>{locale === "es" ? "Probar esta plantilla" : "Try this template"}</span>
+              <span>
+                {locale === "es"
+                  ? "Probar esta plantilla"
+                  : "Try this template"}
+              </span>
             </button>
 
             {/* Expanded design bar — opens on hover (desktop),
@@ -578,12 +612,20 @@ export default function TemplateRoute() {
                     <button
                       type="button"
                       onClick={() => setToolbarExpanded((v) => !v)}
-                      aria-label={toolbarExpanded ? t("portal_collapse") : t("portal_expand")}
+                      aria-label={
+                        toolbarExpanded
+                          ? t("portal_collapse")
+                          : t("portal_expand")
+                      }
                       aria-expanded={toolbarExpanded}
                       aria-controls="tpl-toolbar-panel"
                       className="p-1.5 hover:bg-cream/10 rounded-md transition-colors text-cream/70"
                     >
-                      {toolbarExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                      {toolbarExpanded ? (
+                        <ChevronUp className="w-5 h-5" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5" />
+                      )}
                     </button>
                     <Link
                       href="/templates"
@@ -595,7 +637,9 @@ export default function TemplateRoute() {
                       <span className="text-[10px] uppercase tracking-[0.2em] text-cream/45">
                         {t("tpl_show_eyebrow")}
                       </span>
-                      <span className="text-sm font-medium text-cream truncate">{tpl.label}</span>
+                      <span className="text-sm font-medium text-cream truncate">
+                        {tpl.label}
+                      </span>
                     </div>
                   </div>
 
@@ -648,7 +692,9 @@ export default function TemplateRoute() {
                             className="text-base font-display font-semibold text-cream"
                           >
                             {fmtUsd(monthlyTotalCents)}
-                            <span className="text-xs text-cream/55 font-sans">{t("portal_per_month")}</span>
+                            <span className="text-xs text-cream/55 font-sans">
+                              {t("portal_per_month")}
+                            </span>
                           </span>
                         </div>
                         <button
@@ -703,7 +749,9 @@ export default function TemplateRoute() {
                         <span className="text-[11px] uppercase tracking-[0.18em] font-medium text-cream/65 shrink-0">
                           {t("portal_design_template")}
                         </span>
-                        <span className="text-cream/40 shrink-0" aria-hidden>·</span>
+                        <span className="text-cream/40 shrink-0" aria-hidden>
+                          ·
+                        </span>
                         <span className="text-[12px] text-cream/90 font-medium truncate">
                           {TEMPLATES[activeTemplate].label}
                         </span>
@@ -719,13 +767,16 @@ export default function TemplateRoute() {
                           data-testid="tpl-design-counter"
                           className="text-[10px] text-cream/40 font-mono shrink-0 ml-1"
                         >
-                          {ALL_TEMPLATE_KEYS.indexOf(activeTemplate) + 1}/{ALL_TEMPLATE_KEYS.length}
+                          {ALL_TEMPLATE_KEYS.indexOf(activeTemplate) + 1}/
+                          {ALL_TEMPLATE_KEYS.length}
                         </span>
                       </button>
                       <div
                         id="tpl-design-grid"
                         className={`grid transition-[grid-template-rows] duration-200 ease-out ${
-                          designSectionExpanded ? "grid-rows-[1fr] mt-3" : "grid-rows-[0fr]"
+                          designSectionExpanded
+                            ? "grid-rows-[1fr] mt-3"
+                            : "grid-rows-[0fr]"
                         }`}
                       >
                         <div className="overflow-hidden">
@@ -754,7 +805,9 @@ export default function TemplateRoute() {
                       <div className="flex items-center gap-1.5 mb-3">
                         <Sparkles className="w-3.5 h-3.5 text-cream/55" />
                         <span className="text-[11px] uppercase tracking-[0.18em] font-medium text-cream/65">
-                          {locale === "es" ? "Elige tu nivel" : "Choose your tier"}
+                          {locale === "es"
+                            ? "Elige tu nivel"
+                            : "Choose your tier"}
                         </span>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
@@ -824,7 +877,9 @@ export default function TemplateRoute() {
                         href="/compared"
                         className="inline-flex items-center gap-1 mt-4 text-[11px] text-cream/55 hover:text-cream font-mono uppercase tracking-widest"
                       >
-                        {locale === "es" ? "Ver comparación" : "See full comparison"}
+                        {locale === "es"
+                          ? "Ver comparación"
+                          : "See full comparison"}
                         <ArrowUpRight className="w-3 h-3" />
                       </a>
                     </div>
@@ -856,23 +911,41 @@ export default function TemplateRoute() {
             <DemoProvider templateKey={activeTemplate}>
               {/* CRITICAL #4 — TierProvider drives <TierGate> inside templates. */}
               <TierProvider tier={selectedTier}>
-              <Component
-                content={content}
-                palette={palette}
-                templateKey={activeTemplate}
-                tail={(() => {
-                  if (bare) return null;
-                  if (inlineDemoKeys.length === 0) return null;
-                  return (
-                    <div className="border-t border-ink/10">
-                      {inlineDemoKeys.map((s) => {
-                        const Inline = ADDON_INLINE_COMPONENTS[s];
-                        return <Inline key={s} />;
-                      })}
-                    </div>
+                {(() => {
+                  const rendered = (
+                    <Component
+                      content={content}
+                      palette={palette}
+                      templateKey={activeTemplate}
+                      tail={(() => {
+                        if (bare) return null;
+                        if (inlineDemoKeys.length === 0) return null;
+                        return (
+                          <div className="border-t border-ink/10">
+                            {inlineDemoKeys.map((s) => {
+                              const Inline = ADDON_INLINE_COMPONENTS[s];
+                              return <Inline key={s} />;
+                            })}
+                          </div>
+                        );
+                      })()}
+                    />
+                  );
+                  // Clarity demos the portal's multi-page experience in the
+                  // showcase via a sample PAGES bar (other templates render the
+                  // homepage alone; their sub-pages only exist on a real portal).
+                  return activeTemplate === "clarity" ? (
+                    <ClarityPagesDemo
+                      templateKey={activeTemplate}
+                      palette={palette}
+                      content={content}
+                    >
+                      {rendered}
+                    </ClarityPagesDemo>
+                  ) : (
+                    rendered
                   );
                 })()}
-              />
               </TierProvider>
             </DemoProvider>
           </div>

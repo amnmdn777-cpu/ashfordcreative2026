@@ -208,6 +208,7 @@ const SHARED_SAMPLE_ES: TemplateContent = {
 };
 
 export const SAMPLES: Record<TemplateKey, TemplateContent> = {
+  clarity: SHARED_SAMPLE_EN,
   garden: SHARED_SAMPLE_EN,
   sunrise: SHARED_SAMPLE_EN,
   constellation: SHARED_SAMPLE_EN,
@@ -221,6 +222,7 @@ export const SAMPLES: Record<TemplateKey, TemplateContent> = {
 };
 
 const SAMPLES_ES: Record<TemplateKey, TemplateContent> = {
+  clarity: SHARED_SAMPLE_ES,
   garden: SHARED_SAMPLE_ES,
   sunrise: SHARED_SAMPLE_ES,
   constellation: SHARED_SAMPLE_ES,

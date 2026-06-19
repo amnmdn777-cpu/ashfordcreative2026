@@ -5,6 +5,7 @@ import { useI18n } from "@site/lib/i18n";
 import type { PortalPublicResponse, TemplateKey, PaletteDef } from "@workspace/api-zod";
 
 const TEMPLATE_LABEL: Record<TemplateKey, string> = {
+  clarity: "Clarity",
   garden: "Garden",
   sunrise: "Sunrise",
   constellation: "Constellation",
@@ -37,6 +38,14 @@ type Skin = {
 };
 
 const TEMPLATE_SKINS: Record<TemplateKey, Skin> = {
+  clarity: {
+    rootClass: "",
+    heroFrame: "rounded-3xl bg-white shadow-xl shadow-black/5 border border-black/5 p-8",
+    eyebrowFont: "font-sans uppercase tracking-[0.18em]",
+    headlineFont: "font-display",
+    accentBar: "bg-[#D9805F]",
+    pullQuoteFont: "font-display",
+  },
   polaroid: {
     rootClass: "paper-texture",
     heroFrame: "bg-white/60 backdrop-blur-sm shadow-xl shadow-slate-900/5 border border-black/5 rounded-sm",

@@ -931,6 +931,9 @@ const ATRIUM: ChromeBundle = {
 };
 
 export const TEMPLATE_CHROME: Record<TemplateKey, ChromeBundle> = {
+  // Clarity renders its own inline copy in Clarity.tsx; GARDEN (calm,
+  // considered) is the closest tonal cousin for any legacy pickChrome() caller.
+  clarity: GARDEN,
   sunrise: SUNRISE,
   garden: GARDEN,
   constellation: CONSTELLATION,

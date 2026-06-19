@@ -1,10 +1,11 @@
 import { z } from "zod";
 
-// Catalog: garden, sunrise, constellation, polaroid, playful_modern,
+// Catalog: clarity, garden, sunrise, constellation, polaroid, playful_modern,
 // front_porch, hello_friend. atrium + quiet_practice were retired
 // 2026-05 along with framework + navy_editorial; legacy stored values
 // are normalised by `normalizeTemplateKey` at the boundary.
 export const TemplateKey = z.enum([
+  "clarity",
   "garden",
   "sunrise",
   "constellation",

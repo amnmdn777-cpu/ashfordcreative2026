@@ -7,6 +7,10 @@ import { PageCTA } from "@site/components/PageCTA";
 import { img } from "@site/lib/api";
 
 const PERSONA: Record<string, { en: string; es: string }> = {
+  clarity: {
+    en: "for modern practices that want a clean, premium, editorial first impression",
+    es: "para prácticas modernas que quieren una primera impresión limpia, premium y editorial",
+  },
   garden: {
     en: "for warm, family-friendly trauma-informed practices",
     es: "para prácticas cálidas, familiares e informadas en trauma",
@@ -46,7 +50,13 @@ const COVER: Record<string, string | null> = {};
 // of yet. Each is a tiny on-brand composition (not a generic gradient) so
 // the prospect still gets a clear visual cue of the design direction —
 // palette, type, motif — without us shipping a stale or misleading shot.
-function PlaceholderThumb({ tplKey, label }: { tplKey: string; label: string }) {
+function PlaceholderThumb({
+  tplKey,
+  label,
+}: {
+  tplKey: string;
+  label: string;
+}) {
   if (tplKey === "playful_modern") {
     return (
       <div
@@ -56,7 +66,11 @@ function PlaceholderThumb({ tplKey, label }: { tplKey: string; label: string }) 
             "linear-gradient(135deg, #FDF7F4 0%, #FF6B5A 50%, #2C2654 100%)",
         }}
       >
-        <svg viewBox="0 0 400 300" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice">
+        <svg
+          viewBox="0 0 400 300"
+          className="absolute inset-0 w-full h-full"
+          preserveAspectRatio="xMidYMid slice"
+        >
           <g fill="#C9B6FF" opacity="0.85">
             <path d="M60 70c0-8 12-12 16-4 4-8 16-4 16 4 0 10-16 22-16 22S60 80 60 70z" />
             <circle cx="320" cy="60" r="10" />
@@ -66,9 +80,21 @@ function PlaceholderThumb({ tplKey, label }: { tplKey: string; label: string }) 
             <circle cx="340" cy="220" r="14" />
             <circle cx="335" cy="217" r="2" fill="#2C2654" />
             <circle cx="345" cy="217" r="2" fill="#2C2654" />
-            <path d="M332 223q8 6 16 0" stroke="#2C2654" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+            <path
+              d="M332 223q8 6 16 0"
+              stroke="#2C2654"
+              strokeWidth="1.5"
+              fill="none"
+              strokeLinecap="round"
+            />
           </g>
-          <path d="M40 180q40-10 80 0t80 0 80-10 80 10" stroke="#FFFFFF" strokeWidth="2" fill="none" opacity="0.5" />
+          <path
+            d="M40 180q40-10 80 0t80 0 80-10 80 10"
+            stroke="#FFFFFF"
+            strokeWidth="2"
+            fill="none"
+            opacity="0.5"
+          />
         </svg>
         <div className="absolute bottom-6 left-7 right-7">
           <div className="font-sans font-black text-3xl lg:text-4xl tracking-tight text-white drop-shadow">
@@ -85,13 +111,29 @@ function PlaceholderThumb({ tplKey, label }: { tplKey: string; label: string }) 
         className="relative w-full h-full overflow-hidden group-hover:scale-[1.02] transition-transform duration-700"
         style={{ background: "#F8F0E5" }}
       >
-        <svg viewBox="0 0 400 300" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice">
-          <rect x="0" y="200" width="400" height="100" fill="#F2D67E" opacity="0.55" />
+        <svg
+          viewBox="0 0 400 300"
+          className="absolute inset-0 w-full h-full"
+          preserveAspectRatio="xMidYMid slice"
+        >
+          <rect
+            x="0"
+            y="200"
+            width="400"
+            height="100"
+            fill="#F2D67E"
+            opacity="0.55"
+          />
           <path d="M0 200 L200 110 L400 200 Z" fill="#6B4423" />
           <rect x="170" y="170" width="60" height="60" fill="#2F1F14" />
           <rect x="186" y="186" width="28" height="44" fill="#C97B5A" />
           <circle cx="208" cy="208" r="1.5" fill="#F2D67E" />
-          <path d="M0 200 L400 200" stroke="#2F1F14" strokeWidth="1" opacity="0.4" />
+          <path
+            d="M0 200 L400 200"
+            stroke="#2F1F14"
+            strokeWidth="1"
+            opacity="0.4"
+          />
           <g stroke="#6B4423" strokeWidth="1.2" opacity="0.6">
             <line x1="40" y1="230" x2="40" y2="280" />
             <line x1="80" y1="230" x2="80" y2="280" />
@@ -100,10 +142,16 @@ function PlaceholderThumb({ tplKey, label }: { tplKey: string; label: string }) 
           </g>
         </svg>
         <div className="absolute top-6 left-7 right-7">
-          <div className="font-serif italic text-4xl tracking-tight" style={{ color: "#2F1F14", fontFamily: "Fraunces, Georgia, serif" }}>
+          <div
+            className="font-serif italic text-4xl tracking-tight"
+            style={{ color: "#2F1F14", fontFamily: "Fraunces, Georgia, serif" }}
+          >
             {label}
           </div>
-          <div className="font-mono text-[10px] tracking-[0.25em] uppercase mt-1" style={{ color: "#6B4423" }}>
+          <div
+            className="font-mono text-[10px] tracking-[0.25em] uppercase mt-1"
+            style={{ color: "#6B4423" }}
+          >
             San Antonio · Texas
           </div>
         </div>
@@ -117,21 +165,44 @@ function PlaceholderThumb({ tplKey, label }: { tplKey: string; label: string }) 
         className="relative w-full h-full overflow-hidden group-hover:scale-[1.02] transition-transform duration-700"
         style={{ background: "#2D2A6E" }}
       >
-        <svg viewBox="0 0 400 300" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice">
+        <svg
+          viewBox="0 0 400 300"
+          className="absolute inset-0 w-full h-full"
+          preserveAspectRatio="xMidYMid slice"
+        >
           <path
             d="M40 60 Q40 40 60 40 L300 40 Q320 40 320 60 L320 130 Q320 150 300 150 L120 150 L90 180 L100 150 L60 150 Q40 150 40 130 Z"
             fill="#FFD86B"
           />
-          <text x="70" y="105" fontFamily="Inter, system-ui, sans-serif" fontWeight="700" fontSize="28" fill="#2D2A6E">
+          <text
+            x="70"
+            y="105"
+            fontFamily="Inter, system-ui, sans-serif"
+            fontWeight="700"
+            fontSize="28"
+            fill="#2D2A6E"
+          >
             Hi, I&apos;m Sam.
           </text>
           <circle cx="350" cy="220" r="32" fill="#FF8C7A" />
           <circle cx="342" cy="215" r="2.5" fill="#2D2A6E" />
           <circle cx="358" cy="215" r="2.5" fill="#2D2A6E" />
-          <path d="M338 225 q12 10 24 0" stroke="#2D2A6E" strokeWidth="2" fill="none" strokeLinecap="round" />
+          <path
+            d="M338 225 q12 10 24 0"
+            stroke="#2D2A6E"
+            strokeWidth="2"
+            fill="none"
+            strokeLinecap="round"
+          />
         </svg>
         <div className="absolute bottom-6 left-7 right-7">
-          <div className="font-sans font-bold text-3xl tracking-tight" style={{ color: "#FFF5EE", fontFamily: "Inter, system-ui, sans-serif" }}>
+          <div
+            className="font-sans font-bold text-3xl tracking-tight"
+            style={{
+              color: "#FFF5EE",
+              fontFamily: "Inter, system-ui, sans-serif",
+            }}
+          >
             {label}
           </div>
         </div>
@@ -143,9 +214,15 @@ function PlaceholderThumb({ tplKey, label }: { tplKey: string; label: string }) 
   return (
     <div
       className="w-full h-full flex items-end p-7 group-hover:scale-[1.02] transition-transform duration-700"
-      style={{ background: "linear-gradient(135deg, #fbf8f3 0%, #d4d4d8 55%, #3f3f46 100%)" }}
+      style={{
+        background:
+          "linear-gradient(135deg, #fbf8f3 0%, #d4d4d8 55%, #3f3f46 100%)",
+      }}
     >
-      <div className="font-display text-3xl lg:text-4xl tracking-tight" style={{ color: "#1f2937" }}>
+      <div
+        className="font-display text-3xl lg:text-4xl tracking-tight"
+        style={{ color: "#1f2937" }}
+      >
         {label}
       </div>
     </div>
@@ -156,6 +233,8 @@ function PlaceholderThumb({ tplKey, label }: { tplKey: string; label: string }) 
 // impact rather than catalog order. Independent of the per-prospect
 // preview, where Garden is the safer default landing template.
 const TEMPLATE_DISPLAY_ORDER = [
+  // Premium flagship — clean, modern, editorial.
+  "clarity",
   // Bold visual leads — cinematic + architectural.
   "constellation",
   // Warm mid-pack — perinatal, family-friendly, Texas-rooted.
@@ -169,11 +248,58 @@ const TEMPLATE_DISPLAY_ORDER = [
   "playful_modern",
 ];
 
+// Designed CSS thumbnail for Clarity (no photographic cover shipped yet) —
+// a tiny on-brand mock of the warm-clay landing page: linen field, bold
+// ink headline blocks, a clay CTA pill, and the two-square mark.
+function ClarityThumb() {
+  return (
+    <div
+      className="relative w-full h-full overflow-hidden group-hover:scale-[1.02] transition-transform duration-700"
+      style={{ background: "#F5F1EA" }}
+    >
+      <div
+        className="absolute -top-10 -right-8 w-44 h-44 rounded-full"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(197,106,69,0.38), transparent 65%)",
+          filter: "blur(26px)",
+        }}
+      />
+      <div className="absolute inset-0 p-7 flex flex-col justify-center">
+        <div className="flex items-center gap-1.5 mb-5">
+          <span
+            className="block w-3 h-3 rounded-[3px]"
+            style={{ background: "#1F1B17" }}
+          />
+          <span
+            className="block w-3 h-3 rounded-full"
+            style={{ background: "#1F1B17", opacity: 0.5 }}
+          />
+        </div>
+        <div className="space-y-2">
+          <div
+            className="h-4 rounded-sm"
+            style={{ width: "88%", background: "#1F1B17" }}
+          />
+          <div
+            className="h-4 rounded-sm"
+            style={{ width: "62%", background: "#1F1B17" }}
+          />
+        </div>
+        <div
+          className="mt-5 h-6 w-28 rounded-full"
+          style={{ background: "#C56A45" }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function Templates() {
   const { t, locale } = useI18n();
-  const tpls = TEMPLATE_DISPLAY_ORDER
-    .map((k) => TEMPLATES[k])
-    .filter((t): t is NonNullable<typeof t> => Boolean(t));
+  const tpls = TEMPLATE_DISPLAY_ORDER.map((k) => TEMPLATES[k]).filter(
+    (t): t is NonNullable<typeof t> => Boolean(t),
+  );
 
   return (
     <>
@@ -209,11 +335,17 @@ export default function Templates() {
                 className="block group bg-paper border border-ink/10 hover:border-sage/40 hover:shadow-lg transition-all rounded-sm overflow-hidden cursor-pointer"
               >
                 <div className="aspect-[4/3] bg-ink/5 overflow-hidden">
-                  <img
-                    src={COVER[tpl.key] ?? img(`images/templates/${tpl.key}.jpg`)}
-                    alt={tpl.label}
-                    className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700"
-                  />
+                  {tpl.key === "clarity" ? (
+                    <ClarityThumb />
+                  ) : (
+                    <img
+                      src={
+                        COVER[tpl.key] ?? img(`images/templates/${tpl.key}.jpg`)
+                      }
+                      alt={tpl.label}
+                      className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700"
+                    />
+                  )}
                 </div>
                 <div className="p-6">
                   <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-sage mb-2">

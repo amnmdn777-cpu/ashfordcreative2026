@@ -493,6 +493,7 @@ function GenericSkin(props: SkinProps) {
 }
 
 const SKINS: Record<TemplateKey, (props: SkinProps) => React.ReactElement> = {
+  clarity: GenericSkin,
   garden: GenericSkin,
   sunrise: GenericSkin,
   constellation: GenericSkin,

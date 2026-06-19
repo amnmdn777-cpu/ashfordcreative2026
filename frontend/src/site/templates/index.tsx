@@ -7,6 +7,7 @@ import Garden from "./Garden";
 // renders only one template at a time, so paying the bundle cost
 // for the others up-front is wasted. Garden stays statically imported
 // because it's the default `active` selection.
+const Clarity = lazy(() => import("./Clarity"));
 const Polaroid = lazy(() => import("./Polaroid"));
 const Sunrise = lazy(() => import("./Sunrise"));
 const Constellation = lazy(() => import("./Constellation"));
@@ -43,6 +44,7 @@ const TemplateLoadingFallback = () => (
 );
 
 export const TEMPLATE_COMPONENTS: Record<TemplateKey, ComponentType<TemplateProps>> = {
+  clarity: withSuspense(Clarity, "clarity"),
   garden: withSuspense(Garden, "garden"),
   sunrise: withSuspense(Sunrise, "sunrise"),
   constellation: withSuspense(Constellation, "constellation"),

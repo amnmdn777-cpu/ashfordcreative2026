@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export type TemplateKeyLiteral =
+  | "clarity"
   | "garden"
   | "sunrise"
   | "constellation"
@@ -71,6 +72,7 @@ export type TemplateDef = {
  * Source of truth for any UI that needs to enumerate every template.
  */
 export const TEMPLATE_KEYS: readonly TemplateKeyLiteral[] = [
+  "clarity",
   "constellation",
   "sunrise",
   "garden",
@@ -81,6 +83,36 @@ export const TEMPLATE_KEYS: readonly TemplateKeyLiteral[] = [
 ] as const;
 
 export const TEMPLATES: Record<string, TemplateDef> = {
+  clarity: {
+    key: "clarity",
+    label: "Clarity",
+    description:
+      "Clean, modern, and premium. Oversized bold headlines, generous whitespace, and soft, warmly-lit photography. For practices that want a high-end, editorial first impression — calm, confident, and unmistakably designed.",
+    font: "Space Grotesk",
+    fontBody: "Inter",
+    vibe: "clean, modern, premium",
+    paletteKeys: ["clarity_warm"],
+    voiceHint: {
+      en: {
+        paragraph:
+          "Confident, spacious, and editorial. Lead with a short, bold statement of what the practice does and who it's for, then let each line breathe. Clean sentences, no clutter, nothing clinical or cold. Credible and calm — the page should feel designed, not decorated.",
+        examples: [
+          "Evidence-based therapy for adults navigating anxiety, burnout, and life transitions.",
+          "In-network with major insurance. New clients are usually seen within two weeks.",
+          "A measured, modern approach to the slow work of feeling like yourself again.",
+        ],
+      },
+      es: {
+        paragraph:
+          "Segura, espaciosa y editorial. Empieza con una afirmación breve y contundente de lo que hace la práctica y para quién, y deja respirar cada línea. Frases limpias, sin recargar, nada frío ni demasiado clínico. Con credibilidad y calma — la página debe sentirse diseñada, no decorada.",
+        examples: [
+          "Terapia basada en evidencia para adultos que enfrentan ansiedad, agotamiento y transiciones de vida.",
+          "En red con los principales seguros. Solemos atender nuevos pacientes en menos de dos semanas.",
+          "Un enfoque moderno y medido para el trabajo lento de volver a sentirte tú mismo.",
+        ],
+      },
+    },
+  },
   garden: {
     key: "garden",
     label: "Garden",
@@ -322,6 +354,18 @@ export type PaletteDef = {
  * color identity that the design team curates.
  */
 export const PALETTES: Record<string, PaletteDef> = {
+  clarity_warm: {
+    key: "clarity_warm",
+    label: "Warm Clay & Ink",
+    templateKey: "clarity",
+    primary: "#1A1A1A",
+    secondary: "#EAD8C6",
+    accent: "#C56A45",
+    surface: "#F5F1EA",
+    surfaceSoft: "#FFFFFF",
+    ink: "#1F1B17",
+    muted: "#6A6157",
+  },
   garden_sage: {
     key: "garden_sage",
     label: "Sage & Cream",

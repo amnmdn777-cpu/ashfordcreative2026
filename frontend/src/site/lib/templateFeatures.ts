@@ -114,6 +114,7 @@ const STANDARD: TemplateFeatureMap = {
 };
 
 export const TEMPLATE_FEATURES: Record<TemplateKey, TemplateFeatureMap> = {
+  clarity: STANDARD,
   garden: STANDARD,
   sunrise: STANDARD,
   constellation: STANDARD,
