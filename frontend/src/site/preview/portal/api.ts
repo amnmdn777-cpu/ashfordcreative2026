@@ -89,7 +89,14 @@ const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
           any: (s: AbortSignal[]) => AbortSignal;
         }).any([init.signal, timeoutSignal])
       : (init?.signal ?? timeoutSignal);
-  const res = await fetch(url, { ...init, headers, signal: composed });
+  // `cache: "no-store"` makes the browser bypass its HTTP cache entirely for
+  // every portal request: it never reads a stored copy and never writes one.
+  // This is the client-side half of the cache-busting guarantee (the server
+  // sends `Cache-Control: no-store` too). It means a prospect whose browser
+  // cached an old "expired" (410) response *before* the portal was revived
+  // will still fetch the live page instead of being stuck on the dead copy —
+  // the one case a response-header-only fix can't reach.
+  const res = await fetch(url, { ...init, headers, signal: composed, cache: "no-store" });
   if (!res.ok) {
     let msg = `HTTP ${res.status}`;
     try {
