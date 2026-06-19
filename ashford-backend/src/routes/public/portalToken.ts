@@ -16,6 +16,9 @@ router.get(
   "/p/:token",
   asyncHandler(async (req, res) => {
     const { token } = req.params;
+    // Don't cache the redirect — a cached 302 → ?expired=1 would keep sending
+    // the prospect to the "expired" screen even after the portal is revived.
+    res.setHeader("Cache-Control", "no-store, max-age=0");
 
     const [portal] = await db
       .select({

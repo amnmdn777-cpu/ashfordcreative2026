@@ -42,6 +42,18 @@ import { unauthorized } from "../../lib/errors";
 
 const router: IRouter = Router();
 
+// Never let browsers / proxies cache portal responses. Per HTTP, a `410 Gone`
+// (expired portal) and `404` are cacheable by DEFAULT — so a prospect who once
+// opened an expired/old link would keep seeing the stale "no longer active"
+// page from their cache even after we revive the portal. `no-store` forces
+// every visit to re-validate against the live state, so a fix is seen
+// immediately without the prospect having to clear their cache. Set as
+// middleware so it also covers error responses thrown to the errorHandler.
+router.use((_req, res, next) => {
+  res.setHeader("Cache-Control", "no-store, max-age=0");
+  next();
+});
+
 const SlugParam = z
   .string()
   .min(2)
