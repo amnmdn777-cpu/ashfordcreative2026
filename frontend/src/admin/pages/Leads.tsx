@@ -204,19 +204,36 @@ export default function LeadsPage() {
     }
   };
 
+  // Download the import template client-side (a cross-origin <a download> to
+  // the auth-gated endpoint doesn't reliably download — the download attr is
+  // ignored cross-origin). The columns mirror /admin/leads/import-template.
+  const downloadTemplate = () => {
+    const csv =
+      "name,practice,specialty,city,state,phone,email,current_website,locale\n" +
+      "Jane Smith LCSW,Smith Counseling,LCSW,Austin,TX,5125550101,jane@example.com,janetherapy.com,en\n" +
+      "Maria Lopez LMFT,Lopez Counseling,LMFT,Houston,TX,7135550199,maria@example.com,,es\n";
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "leads-import-template.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="p-6 md:p-10">
       <PageHeader
         title="Leads"
         description="Bulk import Texas mental-health practitioners. Reps claim from the pool."
         actions={
-          <a
-            href={api.importTemplateUrl()}
+          <button
+            type="button"
+            onClick={downloadTemplate}
             className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm hover:bg-muted transition-colors"
-            download
           >
             <Download size={14} /> Download template
-          </a>
+          </button>
         }
       />
 
