@@ -73,9 +73,12 @@ function buildSystemPrompt(p: ChatPractice, locale: "en" | "es"): string {
   return lines.filter(Boolean).join("\n");
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 async function askGeminiDirect(
   system: string,
   history: Msg[],
+  attempt = 0,
 ): Promise<string> {
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${DEV_KEY}`,
@@ -92,11 +95,18 @@ async function askGeminiDirect(
       }),
     },
   );
+  // Free-tier rate limit (429) / transient 503 — back off briefly and retry
+  // up to twice. This is the main cause of "sometimes it doesn't respond"
+  // when messages come in quickly on the free tier.
+  if ((res.status === 429 || res.status === 503) && attempt < 2) {
+    await sleep(1200 * (attempt + 1));
+    return askGeminiDirect(system, history, attempt + 1);
+  }
   if (!res.ok) throw new Error(`Gemini ${res.status}`);
   const data = await res.json();
   return (
     data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ??
-    "Sorry — I didn't catch that. Could you rephrase?"
+    "Sorry — I didn't catch that. Could you rephrase, or tap “Contact” to reach the office?"
   );
 }
 
@@ -195,7 +205,9 @@ export function ClarityChatWidget({
   // which would otherwise trap `position: fixed` children relative to
   // that container instead of the viewport — making the button invisible.
   const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   if (!mounted) return null;
 
   const ui = (
@@ -223,17 +235,37 @@ export function ClarityChatWidget({
           color: "#faf9f7",
           fontFamily: "Inter, sans-serif",
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
+        onMouseEnter={(e) =>
+          (e.currentTarget.style.transform = "translateY(-2px)")
+        }
         onMouseLeave={(e) => (e.currentTarget.style.transform = "")}
       >
         {/* Robot / bot icon */}
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-          <rect x="3" y="8" width="18" height="12" rx="3" stroke="currentColor" strokeWidth="2" />
+          <rect
+            x="3"
+            y="8"
+            width="18"
+            height="12"
+            rx="3"
+            stroke="currentColor"
+            strokeWidth="2"
+          />
           <circle cx="8.5" cy="14" r="1.5" fill="currentColor" />
           <circle cx="15.5" cy="14" r="1.5" fill="currentColor" />
-          <path d="M12 2v4M10 2h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <path
+            d="M12 2v4M10 2h4"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
           <circle cx="12" cy="6" r="1.5" fill="currentColor" />
-          <path d="M7 20v2M17 20v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <path
+            d="M7 20v2M17 20v2"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
         </svg>
         <span style={{ fontSize: "14px", fontWeight: 500 }}>
           {tt("Ask us", "Pregúntanos")}
@@ -340,7 +372,10 @@ export function ClarityChatWidget({
                     fontFamily: "Inter, sans-serif",
                     ...(m.role === "user"
                       ? { backgroundColor: "#1a1a1a", color: "#faf9f7" }
-                      : { backgroundColor: "rgba(210,180,160,0.35)", color: "#1a1a1a" }),
+                      : {
+                          backgroundColor: "rgba(210,180,160,0.35)",
+                          color: "#1a1a1a",
+                        }),
                   }}
                 >
                   {m.text}

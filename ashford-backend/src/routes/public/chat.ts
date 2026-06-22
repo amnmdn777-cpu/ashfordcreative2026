@@ -97,24 +97,36 @@ router.post(
       return;
     }
 
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    const callGemini = async (): Promise<globalThis.Response> => {
+      const payload = {
+        method: "POST" as const,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system_instruction: {
+            parts: [{ text: buildSystemPrompt(practice, locale) }],
+          },
+          contents: messages.map((m) => ({
+            role: m.role,
+            parts: [{ text: m.text }],
+          })),
+          generationConfig: { temperature: 0.4, maxOutputTokens: 400 },
+        }),
+      };
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${env.geminiApiKey}`;
+      // Retry transient rate-limit / unavailable up to twice with backoff.
+      for (let attempt = 0; ; attempt++) {
+        const resp = await fetch(url, payload);
+        if ((resp.status === 429 || resp.status === 503) && attempt < 2) {
+          await sleep(1000 * (attempt + 1));
+          continue;
+        }
+        return resp;
+      }
+    };
+
     try {
-      const r = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${env.geminiApiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            system_instruction: {
-              parts: [{ text: buildSystemPrompt(practice, locale) }],
-            },
-            contents: messages.map((m) => ({
-              role: m.role,
-              parts: [{ text: m.text }],
-            })),
-            generationConfig: { temperature: 0.4, maxOutputTokens: 400 },
-          }),
-        },
-      );
+      const r = await callGemini();
       if (!r.ok) {
         logger.warn({ status: r.status }, "[public-chat] gemini non-200");
         res.json({ reply: FALLBACK(locale) });
