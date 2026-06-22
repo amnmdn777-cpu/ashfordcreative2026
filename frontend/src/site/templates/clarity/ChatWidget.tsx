@@ -207,7 +207,7 @@ export function ClarityChatWidget({
         aria-label={tt("Chat with us", "Chatea con nosotros")}
         style={{
           position: "fixed",
-          bottom: "20px",
+          bottom: "80px",
           right: "20px",
           zIndex: 9999,
           display: "flex",
@@ -226,15 +226,14 @@ export function ClarityChatWidget({
         onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
         onMouseLeave={(e) => (e.currentTarget.style.transform = "")}
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
-          <path
-            d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.6-.8L3 21l1.9-5.4A8.5 8.5 0 1 1 21 11.5z"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+        {/* Robot / bot icon */}
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <rect x="3" y="8" width="18" height="12" rx="3" stroke="currentColor" strokeWidth="2" />
+          <circle cx="8.5" cy="14" r="1.5" fill="currentColor" />
+          <circle cx="15.5" cy="14" r="1.5" fill="currentColor" />
+          <path d="M12 2v4M10 2h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <circle cx="12" cy="6" r="1.5" fill="currentColor" />
+          <path d="M7 20v2M17 20v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
         <span style={{ fontSize: "14px", fontWeight: 500 }}>
           {tt("Ask us", "Pregúntanos")}
@@ -246,7 +245,7 @@ export function ClarityChatWidget({
         <div
           style={{
             position: "fixed",
-            bottom: "80px",
+            bottom: "140px",
             right: "20px",
             zIndex: 9999,
             width: "min(92vw, 380px)",
