@@ -3676,15 +3676,14 @@ function ConfirmWonModal({
 
 
 const TEMPLATE_CHOICES: Array<{ key: string; label: string }> = [
-  { key: "atrium", label: "Atrium" },
-  { key: "garden", label: "Garden" },
-  { key: "sunrise", label: "Sunrise" },
-  { key: "polaroid", label: "Polaroid" },
-  { key: "playful_modern", label: "Playful Modern" },
+  { key: "clarity", label: "Clarity" },
   { key: "constellation", label: "Constellation" },
+  { key: "sunrise", label: "Sunrise" },
+  { key: "garden", label: "Garden" },
   { key: "front_porch", label: "Front Porch" },
+  { key: "polaroid", label: "Polaroid" },
   { key: "hello_friend", label: "Hello Friend" },
-  { key: "quiet_practice", label: "Quiet Practice" },
+  { key: "playful_modern", label: "Playful Modern" },
 ];
 
 // QA Change #5 (2026-06-22): renamed from the old "Snapshot" panel. The

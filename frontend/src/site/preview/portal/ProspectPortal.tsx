@@ -79,13 +79,14 @@ import {
 // inline comment near where the picker used to render below.
 
 const ALL_TEMPLATE_KEYS: TemplateKey[] = [
-  "garden",
-  "sunrise",
+  "clarity",
   "constellation",
-  "polaroid",
-  "playful_modern",
+  "sunrise",
+  "garden",
   "front_porch",
+  "polaroid",
   "hello_friend",
+  "playful_modern",
 ];
 
 /**
