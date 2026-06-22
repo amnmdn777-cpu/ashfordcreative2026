@@ -312,6 +312,40 @@ export default function Home() {
                       </p>
                     </div>
                   </div>
+
+                  {/* QA Notes A (2026-06-22): two additional "handled"
+                      bubbles + an "and so much more" closer per founder. */}
+                  <div className="flex gap-8 items-start group">
+                    <div className="w-20 h-20 flex-shrink-0 rounded-full border-[1.5px] border-gold flex items-center justify-center text-3xl italic text-gold font-medium group-hover:bg-gold group-hover:text-cream transition-colors duration-500">
+                      ✦
+                    </div>
+                    <div>
+                      <h3 className="text-3xl mb-3 font-medium text-cream-warm">
+                        {t("home_handled_specialties_title")}
+                      </h3>
+                      <p className="opacity-60 text-xl leading-relaxed italic">
+                        {t("home_handled_specialties_body")}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-8 items-start group">
+                    <div className="w-20 h-20 flex-shrink-0 rounded-full border-[1.5px] border-sage flex items-center justify-center text-3xl italic text-sage font-medium group-hover:bg-sage group-hover:text-cream transition-colors duration-500">
+                      $
+                    </div>
+                    <div>
+                      <h3 className="text-3xl mb-3 font-medium text-cream-warm">
+                        {t("home_handled_insurance_title")}
+                      </h3>
+                      <p className="opacity-60 text-xl leading-relaxed italic">
+                        {t("home_handled_insurance_body")}
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="text-2xl italic text-cream-warm/70 pl-28">
+                    {t("home_handled_more")}
+                  </p>
                 </div>
               </div>
             </div>

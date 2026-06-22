@@ -22,8 +22,8 @@ export default function FindTherapistIndex() {
   const es = locale === "es";
 
   const title = es
-    ? "Sitios web para terapeutas — Texas (todas las ciudades)"
-    : "Therapist websites — Texas (every city)";
+    ? "Sitios web para terapeutas en todo Texas"
+    : "Therapist websites across Texas";
 
   const description = es
     ? "Sitios web bilingües, hechos a mano, para terapeutas en 20 ciudades de Texas y 5 especialidades — Boutique desde $199/mes, sin tarifa de configuración."

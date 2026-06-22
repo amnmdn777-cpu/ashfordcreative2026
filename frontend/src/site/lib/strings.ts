@@ -635,7 +635,7 @@ export const translations = {
     // The cap is per pod, not company-wide; the "same human day 1 / day
     // 365" promise is what the cap protects.
     about_v2_body:
-      "Each pod caps at 200 active sites so the rep who calls you on day one is the same human answering email on day 365. New regional pods open as markets warrant.",
+      "The rep who calls you on day one is the same human answering your email on day 365 — a small studio, on purpose, so service never gets diluted as we grow.",
     about_v3_title: "Spanish is non-negotiable in Texas.",
     about_v3_body:
       "Every site ships in English and Spanish — real translation, not Google Translate. The patient searching in their first language actually lands on you.",
@@ -798,8 +798,15 @@ export const translations = {
     home_handled_hosting_title: "Looked after, around the clock",
     home_handled_hosting_body:
       "We look after your site quietly — every detail handled in the background. You'll never have to log in.",
+    home_handled_specialties_title: "Shows your specialties",
+    home_handled_specialties_body:
+      "Your modalities and the work you actually do, laid out so the right patient recognises themselves and reaches out.",
+    home_handled_insurance_title: "Explains insurance & costs",
+    home_handled_insurance_body:
+      "Fees, sliding scale, and which plans you take — answered up front, so fewer “do you take my insurance?” emails land in your inbox.",
+    home_handled_more: "…and so much more.",
     home_voice_quote:
-      "Boutique is greater than bloated. We cap each pod at 200 active sites, so the rep who answers your call on day one is the same human on day 365.",
+      "Boutique is greater than bloated. The rep who answers your call on day one is the same human on day 365.",
     home_templates_title_l1: "Seven looks.",
     home_templates_title_l2: "One flat price.",
     home_templates_subtitle:
@@ -817,7 +824,7 @@ export const translations = {
 
     // Home — certification chips
     cert_texas: "Texas-based",
-    cert_boutique: "Boutique (200 / pod)",
+    cert_boutique: "Boutique studio",
     cert_bilingual: "EN / ES",
     cert_crisis: "Crisis Resources (988)",
     cert_founded: "Founded 2014",
@@ -2269,8 +2276,15 @@ export const translations = {
     home_handled_hosting_title: "Cuidado, día y noche",
     home_handled_hosting_body:
       "Cuidamos tu sitio en silencio — cada detalle gestionado en segundo plano. Nunca tendrás que iniciar sesión.",
+    home_handled_specialties_title: "Muestra tus especialidades",
+    home_handled_specialties_body:
+      "Tus modalidades y el trabajo que realmente haces, presentados para que el paciente adecuado se reconozca y te contacte.",
+    home_handled_insurance_title: "Explica seguros y costos",
+    home_handled_insurance_body:
+      "Tarifas, escala móvil y qué planes aceptas — respondidos por adelantado, para que lleguen menos correos de “¿aceptas mi seguro?”.",
+    home_handled_more: "…y mucho más.",
     home_voice_quote:
-      "Boutique es mejor que inflado. Cada pod limita a 200 sitios activos, así que el representante que te atiende el primer día es el mismo el día 365.",
+      "Boutique es mejor que inflado. El representante que te atiende el primer día es el mismo el día 365.",
     home_templates_title_l1: "Siete estilos.",
     home_templates_title_l2: "Un precio único.",
     home_templates_subtitle:
@@ -2288,7 +2302,7 @@ export const translations = {
 
     // Home — certification chips
     cert_texas: "Basados en Texas",
-    cert_boutique: "Boutique (200 / pod)",
+    cert_boutique: "Boutique studio",
     cert_bilingual: "EN / ES",
     cert_crisis: "Recursos de crisis (988)",
     cert_founded: "Fundada en 2014",

@@ -1,38 +1,56 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useRoute } from "wouter";
+import { Link } from "wouter";
 import { Phone } from "lucide-react";
 import { api, fmtDate } from "@rep/lib/api";
 import { PageHeader } from "@rep/components/RepLayout";
-import { ScoreBadge } from "@rep/components/ScoreBadge";
 
-// "Work in Progress" is the rep-facing label for the `nurturing` status.
-// The previous "Active" tab (showing the `claimed` status) is gone — reps
-// no longer auto-claim a lead just by opening it, so there is no
-// intermediate "claimed but not worked" bucket to surface.
-const TABS: {
-  key: "nurturing" | "won" | "disqualified" | "cold" | "all";
-  label: string;
-}[] = [
-  { key: "nurturing", label: "Work in Progress" },
-  { key: "cold", label: "Cold" },
+// QA Change #1 (2026-06-22): the "Status" concept (Work in Progress /
+// Cold / Won / Disqualified) is retired. Leads now carry a single
+// Temperature classification with five values. We DERIVE it from the
+// legacy status + temperature columns so no DB migration is required:
+// workflow-final states (won / disqualified) win, then the rep's
+// temperature read, then "unset".
+export type TempValue = "won" | "disqualified" | "hot" | "lukewarm" | "cold" | "unset";
+
+export const TEMP_ORDER: { key: Exclude<TempValue, "unset">; label: string }[] = [
   { key: "won", label: "Won" },
+  { key: "hot", label: "Hot" },
+  { key: "lukewarm", label: "Lukewarm" },
+  { key: "cold", label: "Cold" },
   { key: "disqualified", label: "Disqualified" },
-  { key: "all", label: "All" },
 ];
 
-const STATUS_STYLES: Record<string, string> = {
-  claimed: "bg-accent/10 text-accent border-accent/30",
-  nurturing: "bg-chart-3/10 text-chart-3 border-chart-3/30",
-  won: "bg-primary/10 text-primary border-primary/30",
-  disqualified: "bg-muted text-muted-foreground border-border",
-  cold: "bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-950/30 dark:text-sky-200 dark:border-sky-900",
+export const TEMP_LABELS: Record<TempValue, string> = {
+  won: "Won",
+  disqualified: "Disqualified",
+  hot: "Hot",
+  lukewarm: "Lukewarm",
+  cold: "Cold",
+  unset: "—",
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  nurturing: "Work in progress",
-  claimed: "Work in progress",
+export const TEMP_STYLES: Record<TempValue, string> = {
+  won: "bg-primary/10 text-primary border-primary/30",
+  disqualified: "bg-muted text-muted-foreground border-border",
+  hot: "bg-red-100 text-red-800 border-red-200 dark:bg-red-950/30 dark:text-red-200 dark:border-red-900",
+  lukewarm: "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/30 dark:text-amber-200 dark:border-amber-900",
+  cold: "bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-950/30 dark:text-sky-200 dark:border-sky-900",
+  unset: "border-border text-muted-foreground",
 };
+
+export function deriveTemperature(lead: {
+  status?: string | null;
+  temperature?: string | null;
+}): TempValue {
+  const status = lead.status ?? undefined;
+  const temp = lead.temperature ?? undefined;
+  if (status === "won") return "won";
+  if (status === "disqualified" || temp === "disqualifier") return "disqualified";
+  if (temp === "hot" || temp === "lukewarm" || temp === "cold") return temp;
+  if (status === "cold") return "cold";
+  return "unset";
+}
 
 // Normalize US phone formatting at render so the table isn't a mix of raw
 // import formats (mirrors AvailableLeads.formatPhoneCell).
@@ -46,52 +64,41 @@ function formatPhoneCell(raw: string | null | undefined): string {
 }
 
 export default function MyLeadsPage() {
-  // Allow deep-linking via /my-leads/<tab> (e.g. the sidebar's Cold leads
-  // entry). Unknown segments fall back to "active".
-  const [, params] = useRoute<{ tab?: string }>("/my-leads/:tab");
-  // Default to "All" so the rep sees every lead she owns in one table — the
-  // same unified view as the admin leads dashboard (M8). A deep-link tab
-  // (/my-leads/<tab>) still wins when present.
-  const initialTab =
-    (TABS.find((t) => t.key === params?.tab)?.key) ?? "all";
-  const [tab, setTab] = useState<(typeof TABS)[number]["key"]>(initialTab);
   // Typo-tolerant search box (server-side trigram match — see
   // services/leads.ts `getRepLeads`). Lets a rep type "Dolores" and find
   // "Delores Hendrix-Giles" in their own claimed pool.
   const [name, setName] = useState("");
-  // Founder feedback 2026-05-19: City / Specialty / No-website filters
-  // parity with Available leads, applied client-side over the rep's pool.
+  // QA Change #2 (2026-06-22): filter bar is Name / City / Specialty +
+  // Has email / Has phone / Temperature. The old QC / Website / date-range
+  // filters and the status tabs are removed.
   const [city, setCity] = useState("");
   const [specialty, setSpecialty] = useState("");
-  const [hasWebsite, setHasWebsite] = useState<"" | "yes" | "no">("");
-  // B7 (founder 2026-05-19) — filter by QC status.
-  const [qcFilter, setQcFilter] = useState<"" | "validated" | "stale" | "none">("");
-  // Admin-parity filters: temperature + date range (over `lastActivityAt`).
-  const [temp, setTemp] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [hasEmail, setHasEmail] = useState<"" | "yes" | "no">("");
+  const [hasPhone, setHasPhone] = useState<"" | "yes" | "no">("");
+  const [temp, setTemp] = useState<"" | TempValue>("");
+  // One unified table over every lead the rep owns (no status tabs).
   const { data, isLoading } = useQuery({
-    queryKey: ["leads", "mine", tab, name],
-    queryFn: () => api.myLeads(tab, name || undefined),
+    queryKey: ["leads", "mine", "all", name],
+    queryFn: () => api.myLeads("all", name || undefined),
   });
   const filteredData = (data?.leads ?? []).filter((lead: any) => {
     if (city.trim() && !(lead.city ?? "").toLowerCase().includes(city.trim().toLowerCase())) return false;
     if (specialty.trim() && !(lead.specialty ?? "").toLowerCase().includes(specialty.trim().toLowerCase())) return false;
-    if (hasWebsite === "yes" && !lead.currentWebsite) return false;
-    if (hasWebsite === "no" && lead.currentWebsite) return false;
-    if (qcFilter && (lead.qcStatus ?? "none") !== qcFilter) return false;
-    if (temp && (lead.temperature ?? "") !== temp) return false;
-    const activity = lead.lastActivityAt ? new Date(lead.lastActivityAt) : null;
-    if (dateFrom && (!activity || activity < new Date(dateFrom))) return false;
-    if (dateTo && (!activity || activity > new Date(`${dateTo}T23:59:59`))) return false;
+    const emailOk = !!(lead.email && String(lead.email).trim());
+    if (hasEmail === "yes" && !emailOk) return false;
+    if (hasEmail === "no" && emailOk) return false;
+    const phoneOk = !!(lead.phone && String(lead.phone).trim());
+    if (hasPhone === "yes" && !phoneOk) return false;
+    if (hasPhone === "no" && phoneOk) return false;
+    if (temp && deriveTemperature(lead) !== temp) return false;
     return true;
   });
 
   return (
-    <div className="px-4 md:px-8 py-8 md:py-10 max-w-7xl">
+    <div className="px-4 md:px-8 py-8 md:py-10 w-full">
       <PageHeader
         title="My leads"
-        description="Leads you've opened, by stage."
+        description="Every lead you've opened, in one list. Filter by temperature."
       />
 
       <div className="bg-card border border-card-border rounded-xl p-4 mb-4 shadow-sm flex flex-wrap gap-3 items-end">
@@ -108,84 +115,48 @@ export default function MyLeadsPage() {
           <input type="text" value={specialty} onChange={(e) => setSpecialty(e.target.value)} placeholder="e.g., LCSW" className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
         </label>
         <label className="block min-w-[140px]">
-          <span className="text-xs text-muted-foreground">Website</span>
-          <select value={hasWebsite} onChange={(e) => setHasWebsite(e.target.value as "" | "yes" | "no")} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+          <span className="text-xs text-muted-foreground">Has email</span>
+          <select value={hasEmail} onChange={(e) => setHasEmail(e.target.value as "" | "yes" | "no")} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
             <option value="">All</option>
-            <option value="yes">Has website</option>
-            <option value="no">No website</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
           </select>
         </label>
         <label className="block min-w-[140px]">
-          <span className="text-xs text-muted-foreground">QC</span>
-          <select value={qcFilter} onChange={(e) => setQcFilter(e.target.value as "" | "validated" | "stale" | "none")} data-testid="myleads-qc-filter" className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+          <span className="text-xs text-muted-foreground">Has phone</span>
+          <select value={hasPhone} onChange={(e) => setHasPhone(e.target.value as "" | "yes" | "no")} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
             <option value="">All</option>
-            <option value="validated">✓ Validated</option>
-            <option value="stale">⚠ Outdated</option>
-            <option value="none">No QC</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
           </select>
         </label>
-        <label className="block min-w-[140px]">
+        <label className="block min-w-[150px]">
           <span className="text-xs text-muted-foreground">Temperature</span>
-          <select value={temp} onChange={(e) => setTemp(e.target.value)} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+          <select value={temp} onChange={(e) => setTemp(e.target.value as "" | TempValue)} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
             <option value="">All</option>
-            <option value="hot">Hot</option>
-            <option value="lukewarm">Lukewarm</option>
-            <option value="cold">Cold</option>
-            <option value="disqualifier">Disqualified</option>
+            {TEMP_ORDER.map((o) => (
+              <option key={o.key} value={o.key}>{o.label}</option>
+            ))}
           </select>
         </label>
-        <label className="block min-w-[150px]">
-          <span className="text-xs text-muted-foreground">Active from</span>
-          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-        </label>
-        <label className="block min-w-[150px]">
-          <span className="text-xs text-muted-foreground">Active to</span>
-          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-        </label>
-        {(city || specialty || hasWebsite || qcFilter || temp || dateFrom || dateTo) && (
-          <button type="button" onClick={() => { setCity(""); setSpecialty(""); setHasWebsite(""); setQcFilter(""); setTemp(""); setDateFrom(""); setDateTo(""); }} className="text-xs text-muted-foreground hover:text-foreground underline">Clear filters</button>
+        {(city || specialty || hasEmail || hasPhone || temp) && (
+          <button type="button" onClick={() => { setCity(""); setSpecialty(""); setHasEmail(""); setHasPhone(""); setTemp(""); }} className="text-xs text-muted-foreground hover:text-foreground underline">Clear filters</button>
         )}
       </div>
-
-      <div className="flex gap-1 mb-4 border-b border-border overflow-x-auto">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
-              tab === t.key
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {tab === "nurturing" && (
-        <div className="mb-4 rounded-md border border-chart-3/30 bg-chart-3/5 px-4 py-3 text-sm text-foreground/80">
-          <span className="font-medium text-foreground">Work in Progress</span>{" "}
-          = leads you've picked up and are actively working. They stay yours
-          and won't get recycled to other reps as long as you keep activity
-          on them (SMS, email, callback, or preview).
-        </div>
-      )}
 
       <div className="bg-card border border-card-border rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
-                <th className="text-left px-4 py-3">Score</th>
+                <th className="text-left px-4 py-3">ID</th>
                 <th className="text-left px-4 py-3">Name</th>
                 <th className="text-left px-4 py-3">Practice</th>
                 <th className="text-left px-4 py-3">Specialty</th>
                 <th className="text-left px-4 py-3">City</th>
                 <th className="text-left px-4 py-3">Phone</th>
                 <th className="text-left px-4 py-3">Email</th>
-                <th className="text-left px-4 py-3">Status</th>
-                <th className="text-left px-4 py-3">Temp</th>
+                <th className="text-left px-4 py-3">Temperature</th>
                 <th className="text-left px-4 py-3">Last activity</th>
               </tr>
             </thead>
@@ -193,7 +164,7 @@ export default function MyLeadsPage() {
               {isLoading && (
                 <tr>
                   <td
-                    colSpan={10}
+                    colSpan={9}
                     className="px-4 py-10 text-center text-muted-foreground"
                   >
                     Loading…
@@ -203,7 +174,7 @@ export default function MyLeadsPage() {
               {data && filteredData.length === 0 && (
                 <tr>
                   <td
-                    colSpan={10}
+                    colSpan={9}
                     className="px-4 py-10 text-center text-muted-foreground"
                   >
                     No leads in this view.
@@ -212,12 +183,10 @@ export default function MyLeadsPage() {
               )}
               {filteredData.map((l) => (
                 <tr key={l.id} className="hover:bg-muted/30">
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <ScoreBadge
-                      tier={l.scoreTier as "A" | "B" | "C" | null | undefined}
-                      score={l.leadScore}
-                      breakdown={l.scoreBreakdown}
-                    />
+                  {/* QA Change #3 (2026-06-22): show the lead number (ID)
+                      instead of the score/scoring badge. */}
+                  <td className="px-4 py-3 whitespace-nowrap font-mono text-muted-foreground">
+                    #{l.id}
                   </td>
                   <td className="px-4 py-3 font-medium">
                     <Link
@@ -242,14 +211,16 @@ export default function MyLeadsPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="inline-flex flex-wrap items-center gap-1.5">
-                      <span
-                        className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full border ${
-                          STATUS_STYLES[l.status] ??
-                          "border-border text-muted-foreground"
-                        }`}
-                      >
-                        {STATUS_LABELS[l.status] ?? l.status}
-                      </span>
+                      {(() => {
+                        const tv = deriveTemperature(l);
+                        return (
+                          <span
+                            className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full border ${TEMP_STYLES[tv]}`}
+                          >
+                            {TEMP_LABELS[tv]}
+                          </span>
+                        );
+                      })()}
                       {l.needsFollowUpCall && (
                         <span
                           data-testid={`needs-call-badge-${l.id}`}
@@ -261,9 +232,6 @@ export default function MyLeadsPage() {
                         </span>
                       )}
                     </div>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground capitalize">
-                    {(l as any).temperature ?? "—"}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {fmtDate(l.lastActivityAt)}

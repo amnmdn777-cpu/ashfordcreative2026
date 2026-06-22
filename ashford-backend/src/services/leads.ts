@@ -953,9 +953,16 @@ export const getAvailableLeads = async (filters: {
   sortBy?: "score" | "name" | "city" | "practice" | "specialty";
   sortDir?: "asc" | "desc";
 }) => {
+  // Available pool = any UNCLAIMED lead that isn't workflow-final
+  // (disqualified / won). 2026-06-22 (Bug #2): the pool used to require
+  // status IN ('available','recycled'), but the imported prod data uses
+  // other status vocab ('handled', 'pending', …) that drifted from the
+  // app enum — leaving 100+ un-disqualified, unclaimed leads invisible to
+  // reps. Gating on "unclaimed and not final" surfaces every contactable
+  // lead regardless of the legacy status label.
   const conds = [
-    sql`(${leads.status} = 'available' OR ${leads.status} = 'recycled')`,
     isNull(leads.claimedByRepId),
+    sql`${leads.status} NOT IN ('disqualified', 'won')`,
   ];
   if (filters.city) conds.push(sql`lower(${leads.city}) = lower(${filters.city})`);
   if (filters.specialty)

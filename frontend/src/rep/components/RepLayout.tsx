@@ -7,7 +7,6 @@ import {
   ListChecks,
   CalendarClock,
   Inbox,
-  Code2,
   Bell,
   DollarSign,
   Settings as SettingsIcon,
@@ -16,7 +15,6 @@ import {
   X,
   BookOpen,
   MessageSquare,
-  Snowflake,
 } from "lucide-react";
 import { useAuth } from "@rep/lib/auth";
 import { api } from "@rep/lib/api";
@@ -28,14 +26,14 @@ type NavItem = {
   badgeKey?: "messages";
 };
 
+// QA Notes C (2026-06-22): removed "Cold leads" and "Custom dev quotes"
+// from the rep menu per founder request.
 const NAV: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/available", label: "Available leads", icon: Search },
   { href: "/my-leads", label: "My leads", icon: ListChecks },
-  { href: "/my-leads/cold", label: "Cold leads", icon: Snowflake },
   { href: "/callbacks", label: "Callbacks", icon: CalendarClock },
   { href: "/inbound", label: "Inbound queue", icon: Inbox },
-  { href: "/custom-dev", label: "Custom dev quotes", icon: Code2 },
   { href: "/messages", label: "Messages", icon: MessageSquare, badgeKey: "messages" },
   { href: "/notifications", label: "Notifications", icon: Bell },
   { href: "/commission", label: "Commission", icon: DollarSign },

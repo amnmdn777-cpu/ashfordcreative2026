@@ -237,12 +237,13 @@ const BOUTIQUE_PRO_CAPABILITIES: readonly CapabilityKey[] = [
   "first_visit_video",
   "telehealth_bridge",
   // 2026-05-21 — `patient_onboarding_hub` capability dropped (Sprint 2 streamline).
+  // 2026-06-22 (QA Notes B) — Insights Journal moved from Concierge into Pro.
+  "blog_publishing",
 ];
 
 const BOUTIQUE_CONCIERGE_CAPABILITIES: readonly CapabilityKey[] = [
   ...BOUTIQUE_PRO_CAPABILITIES,
   "telehealth_full",
-  "blog_publishing",
 ];
 
 export const TIERS: Record<TierKey, TierDef> = {
@@ -261,7 +262,7 @@ export const TIERS: Record<TierKey, TierDef> = {
     monthlyCents: 29900,
     setupCents: 0,
     description:
-      "Everything in Boutique, plus the four front-desk multipliers: online booking, first-visit video, telehealth bridge to your existing room, and a patient onboarding hub.",
+      "Everything in Boutique, plus the front-desk multipliers — online booking, first-visit video, telehealth bridge to your existing room — and a ghostwritten Insights Journal.",
     capabilities: BOUTIQUE_PRO_CAPABILITIES,
     recommended: true,
   },
@@ -271,7 +272,7 @@ export const TIERS: Record<TierKey, TierDef> = {
     monthlyCents: 64900,
     setupCents: 0,
     description:
-      "Everything in Pro, plus white-glove telehealth (we set up Doxy.me Pro under your brand) and a ghostwritten Insights Journal — 14+ pieces of clinical authority per year.",
+      "Everything in Pro, plus white-glove telehealth — we set up Doxy.me Pro under your brand and handle the full onboarding for you.",
     capabilities: BOUTIQUE_CONCIERGE_CAPABILITIES,
   },
 };

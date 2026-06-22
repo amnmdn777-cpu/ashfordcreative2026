@@ -106,7 +106,7 @@ function ReplyComposer({
         htmlFor={`reply-${notificationId}`}
         className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground"
       >
-        Répondre à la vendeuse
+        Reply to the rep
       </label>
       <textarea
         id={`reply-${notificationId}`}
@@ -119,7 +119,7 @@ function ReplyComposer({
             send();
           }
         }}
-        placeholder="Écris ta réponse — elle apparaitra dans les notes du prospect et la vendeuse recevra un mail."
+        placeholder="Write your reply — it appears in the prospect's notes and the rep gets an email."
         rows={3}
         className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 resize-y"
       />
@@ -127,12 +127,12 @@ function ReplyComposer({
         <span className="text-[11px] text-muted-foreground">
           {feedback?.kind === "ok" ? (
             <span className="text-green-700 dark:text-green-400">
-              ✓ Répondu — {feedback.emailed ? `email envoyé à ${feedback.repName}` : `${feedback.repName} notifiée (pas d'email)`}
+              ✓ Replied — {feedback.emailed ? `email sent to ${feedback.repName}` : `${feedback.repName} notified (no email)`}
             </span>
           ) : feedback?.kind === "err" ? (
-            <span className="text-red-600">Erreur : {feedback.message}</span>
+            <span className="text-red-600">Error: {feedback.message}</span>
           ) : (
-            <span>⌘/Ctrl + Enter pour envoyer</span>
+            <span>⌘/Ctrl + Enter to send</span>
           )}
         </span>
         <button
@@ -143,7 +143,7 @@ function ReplyComposer({
           className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <Send size={13} />
-          {reply.isPending ? "Envoi…" : "Envoyer"}
+          {reply.isPending ? "Sending…" : "Send"}
         </button>
       </div>
     </div>
@@ -181,9 +181,9 @@ export default function NotificationsPage() {
         )}
       </div>
       <p className="text-sm text-muted-foreground mb-4">
-        Toutes les notes ou une vendeuse t'a tague avec{" "}
-        <strong className="text-blue-600">@Ashford</strong>. Réponds-lui ici —
-        elle reçoit un mail et voit ta réponse dans son tableau de bord.
+        All notes where a rep tagged you with{" "}
+        <strong className="text-blue-600">@Ashford</strong>. Reply here — the rep
+        gets an email and sees your reply in their dashboard.
       </p>
 
       <div className="flex items-center gap-3 mb-4 text-xs">
@@ -196,7 +196,7 @@ export default function NotificationsPage() {
               : "bg-background border-input text-muted-foreground hover:text-foreground"
           }`}
         >
-          Non lues
+          Unread
         </button>
         <button
           type="button"
@@ -207,7 +207,7 @@ export default function NotificationsPage() {
               : "bg-background border-input text-muted-foreground hover:text-foreground"
           }`}
         >
-          Tout
+          All
         </button>
       </div>
 
@@ -221,8 +221,8 @@ export default function NotificationsPage() {
           />
           <div className="text-sm text-muted-foreground">
             {showRead
-              ? "Aucun tag pour le moment."
-              : "Aucun nouveau tag — toutes les mentions sont lues."}
+              ? "No tags yet."
+              : "No new tags — all mentions are read."}
           </div>
         </div>
       ) : (
@@ -263,7 +263,7 @@ export default function NotificationsPage() {
                       }}
                       className="text-xs font-medium text-blue-600 hover:underline"
                     >
-                      Ouvrir la fiche prospect →
+                      Open prospect record →
                     </Link>
                   ) : null}
                   {n.leadId && n.repId ? (
@@ -276,7 +276,7 @@ export default function NotificationsPage() {
                       className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:underline"
                     >
                       <Send size={12} />
-                      {replyOpen ? "Fermer" : "Répondre"}
+                      {replyOpen ? "Close" : "Reply"}
                     </button>
                   ) : null}
                   {unread ? (
@@ -286,7 +286,7 @@ export default function NotificationsPage() {
                       disabled={markRead.isPending}
                       className="text-xs underline text-muted-foreground hover:text-foreground ml-auto"
                     >
-                      Marquer comme lu
+                      Mark as read
                     </button>
                   ) : null}
                 </div>

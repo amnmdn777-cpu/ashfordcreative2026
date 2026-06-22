@@ -7,6 +7,44 @@ import { PageHeader } from "@admin/components/AdminLayout";
 
 const PAGE_SIZE = 50;
 
+// QA Change #6 (2026-06-22): admin Leads mirrors the rep tables — a single
+// derived Temperature (5 values) replaces the Status column/filter. Local
+// copy of the rep helper (kept in sync with rep/pages/MyLeads.tsx) so admin
+// doesn't import across app boundaries.
+type AdminTempValue = "won" | "disqualified" | "hot" | "lukewarm" | "cold" | "unset";
+const ADMIN_TEMP_ORDER: { key: Exclude<AdminTempValue, "unset">; label: string }[] = [
+  { key: "won", label: "Won" },
+  { key: "hot", label: "Hot" },
+  { key: "lukewarm", label: "Lukewarm" },
+  { key: "cold", label: "Cold" },
+  { key: "disqualified", label: "Disqualified" },
+];
+const ADMIN_TEMP_LABELS: Record<AdminTempValue, string> = {
+  won: "Won",
+  disqualified: "Disqualified",
+  hot: "Hot",
+  lukewarm: "Lukewarm",
+  cold: "Cold",
+  unset: "—",
+};
+const ADMIN_TEMP_STYLES: Record<AdminTempValue, string> = {
+  won: "bg-primary/10 text-primary border-primary/30",
+  disqualified: "bg-muted text-muted-foreground border-border",
+  hot: "bg-red-100 text-red-800 border-red-200 dark:bg-red-950/30 dark:text-red-200 dark:border-red-900",
+  lukewarm: "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/30 dark:text-amber-200 dark:border-amber-900",
+  cold: "bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-950/30 dark:text-sky-200 dark:border-sky-900",
+  unset: "border-border text-muted-foreground",
+};
+function adminDeriveTemp(lead: { status?: string | null; temperature?: string | null }): AdminTempValue {
+  const status = lead.status ?? undefined;
+  const temp = lead.temperature ?? undefined;
+  if (status === "won") return "won";
+  if (status === "disqualified" || temp === "disqualifier") return "disqualified";
+  if (temp === "hot" || temp === "lukewarm" || temp === "cold") return temp;
+  if (status === "cold") return "cold";
+  return "unset";
+}
+
 export default function LeadsPage() {
   const [, navigate] = useLocation();
   const qc = useQueryClient();
@@ -23,16 +61,16 @@ export default function LeadsPage() {
   const [releaseConfirmation, setReleaseConfirmation] = useState("");
   const [wipeConfirmation, setWipeConfirmation] = useState("");
 
-  // Search & Filters state (Bundle 2)
+  // Search & Filters state — QA Change #6: Search + Owner + Has email +
+  // Has phone + Temperature (5 derived values). Status / Lead Type / Date
+  // Range removed. Temperature, Has-email and Has-phone filter client-side
+  // over the current page (same pattern as the rep lead pages).
   const [q, setQ] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
-  const [status, setStatus] = useState("");
-  const [temperature, setTemperature] = useState("");
+  const [temp, setTemp] = useState<"" | AdminTempValue>("");
+  const [hasEmail, setHasEmail] = useState<"" | "yes" | "no">("");
+  const [hasPhone, setHasPhone] = useState<"" | "yes" | "no">("");
   const [repId, setRepId] = useState<number | "">("");
-  const [dateField, setDateField] = useState<"created" | "updated">("created");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [source, setSource] = useState("");
   const [sortBy, setSortBy] = useState<string>("updated");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
@@ -144,38 +182,30 @@ export default function LeadsPage() {
 
   // Bundle 1.1 — leads table (paginated).
   const leadsQuery = useQuery({
-    queryKey: [
-      "admin-leads",
-      page,
-      debouncedQ,
-      status,
-      temperature,
-      repId,
-      dateField,
-      dateFrom,
-      dateTo,
-      source,
-      sortBy,
-      sortDir,
-    ],
+    queryKey: ["admin-leads", page, debouncedQ, repId, sortBy, sortDir],
     queryFn: () =>
       api.listLeads({
         limit: PAGE_SIZE,
         offset: page * PAGE_SIZE,
         q: debouncedQ || undefined,
-        status: status || undefined,
-        temperature: temperature || undefined,
         repId: repId !== "" ? repId : undefined,
-        dateField,
-        dateFrom: dateFrom || undefined,
-        dateTo: dateTo || undefined,
-        source: source || undefined,
         sort: sortBy,
         order: sortDir,
       }),
   });
-  const leadRows = leadsQuery.data?.leads ?? [];
+  const allLeadRows = leadsQuery.data?.leads ?? [];
   const total = leadsQuery.data?.total ?? 0;
+  // Temperature / Has-email / Has-phone applied client-side over the page.
+  const leadRows = allLeadRows.filter((l: any) => {
+    const emailOk = !!(l.email && String(l.email).trim());
+    if (hasEmail === "yes" && !emailOk) return false;
+    if (hasEmail === "no" && emailOk) return false;
+    const phoneOk = !!(l.phone && String(l.phone).trim());
+    if (hasPhone === "yes" && !phoneOk) return false;
+    if (hasPhone === "no" && phoneOk) return false;
+    if (temp && adminDeriveTemp(l) !== temp) return false;
+    return true;
+  });
 
   // Bundle 1.3 — export current view to CSV.
   const onExport = async () => {
@@ -183,13 +213,7 @@ export default function LeadsPage() {
     try {
       const blob = await api.exportLeadsBlob({
         q: debouncedQ || undefined,
-        status: status || undefined,
-        temperature: temperature || undefined,
         repId: repId !== "" ? repId : undefined,
-        dateField,
-        dateFrom: dateFrom || undefined,
-        dateTo: dateTo || undefined,
-        source: source || undefined,
         sort: sortBy,
         order: sortDir,
       });
@@ -268,35 +292,42 @@ export default function LeadsPage() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="font-semibold text-muted-foreground uppercase tracking-wider">Status</label>
+            <label className="font-semibold text-muted-foreground uppercase tracking-wider">Temperature</label>
             <select
-              value={status}
-              onChange={(e) => handleFilterChange(setStatus, e.target.value)}
+              value={temp}
+              onChange={(e) => handleFilterChange(setTemp, e.target.value)}
               className="w-full rounded-md border border-input bg-background px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-ring"
             >
-              <option value="">All Statuses</option>
-              <option value="available">Available</option>
-              <option value="claimed">Claimed</option>
-              <option value="nurturing">Nurturing</option>
-              <option value="won">Won</option>
-              <option value="disqualified">Disqualified</option>
-              <option value="recycled">Recycled</option>
-              <option value="cold">Cold</option>
+              <option value="">All</option>
+              {ADMIN_TEMP_ORDER.map((o) => (
+                <option key={o.key} value={o.key}>{o.label}</option>
+              ))}
             </select>
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="font-semibold text-muted-foreground uppercase tracking-wider">Temp</label>
+            <label className="font-semibold text-muted-foreground uppercase tracking-wider">Has email</label>
             <select
-              value={temperature}
-              onChange={(e) => handleFilterChange(setTemperature, e.target.value)}
+              value={hasEmail}
+              onChange={(e) => handleFilterChange(setHasEmail, e.target.value)}
               className="w-full rounded-md border border-input bg-background px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-ring"
             >
-              <option value="">All Temps</option>
-              <option value="hot">🔥 Hot</option>
-              <option value="lukewarm">☀️ Lukewarm</option>
-              <option value="cold">❄️ Cold</option>
-              <option value="disqualifier">🚫 Disqualifier</option>
+              <option value="">All</option>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="font-semibold text-muted-foreground uppercase tracking-wider">Has phone</label>
+            <select
+              value={hasPhone}
+              onChange={(e) => handleFilterChange(setHasPhone, e.target.value)}
+              className="w-full rounded-md border border-input bg-background px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="">All</option>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
             </select>
           </div>
 
@@ -316,70 +347,15 @@ export default function LeadsPage() {
             </select>
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="font-semibold text-muted-foreground uppercase tracking-wider">Lead Type</label>
-            <select
-              value={source}
-              onChange={(e) => handleFilterChange(setSource, e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="">All Types</option>
-              <option value="apify_import">Apify Scrape</option>
-              <option value="rep_manual">Rep Manual</option>
-              <option value="self_serve_template">Self-Serve Plan A</option>
-              <option value="contact_form">Contact Form</option>
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1 sm:col-span-2">
-            <div className="flex items-center justify-between">
-              <label className="font-semibold text-muted-foreground uppercase tracking-wider">Date Range</label>
-              <div className="flex gap-2 text-[10px]">
-                <button
-                  type="button"
-                  onClick={() => handleFilterChange(setDateField, "created")}
-                  className={`px-1 rounded-sm ${dateField === "created" ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:bg-muted"}`}
-                >
-                  Created
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleFilterChange(setDateField, "updated")}
-                  className={`px-1 rounded-sm ${dateField === "updated" ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:bg-muted"}`}
-                >
-                  Updated
-                </button>
-              </div>
-            </div>
-            <div className="flex items-center gap-1">
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => handleFilterChange(setDateFrom, e.target.value)}
-                className="w-full rounded-md border border-input bg-background px-2 py-1 focus:outline-none"
-              />
-              <span className="text-muted-foreground">to</span>
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => handleFilterChange(setDateTo, e.target.value)}
-                className="w-full rounded-md border border-input bg-background px-2 py-1 focus:outline-none"
-              />
-            </div>
-          </div>
-
           <div className="flex items-end">
             <button
               type="button"
               onClick={() => {
                 setQ("");
-                setStatus("");
-                setTemperature("");
+                setTemp("");
+                setHasEmail("");
+                setHasPhone("");
                 setRepId("");
-                setDateField("created");
-                setDateFrom("");
-                setDateTo("");
-                setSource("");
                 setPage(0);
               }}
               className="w-full rounded-md border border-border bg-card px-2 py-1.5 hover:bg-muted transition-colors text-center font-medium"
@@ -398,11 +374,11 @@ export default function LeadsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground border-b border-border">
+                  <th className="py-2 pr-3 font-medium">ID</th>
                   {renderHeader("Name", "name")}
                   {renderHeader("Practice", "practice")}
                   {renderHeader("City", "city")}
-                  {renderHeader("Status", "status")}
-                  {renderHeader("Temp", "temperature")}
+                  <th className="py-2 pr-3 font-medium">Temperature</th>
                   <th className="py-2 pr-3 font-medium">Owner</th>
                   {renderHeader("Updated", "updated")}
                 </tr>
@@ -414,13 +390,22 @@ export default function LeadsPage() {
                     onClick={() => navigate(`/leads/${l.id}`)}
                     className="border-b border-border/60 hover:bg-muted/50 cursor-pointer"
                   >
+                    <td className="py-2 pr-3 font-mono text-muted-foreground whitespace-nowrap">#{l.id}</td>
                     <td className="py-2 pr-3 font-medium">{l.name}</td>
                     <td className="py-2 pr-3 text-muted-foreground truncate max-w-[200px]">
                       {l.practice ?? "—"}
                     </td>
                     <td className="py-2 pr-3">{l.city ?? "—"}</td>
-                    <td className="py-2 pr-3">{l.status}</td>
-                    <td className="py-2 pr-3">{l.temperature ?? "—"}</td>
+                    <td className="py-2 pr-3">
+                      {(() => {
+                        const tv = adminDeriveTemp(l);
+                        return (
+                          <span className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full border ${ADMIN_TEMP_STYLES[tv]}`}>
+                            {ADMIN_TEMP_LABELS[tv]}
+                          </span>
+                        );
+                      })()}
+                    </td>
                     <td className="py-2 pr-3">
                       {l.claimedByRepId ? `#${l.claimedByRepId}` : "—"}
                     </td>

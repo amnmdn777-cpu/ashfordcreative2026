@@ -63,8 +63,8 @@ type Reminder = {
 const REMINDERS: readonly Reminder[] = [
   {
     id: "seo-programmatic-measurement-2026-07",
-    title: "Mesurer le SEO programmatique",
-    body: "100 pages /therapists/[ville]/[spécialité] mises en ligne le 15 mai 2026. Vérifier dans Google Search Console les visites organiques + positions moyennes par requête, et identifier les 3 villes qui rankent le mieux.",
+    title: "Measure programmatic SEO",
+    body: "100 /therapists/[city]/[specialty] pages went live on May 15, 2026. Check Google Search Console for organic visits + average position per query, and identify the 3 cities ranking best.",
     dueDate: "2026-07-03",
     href: "https://search.google.com/search-console",
   },
@@ -163,7 +163,7 @@ export default function DashboardPage() {
       {visibleReminders().length > 0 && (
         <div className="mb-4 bg-card border border-card-border rounded-lg p-4">
           <div className="text-xs uppercase tracking-wide text-muted-foreground mb-3">
-            Rappels
+            Reminders
           </div>
           <ul className="space-y-3">
             {visibleReminders().map((r) => {
@@ -191,15 +191,15 @@ export default function DashboardPage() {
                   </div>
                   <div className="text-right shrink-0">
                     <div className="font-mono text-[11px] tracking-wide text-muted-foreground uppercase">
-                      Échéance
+                      Due
                     </div>
                     <div className="text-sm text-foreground">
                       {r.dueDate}
                     </div>
                     <div className="text-[11px] text-muted-foreground">
                       {days <= 0
-                        ? "aujourd'hui"
-                        : `dans ${days} jour${days === 1 ? "" : "s"}`}
+                        ? "today"
+                        : `in ${days} day${days === 1 ? "" : "s"}`}
                     </div>
                   </div>
                 </li>
@@ -238,10 +238,10 @@ export default function DashboardPage() {
         <div className="mb-4 bg-card border border-card-border rounded-lg p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="text-xs uppercase tracking-wide text-muted-foreground">
-              Portails à préparer
+              Portals to prepare
             </div>
             <span className="text-xs text-muted-foreground">
-              {portalReqs.portalRequests.length} en attente
+              {portalReqs.portalRequests.length} waiting
             </span>
           </div>
           <ul className="space-y-3">
@@ -262,13 +262,13 @@ export default function DashboardPage() {
                       {r.leadPractice} · {r.leadCity}, {r.leadState}
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
-                      Demandé par <b>{r.requestedByDisplayName}</b> ·{" "}
+                      Requested by <b>{r.requestedByDisplayName}</b> ·{" "}
                       {fmtDateTime(r.createdAt)}
                     </div>
                     {r.message && (
                       <div className="mt-2 text-sm text-foreground bg-muted/40 rounded-md px-3 py-2 whitespace-pre-wrap">
                         <span className="text-[10px] uppercase tracking-wide text-muted-foreground block mb-1">
-                          Message du commercial
+                          Message from rep
                         </span>
                         {r.message}
                       </div>
@@ -276,7 +276,7 @@ export default function DashboardPage() {
                     {r.leadNotes && (
                       <div className="mt-2 text-xs text-muted-foreground bg-muted/20 rounded-md px-3 py-2 whitespace-pre-wrap line-clamp-4">
                         <span className="text-[10px] uppercase tracking-wide text-muted-foreground block mb-1">
-                          Notes existantes (lead)
+                          Existing notes (lead)
                         </span>
                         {r.leadNotes}
                       </div>
@@ -289,8 +289,8 @@ export default function DashboardPage() {
                       className="px-3 py-1.5 rounded-md border border-input bg-background text-xs font-medium hover:bg-muted disabled:opacity-60"
                     >
                       {markHandled.isPending
-                        ? "Traitement…"
-                        : "Marquer traité"}
+                        ? "Processing…"
+                        : "Mark handled"}
                     </button>
                   </div>
                 </div>

@@ -106,12 +106,21 @@ const buildBrochureHtml = (input: {
       ];
   const ctaLabel = ES ? "Ver tu sitio completo" : "View your full preview";
   const planLabel = ES
-    ? "Plan mensual a partir de $149/mes"
-    : "Monthly plan from $149/mo";
+    ? "Plan mensual a partir de $199/mes, todo incluido"
+    : "Monthly plan from $199/mo, all-in";
   const fromRep = ES
-    ? `Preparado por ${safe(input.repName)} — Ashford Creative`
-    : `Prepared by ${safe(input.repName)} — Ashford Creative`;
+    ? `Preparado por ${safe(input.repName)}`
+    : `Prepared by ${safe(input.repName)}`;
+  const eyebrow = ES ? "Vista previa del sitio" : "Website preview";
+  // A soft tint of the accent for the bullet "chips" — falls back to a
+  // translucent accent when the palette doesn't define a soft surface.
+  const chipBg = palette.surfaceSoft ?? `${palette.accent}14`;
 
+  // QA Bug #6 (2026-06-22): redesigned cover — a calmer, more premium
+  // layout. An accent rule frames the page, the practice name leads as a
+  // large serif headline, the selling points sit in tidy tinted chips, and
+  // a single confident CTA closes the page. Pure inline styles + system
+  // fonts so it renders identically through Puppeteer's print pipeline.
   return `
 <section id="ashford-brochure-cover" data-pdf-cover style="
   break-after: page;
@@ -120,76 +129,79 @@ const buildBrochureHtml = (input: {
   color: ${palette.ink};
   width: 100%;
   min-height: 100vh;
-  padding: 56px 56px 48px;
   box-sizing: border-box;
   font-family: 'Georgia', 'Times New Roman', serif;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  border-top: 6px solid ${palette.accent};
 ">
-  <header style="display: flex; justify-content: space-between; align-items: flex-start; gap: 24px;">
-    <div>
-      <div style="font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: ${palette.muted}; margin-bottom: 6px;">
-        Ashford Creative
+  <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 64px 64px 56px;">
+    <header style="display: flex; justify-content: space-between; align-items: flex-start; gap: 24px;">
+      <div>
+        <div style="font-size: 12px; letter-spacing: 4px; text-transform: uppercase; color: ${palette.primary}; font-weight: 700; font-family: 'Helvetica','Arial',sans-serif; margin-bottom: 8px;">
+          Ashford&nbsp;Creative
+        </div>
+        <div style="font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: ${palette.muted}; font-family: 'Helvetica','Arial',sans-serif;">
+          ${eyebrow}
+        </div>
       </div>
-      <div style="font-size: 13px; color: ${palette.muted};">
+      <div style="font-size: 12px; color: ${palette.muted}; text-align: right; max-width: 220px; font-family: 'Helvetica','Arial',sans-serif; line-height: 1.5;">
+        ${fromRep}<br/>
         ${safe(input.specialty)} · ${safe(input.city)}, ${safe(input.state)}
       </div>
-    </div>
-    <div style="font-size: 11px; color: ${palette.muted}; text-align: right; max-width: 220px;">
-      ${fromRep}
-    </div>
-  </header>
+    </header>
 
-  <div style="margin: 32px 0;">
-    <div style="font-size: 14px; color: ${palette.muted}; margin-bottom: 12px;">
-      ${greetingFr}
-    </div>
-    <h1 style="font-size: 44px; line-height: 1.12; margin: 0 0 8px; color: ${palette.primary}; font-weight: 400;">
-      ${safe(input.practice)}
-    </h1>
-    <p style="font-size: 19px; line-height: 1.5; color: ${palette.ink}; margin: 18px 0 0; max-width: 540px;">
-      ${promise}
-    </p>
-  </div>
-
-  <ul style="list-style: none; padding: 0; margin: 0 0 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px 28px;">
-    ${points
-      .map(
-        (p) => `
-      <li style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: ${palette.ink};">
-        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: ${palette.accent}; margin-top: 7px; flex-shrink: 0;"></span>
-        <span>${safe(p)}</span>
-      </li>
-    `,
-      )
-      .join("")}
-  </ul>
-
-  <footer style="border-top: 1px solid ${palette.muted}33; padding-top: 20px; display: flex; justify-content: space-between; align-items: center; gap: 16px;">
-    <div>
-      <div style="font-size: 13px; color: ${palette.muted}; margin-bottom: 4px;">
-        ${planLabel}
+    <div style="margin: 40px 0;">
+      <div style="font-size: 16px; color: ${palette.muted}; margin-bottom: 14px;">
+        ${greetingFr}
       </div>
-      <a href="${safe(input.previewUrl)}" style="
-        display: inline-block;
-        background: ${palette.primary};
-        color: ${palette.surface};
-        padding: 12px 22px;
-        border-radius: 999px;
-        font-size: 14px;
-        font-family: 'Helvetica', 'Arial', sans-serif;
-        font-weight: 600;
-        text-decoration: none;
-        letter-spacing: 0.3px;
-      ">
-        ${ctaLabel} →
-      </a>
+      <h1 style="font-size: 52px; line-height: 1.08; margin: 0; color: ${palette.primary}; font-weight: 400; letter-spacing: -0.5px;">
+        ${safe(input.practice)}
+      </h1>
+      <div style="width: 64px; height: 3px; background: ${palette.accent}; margin: 24px 0;"></div>
+      <p style="font-size: 21px; line-height: 1.5; color: ${palette.ink}; margin: 0; max-width: 560px;">
+        ${promise}
+      </p>
     </div>
-    <div style="font-size: 11px; color: ${palette.muted}; text-align: right;">
-      ashfordhealthcreative.com
-    </div>
-  </footer>
+
+    <ul style="list-style: none; padding: 0; margin: 0 0 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+      ${points
+        .map(
+          (p) => `
+        <li style="display: flex; gap: 12px; align-items: center; font-size: 14.5px; color: ${palette.ink}; background: ${chipBg}; border: 1px solid ${palette.muted}1f; border-radius: 12px; padding: 14px 16px; font-family: 'Helvetica','Arial',sans-serif;">
+          <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: ${palette.accent}; color: ${palette.surface}; font-size: 13px; flex-shrink: 0;">&#10003;</span>
+          <span>${safe(p)}</span>
+        </li>
+      `,
+        )
+        .join("")}
+    </ul>
+
+    <footer style="border-top: 1px solid ${palette.muted}33; padding-top: 24px; display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+      <div>
+        <div style="font-size: 13px; color: ${palette.muted}; margin-bottom: 10px; font-family: 'Helvetica','Arial',sans-serif;">
+          ${planLabel}
+        </div>
+        <a href="${safe(input.previewUrl)}" style="
+          display: inline-block;
+          background: ${palette.primary};
+          color: ${palette.surface};
+          padding: 14px 26px;
+          border-radius: 999px;
+          font-size: 15px;
+          font-family: 'Helvetica', 'Arial', sans-serif;
+          font-weight: 600;
+          text-decoration: none;
+          letter-spacing: 0.3px;
+        ">
+          ${ctaLabel} &rarr;
+        </a>
+      </div>
+      <div style="font-size: 12px; color: ${palette.muted}; text-align: right; font-family: 'Helvetica','Arial',sans-serif; letter-spacing: 0.5px;">
+        ashfordhealthcreative.com
+      </div>
+    </footer>
+  </div>
 </section>
 `;
 };

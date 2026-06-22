@@ -172,69 +172,22 @@ export default function About() {
           <div className="font-mono text-[11px] tracking-[0.3em] uppercase text-gold mb-4">
             {es ? "A quién le vas a hablar" : "Who you'll talk to"}
           </div>
-          {/* Austin pod framing (Investor roleplay 2026-05-02 — story I1.)
-              The previous copy ("seven people, capped at 200 sites") read
-              as a lifestyle-business ceiling to a venture investor doing
-              diligence — and it boxed us in even with our own clinicians,
-              who would naturally ask "wait, am I site #199?". We now name
-              the unit explicitly: a "pod" is the seven-person team that
-              ships and supports up to 200 sites, and the company adds new
-              regional pods as a market warrants one. The therapist still
-              gets the small-team promise (the pod that picks up your call
-              today is the pod that picks it up next year); the investor
-              sees a unit-economic story they can multiply. The Pod #1
-              location MUST match the eyebrow above ("Austin, TX") and the
-              footer's "Austin, Texas" — Houston / Dallas / San Antonio
-              are named only as future expansion markets so the geography
-              stays consistent across the site. */}
+          {/* QA Notes A (2026-06-22): removed the "seven people per pod /
+              200 practices" pod-cap claim and the internal team grid per
+              founder request — we present a small studio with no headcount
+              or per-pod ceiling framing. */}
           <h2 className="font-display text-3xl md:text-4xl mb-4 leading-tight">
             {es
-              ? "Siete personas por pod. Cada pod cubre 200 prácticas."
-              : "Seven people per pod. Each pod serves up to 200 practices."}
+              ? "Un estudio pequeño. Una persona real responde."
+              : "A small studio. A real person answers."}
           </h2>
           <p className="font-serif text-base text-cream/80 leading-relaxed mb-10 max-w-3xl">
             {es
-              ? "Austin Pod #1 está activo. Lo limitamos a 200 prácticas a propósito — para que el humano que toma tu llamada, el que diseña tu sitio y el que contesta cuando algo se rompe sean siempre las mismas siete personas. Cuando #1 esté lleno, abrimos un pod regional nuevo (Houston, Dallas, San Antonio) — nunca pedimos a un pod existente que crezca a costa del servicio."
-              : "Austin Pod #1 is active. We cap each pod at 200 practices on purpose — so the human who picks up your call, the one who designs your site, and the one who answers when something breaks are always the same seven people. When Pod #1 is full, we open a new regional pod (Houston, Dallas, San Antonio) — we never ask an existing pod to grow at the cost of the service it owes the practices already inside it."}
+              ? "El humano que toma tu llamada, el que diseña tu sitio y el que contesta cuando algo se rompe son siempre el mismo equipo reducido — a propósito, para que el servicio nunca se diluya a medida que crecemos."
+              : "The human who picks up your call, the one who designs your site, and the one who answers when something breaks are the same small team — on purpose, so the service never gets diluted as we grow."}
           </p>
 
-          {/* Bios were intentionally dropped on 2026-04-28 — the founder
-              read the per-card paragraphs as job descriptions. The card
-              now carries just the portrait, the name, and the role; the
-              "real human picks up the phone" line below the grid does
-              the rest of the work. */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { initial: "A", name: "Ashford",  role: es ? "Fundador"                  : "Founder"                  },
-              { initial: "C", name: "Camille",  role: es ? "Operaciones & Finanzas"    : "Operations & Finance"     },
-              { initial: "T", name: "Theo",     role: es ? "Diseño"                    : "Design"                   },
-              { initial: "C", name: "Candice",  role: es ? "Ventas — Texas"            : "Sales — Texas"            },
-              { initial: "V", name: "Veronica", role: es ? "Ventas — Español"          : "Sales — Spanish-language" },
-              { initial: "M", name: "Marcus",   role: es ? "Ingeniería — Plataforma"   : "Engineering — Platform"   },
-              { initial: "J", name: "Jonas",    role: es ? "Ingeniería — Producto"     : "Engineering — Product"    },
-              { initial: "+", name: es ? "Tú, quizás" : "You, maybe", role: es ? "Estamos contratando" : "We're hiring" },
-            ].map((m) => (
-              <div
-                key={m.name}
-                className="bg-cream/[0.04] border border-cream/15 rounded-sm p-5 hover:border-gold/40 transition-colors flex items-center gap-3"
-              >
-                <div
-                  className="w-12 h-12 flex items-center justify-center bg-gold text-ink font-display text-lg rounded-sm shrink-0"
-                  aria-hidden
-                >
-                  {m.initial}
-                </div>
-                <div className="min-w-0">
-                  <div className="font-display text-lg leading-tight">{m.name}</div>
-                  <div className="font-mono text-[10px] uppercase tracking-widest text-cream/60 mt-0.5">
-                    {m.role}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <p className="text-xs text-cream/55 font-mono uppercase tracking-widest mt-10">
+          <p className="text-xs text-cream/55 font-mono uppercase tracking-widest mt-2">
             {es
               ? "La persona real responde el teléfono."
               : "The real human picks up the phone."}

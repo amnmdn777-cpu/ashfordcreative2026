@@ -5,13 +5,8 @@ import {
   LayoutDashboard,
   Users,
   UserCog,
-  Code2,
-  Inbox,
   CreditCard,
-  ClipboardList,
   ScrollText,
-  GraduationCap,
-  ShieldCheck,
   FileText,
   BookOpen,
   Bell,
@@ -23,20 +18,18 @@ import {
 import { useAuth } from "@admin/lib/auth";
 import { api } from "@admin/lib/api";
 
+// QA Notes C (2026-06-22): removed Custom dev quotes, Contact requests,
+// Client onboarding, Approvals, and Candidates from the admin menu per
+// founder request.
 const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/notifications", label: "Mentions", icon: Bell },
   { href: "/leads", label: "Leads", icon: Users },
   { href: "/reps", label: "Sales reps", icon: UserCog },
-  { href: "/custom-dev", label: "Custom dev quotes", icon: Code2 },
-  { href: "/contact-requests", label: "Contact requests", icon: Inbox },
   { href: "/subscriptions", label: "Subscriptions", icon: CreditCard },
-  { href: "/onboardings", label: "Client onboarding", icon: ClipboardList },
-  { href: "/approvals", label: "Approvals", icon: ShieldCheck },
   { href: "/transcripts", label: "Transcripts", icon: FileText },
   { href: "/audit", label: "Audit log", icon: ScrollText },
   { href: "/editorial", label: "Editorial queue", icon: BookOpen },
-  { href: "/candidates", label: "Candidates", icon: GraduationCap },
 ];
 
 export default function AdminLayout({ children }: { children: ReactNode }) {

@@ -15,7 +15,6 @@ import { HOT_LEAD_WINDOW_MS } from "@workspace/api-zod";
 import { api, fmtCents, fmtDate, type HotLeadDto, type SaleRow, type TierKey } from "@rep/lib/api";
 import { PageHeader } from "@rep/components/RepLayout";
 import { FutureUpsellsCard } from "@rep/components/FutureUpsellsCard";
-import { PhaseBTrainingPanel } from "@rep/components/PhaseBTrainingPanel";
 import { useAuth } from "@rep/lib/auth";
 
 function Kpi({
@@ -120,17 +119,9 @@ export default function DashboardPage() {
         }
       />
 
-      <HotLeadsSection leads={hotLeads} loading={hot.isLoading} />
-
-      <PhaseBTrainingPanel />
-
-      {/* CLEANUP C.2 — MRR by tier. Counts + monthly recurring revenue per
-       *  tier, computed client-side from the rep's own sales list. */}
-      <MrrByTierCard
-        breakdown={tierBreakdown}
-        loading={salesQ.isLoading}
-      />
-
+      {/* QA Notes C (2026-06-22): removed "Hot now", "New live features —
+          what to pitch" (PhaseBTrainingPanel), and "MRR by tier" from the
+          rep dashboard per founder request. */}
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-10">
         <Kpi

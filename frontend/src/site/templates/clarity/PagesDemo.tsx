@@ -21,7 +21,7 @@ import {
   ClarityServices,
   ClarityStats,
 } from "./sections";
-import { ClarityChatWidget } from "./ChatWidget";
+
 import { TopBar } from "./skin";
 
 /**
@@ -316,22 +316,7 @@ export function ClarityPagesDemo({
               contactLabel={tt("Contact", "Contacto")}
             />
             {renderSubPage(activePage)}
-            <ClarityChatWidget
-              locale={locale}
-              practice={{
-                name: r.name,
-                services: r.focus_areas.map((f) => f.title),
-                specialties: content.specialties,
-                insurance: r.insuranceList,
-                hours: content.locations?.[0]?.hours,
-                feesNote: r.fees
-                  ?.map((f) => `${f.label}: ${f.price}`)
-                  .join("; "),
-                bookingUrl: r.bookingUrl,
-                phone: r.phone,
-                email: r.email,
-              }}
-            />
+
           </div>
         </ThemeProvider>
       ) : (

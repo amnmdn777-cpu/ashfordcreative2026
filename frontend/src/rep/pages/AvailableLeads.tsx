@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Sparkles, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { api } from "@rep/lib/api";
 import { PageHeader } from "@rep/components/RepLayout";
-import { ScoreBadge, type Tier } from "@rep/components/ScoreBadge";
+import { deriveTemperature, TEMP_ORDER, type TempValue } from "@rep/pages/MyLeads";
 
 type SortKey = "score" | "name" | "city" | "practice" | "specialty";
 type SortDir = "asc" | "desc";
@@ -25,13 +25,13 @@ export default function AvailableLeadsPage() {
   const [name, setName] = useState("");
   const [city, setCity] = useState("");
   const [specialty, setSpecialty] = useState("");
-  const [topQualityOnly, setTopQualityOnly] = useState(false);
-  // Website presence filter: "" = all, "yes" = has site, "no" = no site.
-  const [hasWebsite, setHasWebsite] = useState<"" | "yes" | "no">("");
-  // Admin-parity filters (client-side over the current page).
-  const [temp, setTemp] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  // QA Change #2 (2026-06-22): filters are Name / City / Specialty +
+  // Has email / Has phone / Temperature. The "Tier A only", Website, and
+  // date-range filters are removed. Has-email/phone + temperature run
+  // client-side over the current page (same pattern the temp filter used).
+  const [hasEmail, setHasEmail] = useState<"" | "yes" | "no">("");
+  const [hasPhone, setHasPhone] = useState<"" | "yes" | "no">("");
+  const [temp, setTemp] = useState<"" | TempValue>("");
   const [page, setPage] = useState(1);
   // #221 sortable headers. Default mirrors the historical server-side
   // ordering (score DESC) so existing reps see no surprise on first
@@ -53,24 +53,12 @@ export default function AvailableLeadsPage() {
   };
 
   const { data, isLoading } = useQuery({
-    queryKey: [
-      "available",
-      name,
-      city,
-      specialty,
-      topQualityOnly,
-      hasWebsite,
-      page,
-      sortBy,
-      sortDir,
-    ],
+    queryKey: ["available", name, city, specialty, page, sortBy, sortDir],
     queryFn: () =>
       api.availableLeads({
         name: name || undefined,
         city: city || undefined,
         specialty: specialty || undefined,
-        topQualityOnly: topQualityOnly || undefined,
-        hasWebsite: hasWebsite || undefined,
         page,
         pageSize: 25,
         sortBy,
@@ -78,12 +66,15 @@ export default function AvailableLeadsPage() {
       }),
   });
 
-  // Admin-parity filters applied over the returned page.
+  // Has-email / Has-phone / Temperature applied client-side over the page.
   const displayLeads = (data?.leads ?? []).filter((l: any) => {
-    if (temp && (l.temperature ?? "") !== temp) return false;
-    const created = l.createdAt ? new Date(l.createdAt) : null;
-    if (dateFrom && (!created || created < new Date(dateFrom))) return false;
-    if (dateTo && (!created || created > new Date(`${dateTo}T23:59:59`))) return false;
+    const emailOk = !!(l.email && String(l.email).trim());
+    if (hasEmail === "yes" && !emailOk) return false;
+    if (hasEmail === "no" && emailOk) return false;
+    const phoneOk = !!(l.phone && String(l.phone).trim());
+    if (hasPhone === "yes" && !phoneOk) return false;
+    if (hasPhone === "no" && phoneOk) return false;
+    if (temp && deriveTemperature(l) !== temp) return false;
     return true;
   });
 
@@ -91,10 +82,10 @@ export default function AvailableLeadsPage() {
   // page — it no longer claims the lead. The rep explicitly promotes it
   // to Work in Progress from the lead detail when they're ready.
   return (
-    <div className="px-4 md:px-8 py-8 md:py-10 max-w-7xl">
+    <div className="px-4 md:px-8 py-8 md:py-10 w-full">
       <PageHeader
         title="Available leads"
-        description="Texas mental-health practitioners ready to be contacted. Sorted by quality score — tier A first, then B, then C."
+        description="Texas mental-health practitioners ready to be contacted. Every uncontacted lead in the pool."
       />
 
       <div className="bg-card border border-card-border rounded-xl p-4 mb-4 shadow-sm flex flex-wrap gap-3 items-end">
@@ -137,88 +128,52 @@ export default function AvailableLeadsPage() {
             className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </label>
-        {/* Tier-A-only toggle — surfaces just the top-tier leads
-            (score ≥ 70). NULL-scored leads are excluded from this
-            filter on purpose: they haven't proven themselves yet, so
-            they shouldn't crowd a focus session. #212. */}
-        <button
-          type="button"
-          onClick={() => {
-            setTopQualityOnly((v) => !v);
-            setPage(1);
-          }}
-          aria-pressed={topQualityOnly}
-          className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
-            topQualityOnly
-              ? "border-red-500/40 bg-red-500/10 text-red-700"
-              : "border-input bg-background text-muted-foreground hover:text-foreground"
-          }`}
-          title="Show only tier A leads (score ≥ 37)"
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          Tier A only
-        </button>
-        {/* Website presence filter — pitch "we'll refresh your site" vs
-            "you don't have one yet, let's build it" target very
-            different conversations. */}
-        <label className="block min-w-[160px]">
-          <span className="text-xs text-muted-foreground">Website</span>
+        <label className="block min-w-[140px]">
+          <span className="text-xs text-muted-foreground">Has email</span>
           <select
-            value={hasWebsite}
-            onChange={(e) => {
-              setHasWebsite(e.target.value as "" | "yes" | "no");
-              setPage(1);
-            }}
+            value={hasEmail}
+            onChange={(e) => setHasEmail(e.target.value as "" | "yes" | "no")}
             className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="">All</option>
-            <option value="yes">Has website</option>
-            <option value="no">No website</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
           </select>
         </label>
         <label className="block min-w-[140px]">
-          <span className="text-xs text-muted-foreground">Temperature</span>
+          <span className="text-xs text-muted-foreground">Has phone</span>
           <select
-            value={temp}
-            onChange={(e) => setTemp(e.target.value)}
+            value={hasPhone}
+            onChange={(e) => setHasPhone(e.target.value as "" | "yes" | "no")}
             className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="">All</option>
-            <option value="hot">Hot</option>
-            <option value="lukewarm">Lukewarm</option>
-            <option value="cold">Cold</option>
-            <option value="disqualifier">Disqualified</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
           </select>
         </label>
         <label className="block min-w-[150px]">
-          <span className="text-xs text-muted-foreground">Added from</span>
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
+          <span className="text-xs text-muted-foreground">Temperature</span>
+          <select
+            value={temp}
+            onChange={(e) => setTemp(e.target.value as "" | TempValue)}
             className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          />
+          >
+            <option value="">All</option>
+            {TEMP_ORDER.map((o) => (
+              <option key={o.key} value={o.key}>{o.label}</option>
+            ))}
+          </select>
         </label>
-        <label className="block min-w-[150px]">
-          <span className="text-xs text-muted-foreground">Added to</span>
-          <input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          />
-        </label>
-        {(name || city || specialty || topQualityOnly || hasWebsite || temp || dateFrom || dateTo) && (
+        {(name || city || specialty || hasEmail || hasPhone || temp) && (
           <button
             onClick={() => {
               setName("");
               setCity("");
               setSpecialty("");
-              setTopQualityOnly(false);
-              setHasWebsite("");
+              setHasEmail("");
+              setHasPhone("");
               setTemp("");
-              setDateFrom("");
-              setDateTo("");
               setPage(1);
             }}
             className="text-sm text-muted-foreground hover:text-foreground px-3 py-2"
@@ -233,7 +188,8 @@ export default function AvailableLeadsPage() {
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
-                <SortableTh label="Score" sortKey="score" active={sortBy} dir={sortDir} onClick={handleSort} />
+                {/* QA Change #3 (2026-06-22): lead number (ID) replaces the score column. */}
+                <th className="text-left px-4 py-3">ID</th>
                 <SortableTh label="Name" sortKey="name" active={sortBy} dir={sortDir} onClick={handleSort} />
                 <SortableTh label="Practice" sortKey="practice" active={sortBy} dir={sortDir} onClick={handleSort} />
                 <SortableTh label="Specialty" sortKey="specialty" active={sortBy} dir={sortDir} onClick={handleSort} />
@@ -269,12 +225,8 @@ export default function AvailableLeadsPage() {
               )}
               {displayLeads.map((l) => (
                 <tr key={l.id} className="hover:bg-muted/30">
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <ScoreBadge
-                      tier={l.scoreTier as Tier | null | undefined}
-                      score={l.leadScore}
-                      breakdown={l.scoreBreakdown}
-                    />
+                  <td className="px-4 py-3 whitespace-nowrap font-mono text-muted-foreground">
+                    #{l.id}
                   </td>
                   <td className="px-4 py-3 font-medium">{l.name}</td>
                   <td className="px-4 py-3">{l.practice}</td>

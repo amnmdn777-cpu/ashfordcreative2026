@@ -30,7 +30,7 @@ import type { TemplateProps } from "./types";
 import { InsuranceBadges } from "./_wow";
 import { WordReveal } from "./motion";
 import { useClarityNav } from "./clarity/navContext";
-import { ClarityChatWidget } from "./clarity/ChatWidget";
+
 import { Cta, ImageCard, TopBar, WarmBackdrop } from "./clarity/skin";
 
 /**
@@ -545,21 +545,7 @@ function Clarity(props: TemplateProps) {
           )}
         />
 
-        <ClarityChatWidget
-          locale={locale}
-          practice={{
-            name: r.name,
-            blurb: subhead,
-            services: r.focus_areas.map((f) => f.title),
-            specialties,
-            insurance: r.insuranceList,
-            hours: loc?.hours,
-            feesNote: r.fees?.map((f) => `${f.label}: ${f.price}`).join("; "),
-            bookingUrl: r.bookingUrl,
-            phone: r.phone,
-            email: r.email,
-          }}
-        />
+
       </div>
     </ThemeProvider>
   );

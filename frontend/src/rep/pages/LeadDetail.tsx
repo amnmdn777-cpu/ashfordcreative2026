@@ -492,7 +492,7 @@ export default function LeadDetailPage() {
     // never covers the last action card on small screens. The desktop
     // sidebar remains the primary action surface at lg+, so we drop the
     // extra padding back to the original rhythm.
-    <div className="px-4 md:px-8 py-8 md:py-10 pb-24 lg:pb-10 max-w-7xl">
+    <div className="px-4 md:px-8 py-8 md:py-10 pb-24 lg:pb-10 w-full">
       <Link
         href="/my-leads"
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-3"
@@ -646,10 +646,10 @@ export default function LeadDetailPage() {
           {/* M8 — admin lead-dashboard capabilities (inline edit, contacts,
               files, history), owner-gated. Purely additive. */}
           <LeadAdminPanel leadId={id} lead={l} />
-          {/* 2026-05-20 — Badge "Avis d'aperçu" sur les 17 leads avec
-              reviews génériques. Le portail affiche déjà une bannière au
-              prospect; ce badge prévient la REP pour qu'elle ne pitche
-              pas "voici vos vrais avis Google". */}
+          {/* 2026-05-20 — "Preview reviews" badge on the 17 leads with
+              generic reviews. The portal already shows a banner to the
+              prospect; this badge warns the REP not to pitch "here are
+              your real Google reviews". */}
           {SAMPLE_REVIEW_LEAD_IDS_2026_05_20.has(id) && (
             <div
               className="mb-3 rounded-lg border border-sky-500/40 bg-sky-50/60 dark:bg-sky-950/20 px-4 py-2.5 text-xs text-sky-900 dark:text-sky-200 flex items-start gap-2"
@@ -657,68 +657,43 @@ export default function LeadDetailPage() {
             >
               <Sparkles size={14} className="shrink-0 mt-0.5" />
               <div>
-                <span className="font-medium">Avis d'aperçu</span> — ce portail
-                affiche 3 avis génériques (Google non encore connecté). Le
-                prospect voit la bannière « Aperçu — vos vrais avis Google
-                apparaîtront ici une fois votre fiche connectée. » Ne lui dites
-                pas qu'il s'agit de vrais avis.
+                <span className="font-medium">Preview reviews</span> — this portal
+                shows 3 generic reviews (Google not yet connected). The
+                prospect sees the banner "Preview — your real Google reviews
+                will appear here once your profile is connected." Don't tell
+                them these are real reviews.
               </div>
             </div>
           )}
           {/* 2026-05-21 — Sprint 2 streamline: post-launch change requests
               from the client. Silent when none exist. */}
           <ChangeRequestsPanel leadId={id} onError={onErr} />
-          <div className="bg-card border border-card-border rounded-xl p-6 shadow-sm">
-            <h2 className="font-serif text-lg mb-3">Contact</h2>
-            <dl className="grid grid-cols-2 gap-y-2 text-sm">
-              <dt className="text-muted-foreground">Phone</dt>
-              <dd>
-                {l.phone ? (
-                  <CallButton
-                    phone={l.phone}
-                    leadId={id}
-                    practiceName={l.practice ?? null}
-                    onCopied={() => setInfo("Phone number copied to clipboard.")}
-                  />
-                ) : (
-                  <span className="text-muted-foreground">—</span>
-                )}
-              </dd>
-              <dt className="text-muted-foreground">Email</dt>
-              <dd>{l.email ?? "—"}</dd>
-              <dt className="text-muted-foreground">Current site</dt>
-              <dd className="truncate">
-                {l.currentWebsite ? (
-                  <a
-                    href={l.currentWebsite}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-accent hover:underline"
-                  >
-                    {l.currentWebsite}
-                  </a>
-                ) : (
-                  "—"
-                )}
-              </dd>
-              <dt className="text-muted-foreground">Profile</dt>
-              <dd className="whitespace-pre-wrap">{l.profileBlurb ?? "—"}</dd>
-            </dl>
-          </div>
+          {/* QA Change #5 (2026-06-22): Notes moved UP — directly under the
+              editable lead panel — because it's the rep's most-used surface.
+              The old read-only "Contact" card was removed: phone / email /
+              current site now live (editable) inside LeadAdminPanel above,
+              so the two contact areas are merged into one editable panel.
+              The imported profile blurb is kept below as read-only context.
 
-          {/* Rep notes — append-only timestamped feed (#229, 2026-05-11).
+              Rep notes — append-only timestamped feed (#229, 2026-05-11).
               Each "Add note" submit creates its own row so the rep can
-              scroll back through every conversation, follow-up, and
-              detail in chronological order. No edit/delete: a typo gets
-              a new note, not a rewrite. The first non-empty note also
-              promotes a `claimed` lead to `nurturing` so the Nurturing
-              filter remains the rep's working list. */}
+              scroll back through every conversation, follow-up, and detail
+              in chronological order. */}
           <RepNotesPanel
             leadId={id}
             enrichmentNotes={l.notes ?? ""}
             onError={onErr}
             onSuccess={() => onSuccess("Note added")}
           />
+
+          {l.profileBlurb ? (
+            <div className="bg-card border border-card-border rounded-xl p-6 shadow-sm">
+              <h2 className="font-serif text-lg mb-3">Profile</h2>
+              <p className="text-sm whitespace-pre-wrap text-foreground/80">
+                {l.profileBlurb}
+              </p>
+            </div>
+          ) : null}
 
           {/* RepAttachmentsPanel — founder feedback 2026-05-17: 'Wasn't
               the sales rep supposed to able to upload files, images, text
@@ -735,7 +710,7 @@ export default function LeadDetailPage() {
             onSuccess={() => onSuccess("Attachment shared with admin.")}
           />
 
-          <PortalSnapshot leadId={id} />
+          <PortalSnapshot leadId={id} linkEvents={lead.data.linkEvents ?? []} />
 
           {/*
            * The "Customer portal" panel previously rendered here was moved
@@ -745,44 +720,56 @@ export default function LeadDetailPage() {
            * the lead. The lead-portal data fetched in `lead-portal` query
            * higher up in this component is still used by `PortalSnapshot`
            * below to render the prospect's chosen template/colors/addons.
+           *
+           * QA Change #5 (2026-06-22): History (call timeline + event
+           * timeline) is collapsed by default so the rep's eye lands on
+           * Notes and the prospect-activity panel first. Click to expand.
            */}
-          <div className="bg-card border border-card-border rounded-xl p-6 shadow-sm">
-            <CallTimelineList calls={lead.data?.calls ?? []} />
-            <h2 className="font-serif text-lg mb-3">Timeline</h2>
-            {events.length === 0 ? (
-              <div className="text-sm text-muted-foreground">
-                No activity yet — start by sending a preview link.
-              </div>
-            ) : (
-              <ol className="space-y-4">
-                {events.map((e, i) => (
-                  <li key={i} className="flex gap-3">
-                    <div className="shrink-0 w-8 h-8 rounded-full bg-muted grid place-items-center text-muted-foreground">
-                      <e.icon size={14} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium">{e.title}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {fmtDateTime(e.time)}
+          <details className="bg-card border border-card-border rounded-xl p-6 shadow-sm">
+            <summary className="font-serif text-lg cursor-pointer select-none flex items-center justify-between gap-3">
+              <span>History</span>
+              <span className="text-xs font-sans text-muted-foreground">
+                {events.length} event{events.length === 1 ? "" : "s"} · click to {events.length ? "expand" : "view"}
+              </span>
+            </summary>
+            <div className="mt-4">
+              <CallTimelineList calls={lead.data?.calls ?? []} />
+              <h3 className="font-serif text-base mb-3 mt-4">Timeline</h3>
+              {events.length === 0 ? (
+                <div className="text-sm text-muted-foreground">
+                  No activity yet — start by sending a preview link.
+                </div>
+              ) : (
+                <ol className="space-y-4">
+                  {events.map((e, i) => (
+                    <li key={i} className="flex gap-3">
+                      <div className="shrink-0 w-8 h-8 rounded-full bg-muted grid place-items-center text-muted-foreground">
+                        <e.icon size={14} />
                       </div>
-                      {e.paymentMeta ? (
-                        <PaymentLinkEventDetail
-                          meta={e.paymentMeta.meta}
-                          fallback={e.paymentMeta.fallback}
-                        />
-                      ) : (
-                        e.detail && (
-                          <div className="text-sm text-foreground/80 mt-1 whitespace-pre-wrap break-words">
-                            {e.detail}
-                          </div>
-                        )
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium">{e.title}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {fmtDateTime(e.time)}
+                        </div>
+                        {e.paymentMeta ? (
+                          <PaymentLinkEventDetail
+                            meta={e.paymentMeta.meta}
+                            fallback={e.paymentMeta.fallback}
+                          />
+                        ) : (
+                          e.detail && (
+                            <div className="text-sm text-foreground/80 mt-1 whitespace-pre-wrap break-words">
+                              {e.detail}
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+          </details>
         </div>
 
         <aside className="space-y-4 lg:sticky lg:top-6 self-start">
@@ -929,78 +916,17 @@ export default function LeadDetailPage() {
                 </span>
               </div>
             ) : null}
-            {/* Founder feedback 2026-05-19: 'remove the booking + telehealth'.
-                The Calendly + Doxy URLs are still managed via API for the
-                portal BookingWidget + DoxyBridge primitives, but the inline
-                form has been retired from the rep lead-detail panel. */}
-            {/* Sprint 1 (2026-05-22) — primary new action. The rep
-                signals to the founder that she wants a hand-crafted
-                portal for this lead. Disabled while a request is
-                already pending so the founder's dashboard doesn't get
-                spammed with duplicates. */}
-            <ActionButton
-              icon={Sparkles}
-              label={
-                pendingPortalRequest
-                  ? "Portail demandé"
-                  : "Demander un portail"
-              }
-              subtitle={
-                pendingPortalRequest
-                  ? `En cours de préparation par Ashford depuis ${fmtDateTime(pendingPortalRequest.createdAt)}.`
-                  : "Demander à Ashford de préparer un portail personnalisé pour ce prospect."
-              }
-              tone={pendingPortalRequest ? undefined : "primary"}
-              onClick={() => setModal("portal_request")}
-              disabled={Boolean(pendingPortalRequest)}
-            />
-            <ActionButton
-              icon={MessageSquare}
-              label="Send a one-off SMS"
-              subtitle={
-                smsDisabledReason ??
-                (dialerPerRepOauth && dialerRepConnected
-                  ? "Sends from your Dialpad number — replies land in your Dialpad inbox."
-                  : "Temporarily unavailable — pending carrier verification.")
-              }
-              onClick={() => setModal("sms")}
-              // Enabled once the rep has connected her Dialpad seat
-              // (task #226). Without per-rep OAuth, TextBelt's 10DLC
-              // brand isn't verified yet so the action stays disabled.
-              disabled={
-                Boolean(smsDisabledReason) ||
-                !(dialerPerRepOauth && dialerRepConnected)
-              }
-            />
-            <ActionButton
-              icon={Mail}
-              label="Send a one-off email"
-              subtitle={
-                l.email
-                  ? "Quick email — no preview link attached."
-                  : "No email on file for this lead."
-              }
-              onClick={() => setModal("email")}
-              disabled={!l.email}
-            />
-            <ActionButton
-              icon={CalendarClock}
-              label="Schedule callback"
-              subtitle="Book a follow-up. Optional recap message."
-              onClick={() => setModal("callback")}
-            />
+            {/* QA Change #4 (2026-06-22): trimmed "Other actions" to just
+                Mark won + Disqualify. Removed the one-off SMS / one-off
+                email / schedule-callback / mark-as-cold actions and the
+                "Demander un portail" request (reps now generate portals
+                directly, so there's nothing to request from Ashford). */}
             <ActionButton
               icon={CheckCircle2}
               label="Mark won"
               subtitle="They paid. Triggers your $149 closing bonus."
               tone="primary"
               onClick={() => setModal("won")}
-            />
-            <ActionButton
-              icon={Snowflake}
-              label="Mark as cold"
-              subtitle="Park for later. Stays yours; come back when ready."
-              onClick={() => setModal("cold")}
             />
             <ActionButton
               icon={XCircle}
@@ -1114,58 +1040,28 @@ export default function LeadDetailPage() {
       {/* === Mobile sticky action bar ============================================
           Reps work this page mostly from a phone in the field. The sidebar
           aside (the desktop action surface) only becomes sticky at `lg`, so
-          on tablet/phone widths the rep had to scroll back up to fire Call
-          / SMS / Note. This bar pins those three actions to the bottom of
-          the viewport below `lg`, mirrors the same handlers + disabled
-          reasons the sidebar uses (so behavior never drifts), and respects
-          the iOS bottom safe-area inset so the buttons don't sit under the
-          home indicator. SMS is wired but stays disabled for parity with
-          the sidebar — flipping the carrier-verification flag in one place
-          (the sidebar ActionButton above) is enough to also enable it here
-          once the change ships. */}
+          on tablet/phone widths the rep had to scroll back up to fire the
+          primary action. QA Change #4 (2026-06-22) retired SMS and the
+          schedule-callback action, so this bar now pins just Call to the
+          bottom below `lg`, mirroring the sidebar handler, and respects the
+          iOS bottom safe-area inset so the button doesn't sit under the home
+          indicator. */}
       <div
         className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         role="toolbar"
         aria-label="Lead quick actions"
       >
-        <div className="grid grid-cols-3 gap-1 px-2 py-2">
+        <div className="px-2 py-2">
           <button
             type="button"
             onClick={() => setModal("call")}
             disabled={Boolean(callDisabledReason)}
             title={callDisabledReason ?? "Click-to-call. Recorded + auto-summarized."}
-            className="flex flex-col items-center justify-center gap-0.5 py-2 rounded-md text-accent hover:bg-accent/10 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
+            className="flex w-full items-center justify-center gap-2 py-2.5 rounded-md text-accent hover:bg-accent/10 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
           >
             <Phone size={18} />
-            <span className="text-[11px] font-medium">Call</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setModal("sms")}
-            disabled={
-              Boolean(smsDisabledReason) ||
-              !(dialerPerRepOauth && dialerRepConnected)
-            }
-            title={
-              smsDisabledReason ??
-              (dialerPerRepOauth && dialerRepConnected
-                ? "Send a one-off SMS from your Dialpad number."
-                : "Temporarily unavailable — pending carrier verification.")
-            }
-            className="flex flex-col items-center justify-center gap-0.5 py-2 rounded-md text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
-          >
-            <MessageSquare size={18} />
-            <span className="text-[11px] font-medium">SMS</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setModal("callback")}
-            title="Schedule a follow-up callback. Optional recap note."
-            className="flex flex-col items-center justify-center gap-0.5 py-2 rounded-md text-foreground hover:bg-muted transition-colors"
-          >
-            <CalendarClock size={18} />
-            <span className="text-[11px] font-medium">Note</span>
+            <span className="text-sm font-medium">Call the prospect</span>
           </button>
         </div>
       </div>
@@ -1890,15 +1786,8 @@ function WorkflowStepList({
         onClick={onSendPreview}
         primary
       />
-      <WorkflowStep
-        n={5}
-        icon={MessageSquare}
-        label="Send preview SMS"
-        subtitle="Temporarily unavailable — pending carrier verification."
-        status={{ tone: "neutral", label: "Disabled" }}
-        onClick={() => {}}
-        disabled
-      />
+      {/* QA Change #4 (2026-06-22): "Send preview SMS" step removed —
+          all SMS actions are retired from the rep workflow. */}
       {showFollowUpCue && (
         <div
           data-testid="needs-followup-call-callout"
@@ -3798,37 +3687,106 @@ const TEMPLATE_CHOICES: Array<{ key: string; label: string }> = [
   { key: "quiet_practice", label: "Quiet Practice" },
 ];
 
-function PortalSnapshot({ leadId }: { leadId: number }) {
-  const [showAllEvents, setShowAllEvents] = useState(false);
-  const [showAllAddons, setShowAllAddons] = useState(false);
+// QA Change #5 (2026-06-22): renamed from the old "Snapshot" panel. The
+// "Recent activity" (portal_events, which counts the rep's own preview
+// opens) and "Add-ons of interest" blocks were removed; this is now a
+// focused "Prospect activity" panel answering the one question a rep
+// cares about — did the PROSPECT open their link? link_events are the
+// honest signal: a rep preview opens the LONG url (internal=1 / rep_token)
+// and never hits the /s short link, so it creates no link_event. Only
+// genuine prospect clicks land here. The Headway enrichment card is kept.
+function PortalSnapshot({
+  leadId,
+  linkEvents,
+}: {
+  leadId: number;
+  linkEvents: LinkEventDto[];
+}) {
+  const [showAll, setShowAll] = useState(false);
   const portal = useQuery({
     queryKey: ["lead-portal", leadId],
     queryFn: () => api.getLeadPortal(leadId),
     refetchOnWindowFocus: false,
   });
-  const p = portal.data;
-  if (!p) return null;
-  const headway = p.headway;
-  const interestedSlugs = new Set<string>();
-  for (const e of p.events) {
-    if (e.eventType === "addon_toggle" && e.addonSlug) {
-      const md = (e.metadata ?? {}) as { selected?: boolean };
-      if (md.selected) interestedSlugs.add(e.addonSlug);
-    }
-  }
-  const SNAPSHOT_CAP = 5;
-  const allInterested = Array.from(interestedSlugs);
-  const visibleAddons = showAllAddons
-    ? allInterested
-    : allInterested.slice(0, SNAPSHOT_CAP);
-  const visibleEvents = showAllEvents
-    ? p.events
-    : p.events.slice(0, SNAPSHOT_CAP);
+  const headway = portal.data?.headway ?? null;
+
+  const PROSPECT_KINDS = new Set([
+    "opened",
+    "viewed_template",
+    "preferred_template",
+    "requested_changes",
+    "requested_callback",
+  ]);
+  const LINK_LABELS: Record<string, string> = {
+    opened: "Opened the preview",
+    viewed_template: "Viewed a design",
+    preferred_template: "Picked a favorite design",
+    requested_changes: "Requested changes",
+    requested_callback: "Requested a callback",
+  };
+  const prospectEvents = linkEvents
+    .filter((e) => PROSPECT_KINDS.has(e.kind))
+    .slice()
+    .sort((a, b) => +new Date(b.occurredAt) - +new Date(a.occurredAt));
+  const opens = prospectEvents.filter((e) => e.kind === "opened");
+  const lastOpen = opens[0]?.occurredAt ?? null;
+  const ACTIVITY_CAP = 6;
+  const visible = showAll
+    ? prospectEvents
+    : prospectEvents.slice(0, ACTIVITY_CAP);
+
   return (
     <div className="mt-4 space-y-2">
       <h3 className="text-xs uppercase tracking-wide text-muted-foreground">
-        Snapshot
+        Prospect activity
       </h3>
+      <div className="rounded-lg border border-card-border bg-card p-3 shadow-sm">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+          <Eye size={12} /> Did the prospect open their link?
+        </div>
+        {opens.length === 0 ? (
+          <div className="text-xs text-muted-foreground">
+            Not yet — no prospect-side opens recorded. (Your own preview
+            opens don't count.)
+          </div>
+        ) : (
+          <div className="text-sm text-foreground">
+            <span className="font-medium text-emerald-700 dark:text-emerald-400">
+              Opened {opens.length}×
+            </span>
+            {lastOpen ? (
+              <span className="text-muted-foreground">
+                {" "}
+                · last {fmtDateTime(lastOpen)}
+              </span>
+            ) : null}
+          </div>
+        )}
+        {prospectEvents.length > 0 ? (
+          <ul className="space-y-1 text-xs mt-2 pt-2 border-t border-input">
+            {visible.map((e, i) => (
+              <li key={i} className="flex justify-between gap-2">
+                <span className="truncate">
+                  {LINK_LABELS[e.kind] ?? e.kind.replace(/_/g, " ")}
+                  {e.templateKey ? ` · ${e.templateKey}` : ""}
+                </span>
+                <span className="text-muted-foreground shrink-0">
+                  {fmtDateTime(e.occurredAt)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {prospectEvents.length > ACTIVITY_CAP ? (
+          <button
+            type="button"
+            onClick={() => setShowAll((v) => !v)}
+            className="mt-1 text-xs text-primary underline hover:no-underline"
+          >
+            {showAll ? "Show less" : `See all ${prospectEvents.length}`}
+          </button>
+        ) : null}
+      </div>
       {headway ? (
         <div className="rounded-lg border border-card-border bg-card p-3 shadow-sm">
           <div className="flex items-center justify-between gap-2 mb-2">

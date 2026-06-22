@@ -51,17 +51,16 @@ export const generateBriefing = async (leadId: number): Promise<BriefingResult> 
     "current_website_pages",
   ];
   const STALE_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
-  // Hard cap on how long we'll wait for fresh enrichment before returning
-  // the briefing. The Replit autoscale proxy terminates idle requests at
-  // ~25s with HTTP 504; on a freshly-claimed lead the full 12-source
-  // pipeline takes ~25-30s, which used to push the rep's briefing call
-  // into proxy-timeout territory even though the server eventually
-  // responded with a 200 (founder report 2026-05-08, lead Jamonte
-  // Banks). With this race the briefing returns within ~15s worst-case,
-  // any sources that haven't finished by then keep running in the
-  // background, and the very next "Regenerate briefing" click picks up
-  // whatever finished in the meantime.
-  const PRE_ENRICH_BUDGET_MS = 15_000;
+  // 2026-06-22 (Bug #4): enrichment is now FULLY non-blocking. The old
+  // code awaited a 15s Promise.race before generating the briefing; on
+  // Railway the gateway can terminate the request before that resolves,
+  // and any slow downstream (enrichment or the AI call) surfaced to the
+  // rep as "AI briefing temporarily unavailable" even though the server
+  // would have answered eventually. We now kick off refresh in the
+  // background and immediately build the briefing from whatever data is
+  // cached; the next "Regenerate briefing" click picks up the fresh
+  // sources. The briefing endpoint returns in well under a second of
+  // its own work, so it can never time the gateway out.
   try {
     const existing = await getLatestEnrichment(leadId);
     const presentSources = new Set(existing.map((e) => e.sourceKey));
@@ -73,38 +72,17 @@ export const generateBriefing = async (leadId: number): Promise<BriefingResult> 
       return now - ts > STALE_MS;
     });
     if ((anyMissing || anyStale) && isAnyEnrichmentSourceConfigured()) {
-      const enrichPromise = runEnrichmentForLead(leadId, "auto");
-      // Always attach a catch handler to the underlying promise so an
-      // enrichment failure that resolves AFTER the race timeout doesn't
-      // surface as an unhandledRejection on the process.
-      enrichPromise.catch((err) => {
+      // Fire-and-forget — never await. Attach a catch so a later
+      // rejection doesn't surface as an unhandledRejection.
+      void runEnrichmentForLead(leadId, "auto").catch((err) => {
         logger.warn(
           { err, leadId },
-          "briefing: background enrichment failed after race timeout",
+          "briefing: background enrichment refresh failed",
         );
       });
-      // Hold the timeout handle so we can clear it when enrichment wins
-      // the race — otherwise the timer keeps the event loop alive for
-      // the full budget AND falsely logs "budget exhausted" on every
-      // briefing, polluting telemetry (architect review 2026-05-08).
-      let timeoutHandle: NodeJS.Timeout | undefined;
-      const timeoutPromise = new Promise<"timeout">((resolve) => {
-        timeoutHandle = setTimeout(() => resolve("timeout"), PRE_ENRICH_BUDGET_MS);
-      });
-      const winner = await Promise.race([
-        enrichPromise.then(() => "enrichment" as const),
-        timeoutPromise,
-      ]);
-      if (timeoutHandle) clearTimeout(timeoutHandle);
-      if (winner === "timeout") {
-        logger.info(
-          { leadId, budgetMs: PRE_ENRICH_BUDGET_MS },
-          "briefing: pre-enrichment budget exhausted, proceeding with cached data",
-        );
-      }
     }
   } catch (err) {
-    logger.warn({ err, leadId }, "briefing: pre-enrichment failed, continuing");
+    logger.warn({ err, leadId }, "briefing: pre-enrichment check failed, continuing");
   }
   const [events, cart, enrichment, addonCatalog, rep] = await Promise.all([
     getLatestPortalActivity(portal.id, 50),
@@ -271,23 +249,41 @@ Given the prospect snapshot below, return STRICT JSON with these fields:
 If a "headway" block is present in the snapshot, the prospect is already listed on Headway and accepting insurance. Mention this explicitly in "summary" (cite the actual insurance names, e.g. "they accept BCBS, Aetna via Headway"), and emphasise that an Ashford site captures cash-pay clients who don't want to use insurance.
 Do NOT include an "opener" or any greeting line — the rep handles the opener themselves. Keep tone calm and respectful. Do NOT invent facts not in the snapshot.`;
 
+// Hard timeout for the AI provider calls. Without this a slow or hung
+// provider connection blocks the briefing indefinitely; on timeout we
+// abort, the caller catches, and we fall through to the next provider /
+// the deterministic heuristic so the rep always gets a briefing fast.
+const AI_CALL_TIMEOUT_MS = 12_000;
+const withTimeout = (ms: number) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return { signal: controller.signal, clear: () => clearTimeout(timer) };
+};
+
 const callOpenAi = async (ctx: BriefingContext): Promise<Omit<BriefingResult, "generatedAt" | "sourceLabel" | "headwayProfileUrl">> => {
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${env.openaiApiKey}`,
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      response_format: { type: "json_object" },
-      temperature: 0.4,
-      messages: [
-        { role: "system", content: PROMPT_INSTRUCTION },
-        { role: "user", content: JSON.stringify(ctx) },
-      ],
-    }),
-  });
+  const t = withTimeout(AI_CALL_TIMEOUT_MS);
+  let res: globalThis.Response;
+  try {
+    res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      signal: t.signal,
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${env.openaiApiKey}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        response_format: { type: "json_object" },
+        temperature: 0.4,
+        messages: [
+          { role: "system", content: PROMPT_INSTRUCTION },
+          { role: "user", content: JSON.stringify(ctx) },
+        ],
+      }),
+    });
+  } finally {
+    t.clear();
+  }
   if (!res.ok) throw new Error(`openai ${res.status}`);
   const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
   const content = json.choices?.[0]?.message?.content ?? "{}";
@@ -295,20 +291,27 @@ const callOpenAi = async (ctx: BriefingContext): Promise<Omit<BriefingResult, "g
 };
 
 const callAnthropic = async (ctx: BriefingContext): Promise<Omit<BriefingResult, "generatedAt" | "sourceLabel" | "headwayProfileUrl">> => {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": env.anthropicApiKey ?? "",
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 800,
-      system: PROMPT_INSTRUCTION,
-      messages: [{ role: "user", content: JSON.stringify(ctx) }],
-    }),
-  });
+  const t = withTimeout(AI_CALL_TIMEOUT_MS);
+  let res: globalThis.Response;
+  try {
+    res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      signal: t.signal,
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": env.anthropicApiKey ?? "",
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 800,
+        system: PROMPT_INSTRUCTION,
+        messages: [{ role: "user", content: JSON.stringify(ctx) }],
+      }),
+    });
+  } finally {
+    t.clear();
+  }
   if (!res.ok) throw new Error(`anthropic ${res.status}`);
   const json = (await res.json()) as { content?: Array<{ text?: string }> };
   const text = json.content?.[0]?.text ?? "{}";
