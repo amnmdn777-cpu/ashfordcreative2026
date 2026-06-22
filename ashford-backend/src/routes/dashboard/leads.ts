@@ -602,6 +602,9 @@ const SUPPORTED_TEMPLATES = new Set([
   "front_porch",
   "hello_friend",
   "quiet_practice",
+  // 2026-06-22: the new premium "Clarity" template. Was missing here, so
+  // picking it in "Send preview email" 400'd with "Unsupported template key".
+  "clarity",
 ]);
 const SetTemplateBody = z.object({
   templateKey: z
