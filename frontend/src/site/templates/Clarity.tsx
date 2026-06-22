@@ -10,7 +10,6 @@ import {
 } from "@site/components/sections";
 import {
   ClarityServices,
-  ClarityTeam,
   ClarityStats,
   ClarityVideo,
   ClarityLocation,
@@ -31,6 +30,7 @@ import type { TemplateProps } from "./types";
 import { InsuranceBadges } from "./_wow";
 import { WordReveal } from "./motion";
 import { useClarityNav } from "./clarity/navContext";
+import { ClarityChatWidget } from "./clarity/ChatWidget";
 import { Cta, ImageCard, TopBar, WarmBackdrop } from "./clarity/skin";
 
 /**
@@ -62,7 +62,6 @@ function Clarity(props: TemplateProps) {
         { label: tt("Home", "Inicio"), href: "/" },
         { label: tt("About", "Acerca"), href: "/about" },
         { label: tt("Services", "Servicios"), href: "/services" },
-        { label: tt("Team", "Equipo"), href: "/team" },
         { label: tt("Blog", "Blog"), href: "/blog" },
       ]
     : [
@@ -355,18 +354,6 @@ function Clarity(props: TemplateProps) {
           />
         </motion.div>
 
-        {/* ── Meet the team ────────────────────────────────────── */}
-        <ClarityTeam
-          heading={tt("Meet the team", "Conoce al equipo")}
-          subhead={tt(
-            "The clinicians you'll actually be working with.",
-            "Los profesionales con quienes realmente trabajarás.",
-          )}
-          id="team"
-          members={props.content.team}
-          locale={locale}
-        />
-
         {/* ── Our approach ─────────────────────────────────────── */}
         <ClarityApproach
           heading={tt("Our approach", "Nuestro enfoque")}
@@ -556,6 +543,22 @@ function Clarity(props: TemplateProps) {
             "988 Suicide & Crisis Lifeline · 24/7",
             "Línea 988 de Crisis y Suicidio · 24/7",
           )}
+        />
+
+        <ClarityChatWidget
+          locale={locale}
+          practice={{
+            name: r.name,
+            blurb: subhead,
+            services: r.focus_areas.map((f) => f.title),
+            specialties,
+            insurance: r.insuranceList,
+            hours: loc?.hours,
+            feesNote: r.fees?.map((f) => `${f.label}: ${f.price}`).join("; "),
+            bookingUrl: r.bookingUrl,
+            phone: r.phone,
+            email: r.email,
+          }}
         />
       </div>
     </ThemeProvider>

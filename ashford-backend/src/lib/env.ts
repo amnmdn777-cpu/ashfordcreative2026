@@ -327,6 +327,10 @@ export const env = {
   googlePlacesApiKey: readEnv("GOOGLE_PLACES_API_KEY"),
   openaiApiKey: readEnv("OPENAI_API_KEY"),
   anthropicApiKey: readEnv("ANTHROPIC_API_KEY"),
+  // Gemini (Google AI Studio) — powers the public per-practice concierge
+  // chat widget. Free-tier key lives here server-side; the browser never
+  // sees it (the widget proxies through /api/public/chat).
+  geminiApiKey: readEnv("GEMINI_API_KEY"),
   // Replit AI Integrations proxy for Anthropic. When present we prefer this
   // over a raw ANTHROPIC_API_KEY because it routes through Replit's billing
   // (no per-key usage caps to manage). The base URL points at the proxy and

@@ -17,6 +17,7 @@ import selfServeReserve from "./selfServeReserve";
 import funnelEvents from "./funnelEvents";
 import editorial from "./editorial";
 import whatsappClicks from "./whatsappClicks";
+import chat from "./chat";
 
 const router: IRouter = Router();
 router.use(preview);
@@ -36,5 +37,6 @@ router.use(selfServeReserve);
 router.use(funnelEvents);
 router.use(editorial);
 router.use(whatsappClicks);
+router.use(chat);
 
 export default router;

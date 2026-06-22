@@ -19,9 +19,9 @@ import {
   ClarityProcess,
   ClarityCtaBand,
   ClarityServices,
-  ClarityTeam,
   ClarityStats,
 } from "./sections";
+import { ClarityChatWidget } from "./ChatWidget";
 import { TopBar } from "./skin";
 
 /**
@@ -66,8 +66,8 @@ const SAMPLE_PAGES: PreviewWebsitePage[] = [
     "About the practice",
     "A calm, modern practice built around one idea: therapy should meet you where you are.",
     [
-      "We're a group of licensed clinicians who believe good therapy is equal parts evidence and warmth. Every clinician here is trained in modalities that actually move the needle — EMDR, CBT, and depth-oriented work — and chosen as much for how they make people feel as for their credentials.",
-      "We opened our doors because too many people told us their last therapy experience felt transactional — a waiting-room form, a rushed intake, a clinician watching the clock. We built the opposite: small caseloads, unhurried sessions, and a front desk that actually answers.",
+      "I'm a licensed therapist who believes good therapy is equal parts evidence and warmth. I'm trained in modalities that actually move the needle — EMDR, CBT, and depth-oriented work — and I chose this work for how it helps people feel, not just for the credentials on the wall.",
+      "I opened this practice because too many people told me their last therapy experience felt transactional — a waiting-room form, a rushed intake, a clinician watching the clock. I built the opposite: a small caseload, unhurried sessions, and a real person who answers when you reach out.",
       "Our work is trauma-informed and culturally responsive. Several of our clinicians are bilingual, and we see individuals, couples, and families across the lifespan — from teens finding their footing to adults navigating burnout, grief, and the quieter transitions no one warns you about.",
       "New clients tell us the same thing: it finally felt like someone was listening. That's the bar we hold ourselves to, session after session.",
     ],
@@ -85,18 +85,6 @@ const SAMPLE_PAGES: PreviewWebsitePage[] = [
       "Family therapy for the seasons that ask the most of a family — a new diagnosis, a blended household, a teen in crisis, a parent in decline. We make room for every voice and help you move as one.",
       "Sessions are 50 minutes, weekly to start, available in person or over secure video. Sliding-scale spots open up regularly — just ask.",
     ],
-  ),
-  mkPage(
-    "/team",
-    "team",
-    "Our clinicians",
-    "Meet the team",
-    "The clinicians you'll actually be working with — real people, real specialties.",
-    [
-      "Each clinician keeps a deliberately small caseload so the people they see get their full attention. We hire for warmth as much as credentials, and every therapist here has a focus — perinatal, trauma, couples, adolescents — so we can match you with someone who actually fits.",
-      "Not sure who to pick? Start with a free 15-minute call and we'll point you to the right person. If it's not a fit after the first session, we'll help you find a better one — no awkwardness, no charge.",
-    ],
-    [PORTRAIT],
   ),
   mkPage(
     "/blog",
@@ -149,7 +137,6 @@ export function ClarityPagesDemo({
     { label: tt("Home", "Inicio"), href: "/" },
     { label: tt("About", "Acerca"), href: "/about" },
     { label: tt("Services", "Servicios"), href: "/services" },
-    { label: tt("Team", "Equipo"), href: "/team" },
     { label: tt("Blog", "Blog"), href: "/blog" },
   ];
 
@@ -293,22 +280,6 @@ export function ClarityPagesDemo({
             {ctaBand}
           </>
         );
-      case "team":
-        return (
-          <>
-            <ClarityPageHero
-              eyebrow={tt("Team", "Equipo")}
-              title={title}
-              intro={intro}
-            />
-            <ClarityTeam
-              heading={tt("Meet the team", "Conoce al equipo")}
-              members={content.team}
-              locale={locale}
-            />
-            {ctaBand}
-          </>
-        );
       default:
         return (
           <>
@@ -345,6 +316,22 @@ export function ClarityPagesDemo({
               contactLabel={tt("Contact", "Contacto")}
             />
             {renderSubPage(activePage)}
+            <ClarityChatWidget
+              locale={locale}
+              practice={{
+                name: r.name,
+                services: r.focus_areas.map((f) => f.title),
+                specialties: content.specialties,
+                insurance: r.insuranceList,
+                hours: content.locations?.[0]?.hours,
+                feesNote: r.fees
+                  ?.map((f) => `${f.label}: ${f.price}`)
+                  .join("; "),
+                bookingUrl: r.bookingUrl,
+                phone: r.phone,
+                email: r.email,
+              }}
+            />
           </div>
         </ThemeProvider>
       ) : (
