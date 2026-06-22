@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 /**
  * Clarity AI concierge — a per-practice chat widget.
@@ -189,19 +190,41 @@ export function ClarityChatWidget({
     }
   };
 
-  return (
+  // Use a portal to render directly into document.body.
+  // This escapes the `transform: translateZ(0)` wrapper in TemplateRoute
+  // which would otherwise trap `position: fixed` children relative to
+  // that container instead of the viewport — making the button invisible.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  if (!mounted) return null;
+
+  const ui = (
     <>
       {/* Launcher */}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={tt("Chat with us", "Chatea con nosotros")}
-        className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-full px-5 py-3 shadow-lg transition-transform hover:-translate-y-0.5"
         style={{
-          backgroundColor: "var(--color-text)",
-          color: "var(--color-surface)",
-          fontFamily: "var(--font-body)",
+          position: "fixed",
+          bottom: "20px",
+          right: "20px",
+          zIndex: 9999,
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          borderRadius: "9999px",
+          padding: "12px 20px",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
+          transition: "transform 0.2s",
+          border: "none",
+          cursor: "pointer",
+          backgroundColor: "#1a1a1a",
+          color: "#faf9f7",
+          fontFamily: "Inter, sans-serif",
         }}
+        onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
+        onMouseLeave={(e) => (e.currentTarget.style.transform = "")}
       >
         <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
           <path
@@ -213,7 +236,7 @@ export function ClarityChatWidget({
             strokeLinejoin="round"
           />
         </svg>
-        <span className="text-sm font-medium">
+        <span style={{ fontSize: "14px", fontWeight: 500 }}>
           {tt("Ask us", "Pregúntanos")}
         </span>
       </button>
@@ -221,29 +244,47 @@ export function ClarityChatWidget({
       {/* Panel */}
       {open ? (
         <div
-          className="fixed bottom-20 right-5 z-50 w-[min(92vw,380px)] rounded-2xl overflow-hidden shadow-2xl flex flex-col"
           style={{
-            backgroundColor: "var(--color-surface-soft)",
-            border:
-              "1px solid color-mix(in srgb, var(--color-text) 12%, transparent)",
+            position: "fixed",
+            bottom: "80px",
+            right: "20px",
+            zIndex: 9999,
+            width: "min(92vw, 380px)",
+            borderRadius: "16px",
+            overflow: "hidden",
+            boxShadow: "0 8px 40px rgba(0,0,0,0.22)",
+            display: "flex",
+            flexDirection: "column",
             maxHeight: "min(70vh, 560px)",
+            backgroundColor: "#f5f1eb",
+            border: "1px solid rgba(26,26,26,0.12)",
           }}
         >
+          {/* Header */}
           <div
-            className="px-4 py-3 flex items-center justify-between"
             style={{
-              backgroundColor: "var(--color-text)",
-              color: "var(--color-surface)",
+              padding: "12px 16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              backgroundColor: "#1a1a1a",
+              color: "#faf9f7",
             }}
           >
-            <div className="min-w-0">
+            <div style={{ minWidth: 0 }}>
               <div
-                className="text-sm font-semibold truncate"
-                style={{ fontFamily: "var(--font-display)" }}
+                style={{
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  fontFamily: "Inter, sans-serif",
+                }}
               >
                 {practice.name}
               </div>
-              <div className="text-[11px] opacity-80">
+              <div style={{ fontSize: "11px", opacity: 0.8 }}>
                 {tt("Virtual assistant", "Asistente virtual")}
               </div>
             </div>
@@ -251,7 +292,13 @@ export function ClarityChatWidget({
               type="button"
               onClick={() => setOpen(false)}
               aria-label="Close"
-              className="opacity-80 hover:opacity-100"
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "#faf9f7",
+                opacity: 0.8,
+              }}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
                 <path
@@ -264,43 +311,52 @@ export function ClarityChatWidget({
             </button>
           </div>
 
-          <div ref={scroller} className="flex-1 overflow-y-auto p-4 space-y-3">
+          {/* Messages */}
+          <div
+            ref={scroller}
+            style={{
+              flex: 1,
+              overflowY: "auto",
+              padding: "16px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px",
+            }}
+          >
             {messages.map((m, i) => (
               <div
                 key={i}
-                className={
-                  m.role === "user" ? "flex justify-end" : "flex justify-start"
-                }
+                style={{
+                  display: "flex",
+                  justifyContent: m.role === "user" ? "flex-end" : "flex-start",
+                }}
               >
                 <div
-                  className="max-w-[80%] rounded-2xl px-3.5 py-2.5 text-[14px] leading-relaxed"
-                  style={
-                    m.role === "user"
-                      ? {
-                          backgroundColor: "var(--color-text)",
-                          color: "var(--color-surface)",
-                          fontFamily: "var(--font-body)",
-                        }
-                      : {
-                          backgroundColor:
-                            "color-mix(in srgb, var(--color-secondary) 35%, var(--color-surface))",
-                          color: "var(--color-text)",
-                          fontFamily: "var(--font-body)",
-                        }
-                  }
+                  style={{
+                    maxWidth: "80%",
+                    borderRadius: "16px",
+                    padding: "10px 14px",
+                    fontSize: "14px",
+                    lineHeight: 1.5,
+                    fontFamily: "Inter, sans-serif",
+                    ...(m.role === "user"
+                      ? { backgroundColor: "#1a1a1a", color: "#faf9f7" }
+                      : { backgroundColor: "rgba(210,180,160,0.35)", color: "#1a1a1a" }),
+                  }}
                 >
                   {m.text}
                 </div>
               </div>
             ))}
             {busy ? (
-              <div className="flex justify-start">
+              <div style={{ display: "flex", justifyContent: "flex-start" }}>
                 <div
-                  className="rounded-2xl px-3.5 py-2.5 text-[14px]"
                   style={{
-                    backgroundColor:
-                      "color-mix(in srgb, var(--color-secondary) 35%, var(--color-surface))",
-                    color: "var(--color-text-muted)",
+                    borderRadius: "16px",
+                    padding: "10px 14px",
+                    fontSize: "14px",
+                    backgroundColor: "rgba(210,180,160,0.35)",
+                    color: "#888",
                   }}
                 >
                   …
@@ -309,38 +365,49 @@ export function ClarityChatWidget({
             ) : null}
           </div>
 
+          {/* Input */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
               void send();
             }}
-            className="p-3 flex gap-2"
             style={{
-              borderTop:
-                "1px solid color-mix(in srgb, var(--color-text) 10%, transparent)",
+              padding: "12px",
+              display: "flex",
+              gap: "8px",
+              borderTop: "1px solid rgba(26,26,26,0.10)",
             }}
           >
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={tt("Type a message…", "Escribe un mensaje…")}
-              className="flex-1 rounded-full px-4 py-2.5 text-sm outline-none"
               style={{
-                backgroundColor: "var(--color-surface)",
-                border:
-                  "1px solid color-mix(in srgb, var(--color-text) 14%, transparent)",
-                color: "var(--color-text)",
-                fontFamily: "var(--font-body)",
+                flex: 1,
+                borderRadius: "9999px",
+                padding: "10px 16px",
+                fontSize: "14px",
+                outline: "none",
+                backgroundColor: "#faf9f7",
+                border: "1px solid rgba(26,26,26,0.14)",
+                color: "#1a1a1a",
+                fontFamily: "Inter, sans-serif",
               }}
             />
             <button
               type="submit"
               disabled={busy || !input.trim()}
-              className="rounded-full px-4 py-2.5 text-sm font-medium disabled:opacity-50"
               style={{
-                backgroundColor: "var(--color-accent)",
+                borderRadius: "9999px",
+                padding: "10px 16px",
+                fontSize: "14px",
+                fontWeight: 500,
+                backgroundColor: "#c4714a",
                 color: "#fff",
-                fontFamily: "var(--font-body)",
+                border: "none",
+                cursor: busy || !input.trim() ? "not-allowed" : "pointer",
+                opacity: busy || !input.trim() ? 0.5 : 1,
+                fontFamily: "Inter, sans-serif",
               }}
             >
               {tt("Send", "Enviar")}
@@ -350,4 +417,6 @@ export function ClarityChatWidget({
       ) : null}
     </>
   );
+
+  return createPortal(ui, document.body);
 }
