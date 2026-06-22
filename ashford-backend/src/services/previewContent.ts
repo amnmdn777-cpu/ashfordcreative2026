@@ -497,6 +497,41 @@ export const buildPreviewContent = async (
     }
   }
 
+  // Normalize the services list. Directory / PT / AI sources sometimes
+  // hand back a SINGLE entry whose name is a long comma-joined specialty
+  // dump ("Anger Management, Anxiety, …, Women's Issues"), which renders as
+  // one unreadable mega-card in every template's "what we work on" section.
+  // Explode any clearly list-like name (3+ comma/pipe/slash-separated
+  // parts) into discrete services, trim, de-dupe (case-insensitive), drop
+  // empties, and cap so the section stays a clean handful. Single-comma
+  // names (e.g. "Sex, Love & Relationship Therapy") are left intact.
+  const SERVICES_MAX = 6;
+  const splitServiceName = (raw: string): string[] =>
+    raw
+      .split(/\s*[,;|·•]\s*|\s*\/\s*|\n+/)
+      .map((s) => s.replace(/\s+/g, " ").trim())
+      .filter((s) => s.length > 1 && s.length <= 60);
+  if (services.length > 0) {
+    const seen = new Set<string>();
+    const normalized: PreviewContent["services"] = [];
+    for (const svc of services) {
+      const parts = splitServiceName(svc.name ?? "");
+      const items =
+        parts.length >= 3
+          ? parts.map((name) => ({ name, description: null }))
+          : [{ name: (svc.name ?? "").trim(), description: svc.description }];
+      for (const it of items) {
+        const key = it.name.toLowerCase();
+        if (!it.name || seen.has(key)) continue;
+        seen.add(key);
+        normalized.push(it);
+        if (normalized.length >= SERVICES_MAX) break;
+      }
+      if (normalized.length >= SERVICES_MAX) break;
+    }
+    services = normalized;
+  }
+
   // ---- specialties ---------------------------------------------------
   let specialties: string[] = [];
   if (

@@ -590,7 +590,16 @@ export function resolvePersona(
     : [];
   let focus_areas: FocusArea[];
   if (leadServices.length > 0) {
-    focus_areas = leadServices.map((s) => ({ title: s.name, body: s.description }));
+    // Services synthesized from a specialty list (or otherwise missing a
+    // blurb) arrive with no description; give those cards a short, on-brand
+    // body so the "what we work on" section never renders a bare title.
+    focus_areas = leadServices.map((s) => ({
+      title: s.name,
+      body:
+        s.description && s.description.trim()
+          ? s.description
+          : `Focused support for ${s.name.toLowerCase()} — in person and online across Texas.`,
+    }));
   } else if (isReal && leadSpecialties.length >= 3) {
     focus_areas = leadSpecialties.slice(0, 3).map((sp) => ({
       title: sp,
