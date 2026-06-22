@@ -634,12 +634,21 @@ export const resetPortalCompletely = async (
 
   const token = generateAccessToken();
   const expiresAt = new Date(Date.now() + PORTAL_TOKEN_TTL_MS);
+  // 2026-06-22: preserve the currently-selected template through the reset.
+  // #228 originally forced this back to the specialty default to drop the
+  // prospect's prior pick, but that also clobbered a template the REP
+  // deliberately chose (e.g. the premium "Clarity" look) — so picking a
+  // template then hitting "Prepare preview" silently reverted it. We still
+  // wipe customizations + enrichment for a clean slate, but keep the
+  // template. Fall back to the specialty default only when none is set.
+  const keepTemplate =
+    portal.selectedTemplate ?? defaultTemplateForSpecialty(lead.specialty);
   const [updated] = await db
     .update(prospectPortals)
     .set({
       accessToken: token,
       accessTokenExpiresAt: expiresAt,
-      selectedTemplate: defaultTemplateForSpecialty(lead.specialty),
+      selectedTemplate: keepTemplate,
       customizations: {},
       enrichmentSnapshot: null,
       updatedAt: new Date(),
