@@ -98,6 +98,58 @@ export default function MyLeadsPage() {
     return true;
   });
 
+  // FR#3 (2026-06-23): clickable column sorting, persisted in localStorage.
+  // Default = most-recent activity first (what Candice asked for).
+  type SortKey = "id" | "name" | "practice" | "specialty" | "city" | "temperature" | "lastActivityAt";
+  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>(() => {
+    try {
+      const raw = localStorage.getItem("myLeadsSort");
+      if (raw) return JSON.parse(raw) as { key: SortKey; dir: "asc" | "desc" };
+    } catch { /* ignore */ }
+    return { key: "lastActivityAt", dir: "desc" };
+  });
+  const toggleSort = (key: SortKey) => {
+    setSort((s) => {
+      const next: { key: SortKey; dir: "asc" | "desc" } =
+        s.key === key
+          ? { key, dir: s.dir === "asc" ? "desc" : "asc" }
+          : { key, dir: key === "lastActivityAt" ? "desc" : "asc" };
+      try { localStorage.setItem("myLeadsSort", JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
+  const TEMP_RANK: Record<string, number> = { won: 5, hot: 4, lukewarm: 3, cold: 2, disqualified: 1, unset: 0 };
+  const sortedData = [...filteredData].sort((a: any, b: any) => {
+    const dir = sort.dir === "asc" ? 1 : -1;
+    let av: number | string;
+    let bv: number | string;
+    switch (sort.key) {
+      case "id": av = a.id; bv = b.id; break;
+      case "temperature": av = TEMP_RANK[deriveTemperature(a)] ?? 0; bv = TEMP_RANK[deriveTemperature(b)] ?? 0; break;
+      case "lastActivityAt":
+        av = a.lastActivityAt ? new Date(a.lastActivityAt).getTime() : 0;
+        bv = b.lastActivityAt ? new Date(b.lastActivityAt).getTime() : 0;
+        break;
+      default:
+        av = (a[sort.key] ?? "").toString().toLowerCase();
+        bv = (b[sort.key] ?? "").toString().toLowerCase();
+    }
+    if (av < bv) return -1 * dir;
+    if (av > bv) return 1 * dir;
+    return 0;
+  });
+  const SortTh = ({ label, k }: { label: string; k: SortKey }) => (
+    <th
+      onClick={() => toggleSort(k)}
+      className="text-left px-4 py-3 cursor-pointer select-none hover:text-foreground"
+    >
+      <span className="inline-flex items-center gap-1">
+        {label}
+        {sort.key === k ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+      </span>
+    </th>
+  );
+
   return (
     <div className="px-4 md:px-8 py-8 md:py-10 w-full">
       <PageHeader
@@ -153,15 +205,15 @@ export default function MyLeadsPage() {
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
-                <th className="text-left px-4 py-3">ID</th>
-                <th className="text-left px-4 py-3">Name</th>
-                <th className="text-left px-4 py-3">Practice</th>
-                <th className="text-left px-4 py-3">Specialty</th>
-                <th className="text-left px-4 py-3">City</th>
+                <SortTh label="ID" k="id" />
+                <SortTh label="Name" k="name" />
+                <SortTh label="Practice" k="practice" />
+                <SortTh label="Specialty" k="specialty" />
+                <SortTh label="City" k="city" />
                 <th className="text-left px-4 py-3">Phone</th>
                 <th className="text-left px-4 py-3">Email</th>
-                <th className="text-left px-4 py-3">Temperature</th>
-                <th className="text-left px-4 py-3">Last activity</th>
+                <SortTh label="Temperature" k="temperature" />
+                <SortTh label="Last activity" k="lastActivityAt" />
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -185,7 +237,7 @@ export default function MyLeadsPage() {
                   </td>
                 </tr>
               )}
-              {filteredData.map((l) => (
+              {sortedData.map((l: any) => (
                 <tr key={l.id} className="hover:bg-muted/30">
                   {/* QA Change #3 (2026-06-22): show the lead number (ID)
                       instead of the score/scoring badge. */}
