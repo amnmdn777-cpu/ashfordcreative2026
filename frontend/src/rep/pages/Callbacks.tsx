@@ -6,7 +6,7 @@ import { api, fmtDateTime } from "@rep/lib/api";
 import type { CallbackDto } from "@workspace/api-zod";
 import { PageHeader } from "@rep/components/RepLayout";
 
-function bucket(c: CallbackDto): "today" | "week" | "later" {
+function bucket(c: CallbackDto): "overdue" | "today" | "week" | "later" {
   const d = new Date(c.scheduledFor);
   const now = new Date();
   const startOfToday = new Date(now);
@@ -15,7 +15,12 @@ function bucket(c: CallbackDto): "today" | "week" | "later" {
   endOfToday.setDate(endOfToday.getDate() + 1);
   const endOfWeek = new Date(startOfToday);
   endOfWeek.setDate(endOfWeek.getDate() + 7);
-  if (d >= startOfToday && d < endOfToday) return "today";
+  // NEW-BUG-2: anything scheduled before today is OVERDUE. The old logic
+  // had no lower bound, so a May callback (in the past) satisfied
+  // `d < endOfWeek` and got mislabeled "This week" — hiding weeks-overdue
+  // follow-ups behind a false sense of being current.
+  if (d < startOfToday) return "overdue";
+  if (d < endOfToday) return "today";
   if (d < endOfWeek) return "week";
   return "later";
 }
@@ -27,6 +32,7 @@ export default function CallbacksPage() {
   });
 
   const grouped = useMemo(() => {
+    const o: CallbackDto[] = [];
     const t: CallbackDto[] = [];
     const w: CallbackDto[] = [];
     const l: CallbackDto[] = [];
@@ -38,11 +44,12 @@ export default function CallbacksPage() {
       )
       .forEach((c) => {
         const b = bucket(c);
-        if (b === "today") t.push(c);
+        if (b === "overdue") o.push(c);
+        else if (b === "today") t.push(c);
         else if (b === "week") w.push(c);
         else l.push(c);
       });
-    return { today: t, week: w, later: l };
+    return { overdue: o, today: t, week: w, later: l };
   }, [data]);
 
   return (
@@ -56,6 +63,7 @@ export default function CallbacksPage() {
         <div className="text-sm text-muted-foreground">Loading…</div>
       ) : (
         <div className="space-y-6">
+          <Section title="Overdue" items={grouped.overdue} urgent />
           <Section title="Today" items={grouped.today} />
           <Section title="This week" items={grouped.week} />
           <Section title="Later" items={grouped.later} />
@@ -68,14 +76,27 @@ export default function CallbacksPage() {
 function Section({
   title,
   items,
+  urgent,
 }: {
   title: string;
   items: CallbackDto[];
+  urgent?: boolean;
 }) {
+  // Hide an empty Overdue card entirely — no need to draw attention to a
+  // bucket that's clear. Other buckets still render their empty state.
+  if (urgent && items.length === 0) return null;
   return (
-    <div className="bg-card border border-card-border rounded-xl shadow-sm overflow-hidden">
-      <div className="px-5 py-3 border-b border-border bg-muted/30">
-        <h2 className="font-serif text-lg">
+    <div
+      className={`bg-card border rounded-xl shadow-sm overflow-hidden ${
+        urgent ? "border-destructive/40" : "border-card-border"
+      }`}
+    >
+      <div
+        className={`px-5 py-3 border-b ${
+          urgent ? "border-destructive/30 bg-destructive/10" : "border-border bg-muted/30"
+        }`}
+      >
+        <h2 className={`font-serif text-lg ${urgent ? "text-destructive" : ""}`}>
           {title}{" "}
           <span className="text-sm text-muted-foreground font-sans">
             ({items.length})

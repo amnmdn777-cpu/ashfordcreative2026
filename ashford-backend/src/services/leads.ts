@@ -31,6 +31,7 @@ import { env } from "../lib/env";
 import { sendEmail } from "../integrations/resend";
 import { notify } from "./notifications";
 import { tierForScore } from "./leadScoring";
+import { writeAudit, snapshotKeys } from "./auditLog";
 
 export const STALE_CLAIM_DAYS = 7;
 
@@ -154,7 +155,15 @@ export const claimLead = async (repId: number, leadId: number) => {
       .for("update")
       .limit(1);
     if (!lead) throw notFound("Lead not found");
-    if (lead.status !== "available" && lead.status !== "recycled") {
+    // Mirror getAvailableLeads' pool predicate (unclaimed & not final) so a
+    // lead visible in Available can always be claimed, even when its
+    // imported status drifted to 'handled'/'pending'/'unset' (NEW-BUG-1).
+    if (lead.claimedByRepId != null && lead.claimedByRepId !== repId) {
+      throw conflict(
+        `Lead already claimed by another rep. Refresh your queue to see what's available.`,
+      );
+    }
+    if (lead.status === "won" || lead.status === "disqualified") {
       throw conflict(
         `Lead already ${lead.status}. Refresh your queue to see what's available.`,
       );
@@ -233,7 +242,19 @@ export const startWorkOnLead = async (repId: number, leadId: number) => {
       return sanitizeLeadForRep(updated);
     }
 
-    if (lead.status !== "available" && lead.status !== "recycled") {
+    // Claimable = not already owned by another rep AND not workflow-final
+    // (won / disqualified). This MUST mirror getAvailableLeads' pool
+    // predicate (unclaimed & not final) — otherwise a lead the rep can SEE
+    // in Available throws on "Open Lead" and vanishes into limbo. The old
+    // guard required status IN ('available','recycled'), but imported prod
+    // rows use drifted vocab ('handled','pending','unset','cold'…) that
+    // never matched, so every such lead was unclaimable (NEW-BUG-1).
+    if (lead.claimedByRepId != null && lead.claimedByRepId !== repId) {
+      throw conflict(
+        `Lead already claimed by another rep. Refresh your queue to see what's available.`,
+      );
+    }
+    if (lead.status === "won" || lead.status === "disqualified") {
       throw conflict(
         `Lead already ${lead.status}. Refresh your queue to see what's available.`,
       );
@@ -349,6 +370,21 @@ export const updateLeadByRep = async (
     })
     .where(eq(leads.id, leadId))
     .returning();
+  // NEW-BUG-12: record the mutation in the audit trail. Without this, rep
+  // status/field changes (disqualify, nurture, cold, won, phone/email
+  // edits) never appeared in the per-lead History or the admin audit log —
+  // only `lead.read` events were ever written. Best-effort; needs the
+  // actor Request, which the rep routes now always pass through.
+  if (req) {
+    const auditedKeys = Object.keys(patch) as (keyof typeof lead)[];
+    await writeAudit(req, {
+      action: patch.status ? `lead.status_${patch.status}` : "lead.update",
+      targetType: "lead",
+      targetId: leadId,
+      before: snapshotKeys(lead, auditedKeys),
+      after: snapshotKeys(updated, auditedKeys),
+    });
+  }
   // LOT 1.4 — fire portal lifecycle expire inline when the new status
   // is in the terminal set. 'cold' is intentionally NOT here — it
   // means "rep parked for follow-up", killing the preview would block

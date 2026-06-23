@@ -327,6 +327,14 @@ const REVIEW_NAME_ALLOWLIST = new Set([
   "google", "yelp", "facebook", "instagram",
 ]);
 
+// Words that commonly FOLLOW a person's name in a review ("Jennifer was
+// wonderful", "Steven helped me"). Used to recover a sentence-INITIAL name,
+// which the old scan skipped — letting group-practice reviews that open with
+// a colleague's name slip onto the wrong therapist's portal (NEW-BUG-3:
+// 'Jennifer'/'Stefanie'/'Steven' showed under Rachel Pei-Chi Liao).
+const NAME_FOLLOWER =
+  /^(was|is|are|has|have|had|did|does|helped|helps|made|makes|listened|took|gave|provided|created|treated|guided|supported|saw|met|really|always|truly|and|genuinely|immediately|patiently)$/i;
+
 /** Tokenises a review body and returns the set of capitalised tokens
  *  that look like proper names (Title Case, 3+ chars, not at start of
  *  sentence so we don\'t false-positive every sentence opener). */
@@ -339,12 +347,18 @@ function reviewProperNames(body: string): string[] {
   for (const sentence of sentences) {
     const tokens = sentence.split(/\s+/);
     // Skip token #0 — it's the sentence opener, almost always Capitalised.
-    for (let i = 1; i < tokens.length; i++) {
-      const tok = tokens[i]!.replace(/[^A-Za-z'\u2019-]/g, "");
+    for (let i = 0; i < tokens.length; i++) {
+      const raw = tokens[i] ?? "";
+      const tok = raw.replace(/[^A-Za-z'-]/g, "");
       if (tok.length < 3) continue;
       if (!/^[A-Z][a-z]+/.test(tok)) continue;
       const lower = tok.toLowerCase();
       if (REVIEW_NAME_ALLOWLIST.has(lower)) continue;
+      if (i === 0) {
+        const possessive = /'s$/i.test(raw);
+        const nextWord = (tokens[1] ?? "").replace(/[^A-Za-z]/g, "");
+        if (!possessive && !NAME_FOLLOWER.test(nextWord)) continue;
+      }
       out.add(tok);
     }
   }
@@ -362,11 +376,18 @@ function filterReviewsForLead(
   practiceName: string,
 ): Review[] {
   const MIN_RATING = 4;
-  const leadTokens = `${leadName} ${practiceName}`
-    .split(/[^A-Za-z\u2019']+/)
-    .map((t) => t.trim().toLowerCase())
-    .filter((t) => t.length >= 3);
-  const leadSet = new Set(leadTokens);
+  const tokenize = (s: string) =>
+    s
+      .split(/[^A-Za-z\u2019']+/)
+      .map((t) => t.trim().toLowerCase())
+      .filter((t) => t.length >= 3);
+  // Personal name only (first/last) \u2014 only these "rescue" a review that
+  // also names someone else. Practice tokens are kept separate so a group
+  // review like "Jennifer was great at TherapyWorks" can't use the practice
+  // mention to pass the colleague-name gate (NEW-BUG-3).
+  const personTokens = tokenize(leadName);
+  const personSet = new Set(personTokens);
+  const ownSet = new Set([...personTokens, ...tokenize(practiceName)]);
   return reviews.filter((r) => {
     const body = (r.body ?? "").trim();
     if (body.length < 20) return false;
@@ -382,14 +403,14 @@ function filterReviewsForLead(
     // 2. Rating gate.
     if (typeof r.rating === "number" && r.rating < MIN_RATING) return false;
     // 3. Other-practitioner name gate.
-    if (leadSet.size > 0) {
+    if (ownSet.size > 0) {
       const names = reviewProperNames(body);
-      const foreign = names.filter((n) => !leadSet.has(n.toLowerCase()));
+      const foreign = names.filter((n) => !ownSet.has(n.toLowerCase()));
       // If we found foreign Title-Case names AND none of the lead tokens
       // appear in the body, the review almost certainly references a
       // different practitioner — drop it.
-      const mentionsLead = names.some((n) => leadSet.has(n.toLowerCase()))
-        || leadTokens.some((tok) => lower.includes(tok));
+      const mentionsLead = names.some((n) => personSet.has(n.toLowerCase()))
+        || personTokens.some((tok) => lower.includes(tok));
       if (foreign.length > 0 && !mentionsLead) return false;
     }
     return true;

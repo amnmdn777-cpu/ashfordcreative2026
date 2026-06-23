@@ -381,6 +381,13 @@ router.post(
       .insert(leadContacts)
       .values({ leadId: id, kind: body.kind, value: body.value, label: body.label ?? null, isPrimary: body.isPrimary ?? false })
       .returning();
+    await writeAudit(req, {
+      action: "lead.contact_added",
+      targetType: "lead",
+      targetId: id,
+      before: null,
+      after: { kind: row.kind, value: row.value, label: row.label, isPrimary: row.isPrimary },
+    });
     res.json({ contact: dateToIso(row) });
   }),
 );
@@ -413,6 +420,13 @@ router.patch(
       })
       .where(eq(leadContacts.id, contactId))
       .returning();
+    await writeAudit(req, {
+      action: body.isPrimary && !existing.isPrimary ? "lead.contact_set_primary" : "lead.contact_updated",
+      targetType: "lead",
+      targetId: id,
+      before: { value: existing.value, label: existing.label, isPrimary: existing.isPrimary },
+      after: { value: row.value, label: row.label, isPrimary: row.isPrimary },
+    });
     res.json({ contact: dateToIso(row) });
   }),
 );
@@ -423,9 +437,21 @@ router.delete(
     const id = z.coerce.number().int().parse(req.params.id);
     const contactId = z.coerce.number().int().parse(req.params.contactId);
     await loadOwnedLead(id, req.user!);
+    const [existing] = await db
+      .select()
+      .from(leadContacts)
+      .where(and(eq(leadContacts.id, contactId), eq(leadContacts.leadId, id)))
+      .limit(1);
     await db
       .delete(leadContacts)
       .where(and(eq(leadContacts.id, contactId), eq(leadContacts.leadId, id)));
+    await writeAudit(req, {
+      action: "lead.contact_deleted",
+      targetType: "lead",
+      targetId: id,
+      before: existing ? { kind: existing.kind, value: existing.value, label: existing.label } : null,
+      after: null,
+    });
     res.json({ deleted: true });
   }),
 );
@@ -574,6 +600,13 @@ router.post(
     const id = z.coerce.number().int().parse(req.params.id);
     const body = AddLeadRepNoteRequest.parse(req.body);
     const note = await addLeadRepNote(req.user!.id, id, body.body);
+    await writeAudit(req, {
+      action: "lead.note_added",
+      targetType: "lead",
+      targetId: id,
+      before: null,
+      after: { body: body.body.slice(0, 500) },
+    });
     res.json({ note: dateToIso(note) });
   }),
 );
@@ -588,6 +621,13 @@ router.patch(
     const noteId = z.coerce.number().int().parse(req.params.noteId);
     const body = AddLeadRepNoteRequest.parse(req.body);
     const note = await editLeadRepNote(req.user!.id, id, noteId, body.body);
+    await writeAudit(req, {
+      action: "lead.note_edited",
+      targetType: "lead",
+      targetId: id,
+      before: null,
+      after: { noteId, body: body.body.slice(0, 500) },
+    });
     res.json({ note: dateToIso(note) });
   }),
 );
@@ -1586,7 +1626,7 @@ router.post(
     const updated = await updateLeadByRep(req.user!.id, id, {
       status: "nurturing",
       notes: body.note,
-    });
+    }, req);
     let callback;
     if (body.callbackAt) {
       const when = new Date(body.callbackAt);
@@ -1603,7 +1643,7 @@ router.post(
     const id = z.coerce.number().int().parse(req.params.id);
     const updated = await updateLeadByRep(req.user!.id, id, {
       status: "cold",
-    });
+    }, req);
     res.json({ lead: dateToIso(updated) });
   }),
 );
@@ -1868,7 +1908,19 @@ router.patch(
       temperature: z.enum(["disqualifier", "cold", "lukewarm", "hot"]).nullable(),
     }).parse(req.body);
     await loadOwnedLead(leadId, req.user!);
+    const [prev] = await db
+      .select({ temperature: leadsTbl.temperature })
+      .from(leadsTbl)
+      .where(eq(leadsTbl.id, leadId))
+      .limit(1);
     await db.update(leadsTbl).set({ temperature: body.temperature }).where(eq(leadsTbl.id, leadId));
+    await writeAudit(req, {
+      action: "lead.temperature_changed",
+      targetType: "lead",
+      targetId: leadId,
+      before: { temperature: prev?.temperature ?? null },
+      after: { temperature: body.temperature },
+    });
     res.json({ ok: true });
   }),
 );
