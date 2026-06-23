@@ -273,6 +273,8 @@ function FilesCard({ leadId }: { leadId: number }) {
   const files = q.data?.attachments ?? [];
   const [uploading, setUploading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  // FR#1: optional note typed before choosing a file; sent with the upload.
+  const [note, setNote] = useState("");
 
   const upload = async (file: File | undefined) => {
     if (!file) return;
@@ -286,7 +288,12 @@ function FilesCard({ leadId }: { leadId: number }) {
         r.onerror = () => rej(new Error("Could not read file"));
         r.readAsDataURL(file);
       });
-      await api.uploadLeadAttachment(leadId, { filename: file.name, dataUrl });
+      await api.uploadLeadAttachment(leadId, {
+        filename: file.name,
+        dataUrl,
+        note: note.trim() || undefined,
+      });
+      setNote("");
       qc.invalidateQueries({ queryKey: key });
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Upload failed");
@@ -321,6 +328,14 @@ function FilesCard({ leadId }: { leadId: number }) {
     <section className="bg-card border border-card-border rounded-xl p-5 shadow-sm">
       <h2 className="font-serif text-lg mb-1 flex items-center gap-2"><Paperclip size={16} /> Files</h2>
       <p className="text-xs text-muted-foreground mb-3">PDF, images, Word/Excel, CSV or text · max 10 MB each.</p>
+      <input
+        type="text"
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        placeholder="Optional note for the next file (e.g. 'Intake form, signed')"
+        maxLength={500}
+        className={inputCls + " mb-2"}
+      />
       <label className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-input hover:bg-muted/40 px-4 py-6 text-sm cursor-pointer"
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => { e.preventDefault(); upload(e.dataTransfer.files?.[0]); }}>
@@ -341,6 +356,9 @@ function FilesCard({ leadId }: { leadId: number }) {
               <li key={f.id} className="flex items-center justify-between gap-3 py-2">
                 <div className="min-w-0">
                   <div className="font-medium truncate text-sm">{f.filename}</div>
+                  {f.note ? (
+                    <div className="text-xs text-foreground/70 truncate">{f.note}</div>
+                  ) : null}
                   <div className="text-xs text-muted-foreground">{fmtBytes(f.sizeBytes)}</div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">

@@ -440,6 +440,8 @@ const REP_ATTACH_TYPES = new Set<string>([
 const RepUploadAttachment = z.object({
   filename: z.string().min(1).max(256),
   dataUrl: z.string().regex(/^data:[^;]+;base64,/i, "Must be a base64 data URL"),
+  // FR#1: optional annotation for the file.
+  note: z.string().max(500).optional(),
 });
 
 router.get(
@@ -451,6 +453,7 @@ router.get(
       .select({
         id: leadAttachments.id,
         filename: leadAttachments.filename,
+        note: leadAttachments.note,
         contentType: leadAttachments.contentType,
         sizeBytes: leadAttachments.sizeBytes,
         uploadedByRepId: leadAttachments.uploadedByRepId,
@@ -487,6 +490,7 @@ router.post(
         leadId: id,
         storageKey: key,
         filename: body.filename.slice(0, 256),
+        note: body.note?.trim() ? body.note.trim().slice(0, 500) : null,
         contentType,
         sizeBytes: buffer.length,
         uploadedByRepId: req.user?.id ?? null,

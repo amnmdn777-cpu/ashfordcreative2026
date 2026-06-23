@@ -45,6 +45,7 @@ export interface RepLeadContact {
 export interface RepLeadAttachment {
   id: number;
   filename: string;
+  note?: string | null;
   contentType: string;
   sizeBytes: number;
   uploadedByRepId: number | null;
@@ -552,7 +553,7 @@ export const api = {
     }),
   listLeadAttachments: (id: number) =>
     request<{ attachments: RepLeadAttachment[] }>(`/dashboard/leads/${id}/attachments`),
-  uploadLeadAttachment: (id: number, body: { filename: string; dataUrl: string }) =>
+  uploadLeadAttachment: (id: number, body: { filename: string; dataUrl: string; note?: string }) =>
     request<{ attachment: RepLeadAttachment }>(`/dashboard/leads/${id}/attachments`, {
       method: "POST",
       body: JSON.stringify(body),

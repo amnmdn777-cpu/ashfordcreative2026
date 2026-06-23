@@ -24,6 +24,9 @@ export const leadAttachments = pgTable(
       .references(() => leads.id, { onDelete: "cascade" }),
     storageKey: varchar("storage_key", { length: 256 }).notNull(),
     filename: varchar("filename", { length: 256 }).notNull(),
+    // FR#1 (2026-06-23): optional per-file note so the rep can annotate
+    // what a document is ("Intake form signed 2024-05-10", "Insurance card").
+    note: varchar("note", { length: 500 }),
     contentType: varchar("content_type", { length: 128 }).notNull(),
     sizeBytes: integer("size_bytes").notNull(),
     uploadedByRepId: integer("uploaded_by_rep_id").references(
