@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { LeadAdminPanel } from "@rep/components/LeadAdminPanel";
+import { LeadAdminPanel, LeadHistoryCard } from "@rep/components/LeadAdminPanel";
 import {
   Mail,
   MessageSquare,
@@ -713,6 +713,10 @@ export default function LeadDetailPage() {
 
           <PortalSnapshot leadId={id} linkEvents={lead.data.linkEvents ?? []} />
 
+          {/* QA Change #5 (2026-06-23): field-change History — collapsed and
+              below Notes / Prospect activity so it never crowds the page. */}
+          <LeadHistoryCard leadId={id} />
+
           {/*
            * The "Customer portal" panel previously rendered here was moved
            * to the admin dashboard (`/admin/leads/:id`) on the user's
@@ -728,7 +732,7 @@ export default function LeadDetailPage() {
            */}
           <details className="bg-card border border-card-border rounded-xl p-6 shadow-sm">
             <summary className="font-serif text-lg cursor-pointer select-none flex items-center justify-between gap-3">
-              <span>History</span>
+              <span>Timeline</span>
               <span className="text-xs font-sans text-muted-foreground">
                 {events.length} event{events.length === 1 ? "" : "s"} · click to {events.length ? "expand" : "view"}
               </span>

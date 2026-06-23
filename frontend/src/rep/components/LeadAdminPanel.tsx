@@ -19,10 +19,15 @@ import type { LeadDto } from "@workspace/api-zod";
 export function LeadAdminPanel({ leadId, lead }: { leadId: number; lead: LeadDto }) {
   return (
     <div className="space-y-6 mt-6">
-      <EditableFieldsCard leadId={leadId} lead={lead} />
-      <ContactsCard leadId={leadId} />
+      {/* QA Change #5 (2026-06-23): Lead fields + Contacts merged into one
+          editable identity panel. History is rendered separately, collapsed
+          and below Notes, by LeadDetail via <LeadHistoryCard />. */}
+      <section className="bg-card border border-card-border rounded-xl p-5 shadow-sm">
+        <EditableFieldsCard leadId={leadId} lead={lead} bare />
+        <div className="my-5 border-t border-border" />
+        <ContactsCard leadId={leadId} bare />
+      </section>
       <FilesCard leadId={leadId} />
-      <HistoryCard leadId={leadId} />
     </div>
   );
 }
@@ -99,7 +104,7 @@ function EditableField({
   );
 }
 
-function EditableFieldsCard({ leadId, lead }: { leadId: number; lead: LeadDto }) {
+function EditableFieldsCard({ leadId, lead, bare }: { leadId: number; lead: LeadDto; bare?: boolean }) {
   const qc = useQueryClient();
   const [local, setLocal] = useState<Record<string, string | null>>({});
   const get = (k: keyof LeadDto): string | null =>
@@ -110,12 +115,12 @@ function EditableFieldsCard({ leadId, lead }: { leadId: number; lead: LeadDto })
     qc.invalidateQueries({ queryKey: ["rep", "lead", leadId, "history"] });
   };
 
-  return (
-    <section className="bg-card border border-card-border rounded-xl p-5 shadow-sm">
+  const inner = (
+    <>
       <h2 className="font-serif text-lg mb-1">Lead fields</h2>
       <p className="text-xs text-muted-foreground mb-4">
         Click any value to edit. Saves on Enter or when you click away. Changes
-        are logged in History below.
+        are logged in History.
       </p>
       <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm">
         <EditableField label="Name" value={get("name")} onSave={(v) => save({ name: v ?? "" })} />
@@ -129,12 +134,18 @@ function EditableFieldsCard({ leadId, lead }: { leadId: number; lead: LeadDto })
           <EditableField label="Current site" value={get("currentWebsite")} onSave={(v) => save({ currentWebsite: v })} />
         </div>
       </dl>
+    </>
+  );
+  if (bare) return inner;
+  return (
+    <section className="bg-card border border-card-border rounded-xl p-5 shadow-sm">
+      {inner}
     </section>
   );
 }
 
 // ── Contacts ────────────────────────────────────────────────────────────
-function ContactsCard({ leadId }: { leadId: number }) {
+function ContactsCard({ leadId, bare }: { leadId: number; bare?: boolean }) {
   const qc = useQueryClient();
   const key = ["rep", "lead", leadId, "contacts"];
   const q = useQuery({ queryKey: key, queryFn: () => api.listLeadContacts(leadId) });
@@ -200,8 +211,8 @@ function ContactsCard({ leadId }: { leadId: number }) {
     </li>
   );
 
-  return (
-    <section className="bg-card border border-card-border rounded-xl p-5 shadow-sm">
+  const inner = (
+    <>
       <h2 className="font-serif text-lg mb-1">Contacts</h2>
       <p className="text-xs text-muted-foreground mb-3">
         Multiple phone numbers and emails per lead. The primary drives calls and emails.
@@ -241,6 +252,12 @@ function ContactsCard({ leadId }: { leadId: number }) {
         </button>
       </div>
       {err && <div className="text-xs text-destructive mt-1">{err}</div>}
+    </>
+  );
+  if (bare) return inner;
+  return (
+    <section className="bg-card border border-card-border rounded-xl p-5 shadow-sm">
+      {inner}
     </section>
   );
 }
@@ -343,7 +360,9 @@ function FilesCard({ leadId }: { leadId: number }) {
 const fmtHistVal = (v: unknown): string =>
   v === null || v === undefined || v === "" ? "—" : String(v);
 
-function HistoryCard({ leadId }: { leadId: number }) {
+// QA Change #5 (2026-06-23): exported + collapsed-by-default so LeadDetail
+// can render it BELOW the Notes panel, de-emphasising the audit log.
+export function LeadHistoryCard({ leadId }: { leadId: number }) {
   const q = useQuery({
     queryKey: ["rep", "lead", leadId, "history"],
     queryFn: () => api.leadHistory(leadId),
@@ -371,24 +390,31 @@ function HistoryCard({ leadId }: { leadId: number }) {
   };
 
   return (
-    <section className="bg-card border border-card-border rounded-xl p-5 shadow-sm">
-      <h2 className="font-serif text-lg mb-3">History</h2>
-      {q.isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
-      ) : entries.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No changes recorded yet.</p>
-      ) : (
-        <ul className="space-y-3">
-          {entries.map((e) => (
-            <li key={e.id} className="border-b border-border/60 pb-2 last:border-0">
-              <div className="text-xs text-muted-foreground mb-1">
-                {new Date(e.at).toLocaleString()} · {e.actor}
-              </div>
-              {diff(e)}
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
+    <details className="bg-card border border-card-border rounded-xl p-5 shadow-sm">
+      <summary className="font-serif text-lg cursor-pointer select-none flex items-center justify-between gap-3">
+        <span>History</span>
+        <span className="text-xs font-sans text-muted-foreground">
+          {entries.length} change{entries.length === 1 ? "" : "s"} · click to expand
+        </span>
+      </summary>
+      <div className="mt-3">
+        {q.isLoading ? (
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        ) : entries.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No changes recorded yet.</p>
+        ) : (
+          <ul className="space-y-3">
+            {entries.map((e) => (
+              <li key={e.id} className="border-b border-border/60 pb-2 last:border-0">
+                <div className="text-xs text-muted-foreground mb-1">
+                  {new Date(e.at).toLocaleString()} · {e.actor}
+                </div>
+                {diff(e)}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </details>
   );
 }
