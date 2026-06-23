@@ -64,6 +64,8 @@ export default function AvailableLeadsPage() {
         sortBy,
         sortDir,
       }),
+    // EB#2 (2026-06-23): always refetch on return so the list is current.
+    refetchOnMount: "always",
   });
 
   // Has-email / Has-phone / Temperature applied client-side over the page.

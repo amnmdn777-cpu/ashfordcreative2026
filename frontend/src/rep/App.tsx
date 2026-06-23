@@ -13,6 +13,7 @@ import DashboardPage from "@rep/pages/Dashboard";
 import AvailableLeadsPage from "@rep/pages/AvailableLeads";
 import MyLeadsPage from "@rep/pages/MyLeads";
 import LeadDetailPage from "@rep/pages/LeadDetail";
+import { RouteErrorBoundary } from "@rep/components/RouteErrorBoundary";
 import CallbacksPage from "@rep/pages/Callbacks";
 import InboundQueuePage from "@rep/pages/InboundQueue";
 import CustomDevPage from "@rep/pages/CustomDev";
@@ -115,6 +116,9 @@ function RepRoutes() {
 
   return (
     <RepLayout>
+      {/* EB#3: per-route error boundary, keyed by location so a crash on one
+          page can't blank the whole CRM and resets on navigation. */}
+      <RouteErrorBoundary key={location}>
       <Switch>
         {/* 2026-05-21 — `/onboarding` route removed (rep training gate killed). */}
         <Route path="/" component={DashboardPage} />
@@ -139,6 +143,7 @@ function RepRoutes() {
         <Route path="/phase-b" component={PhaseBFaqPage} />
         <Route component={NotFound} />
       </Switch>
+      </RouteErrorBoundary>
     </RepLayout>
   );
 }

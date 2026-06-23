@@ -80,6 +80,10 @@ export default function MyLeadsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["leads", "mine", "all", name],
     queryFn: () => api.myLeads("all", name || undefined),
+    // EB#2 (2026-06-23): always refetch when the rep returns to the list so
+    // "Last activity" reflects notes/emails/calls just logged on a lead,
+    // without needing a full page reload.
+    refetchOnMount: "always",
   });
   const filteredData = (data?.leads ?? []).filter((lead: any) => {
     if (city.trim() && !(lead.city ?? "").toLowerCase().includes(city.trim().toLowerCase())) return false;

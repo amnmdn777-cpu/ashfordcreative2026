@@ -156,13 +156,26 @@ function ContactsCard({ leadId }: { leadId: number }) {
     }
   };
   const makePrimary = async (c: RepLeadContact) => {
-    await api.updateLeadContact(leadId, c.id, { isPrimary: true });
-    refresh();
+    // EB#4 (2026-06-23): this used to throw silently on failure, so a rep
+    // clicking the star saw nothing happen ("the UI did not allow it").
+    // Surface the error and clear it on success.
+    try {
+      setErr(null);
+      await api.updateLeadContact(leadId, c.id, { isPrimary: true });
+      refresh();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Could not set as primary.");
+    }
   };
   const remove = async (c: RepLeadContact) => {
     if (!window.confirm(`Delete ${c.value}?`)) return;
-    await api.deleteLeadContact(leadId, c.id);
-    refresh();
+    try {
+      setErr(null);
+      await api.deleteLeadContact(leadId, c.id);
+      refresh();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Could not delete contact.");
+    }
   };
 
   const row = (c: RepLeadContact) => (
