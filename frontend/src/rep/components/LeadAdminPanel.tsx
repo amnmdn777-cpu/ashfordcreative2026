@@ -19,14 +19,12 @@ import type { LeadDto } from "@workspace/api-zod";
 export function LeadAdminPanel({ leadId, lead }: { leadId: number; lead: LeadDto }) {
   return (
     <div className="space-y-6 mt-6">
-      {/* QA Change #5 (2026-06-23): Lead fields + Contacts merged into one
-          editable identity panel. History is rendered separately, collapsed
-          and below Notes, by LeadDetail via <LeadHistoryCard />. */}
-      <section className="bg-card border border-card-border rounded-xl p-5 shadow-sm">
-        <EditableFieldsCard leadId={leadId} lead={lead} bare />
-        <div className="my-5 border-t border-border" />
-        <ContactsCard leadId={leadId} bare />
-      </section>
+      {/* QA Change #5 Issue 3 (2026-06-23): Lead Fields and Contacts are now
+          SEPARATE cards again, matching the admin lead panel Amine verified as
+          correct. History renders separately (collapsed, below Notes) via
+          <LeadHistoryCard />. */}
+      <EditableFieldsCard leadId={leadId} lead={lead} />
+      <ContactsCard leadId={leadId} />
       <FilesCard leadId={leadId} />
     </div>
   );
@@ -225,14 +223,23 @@ function ContactsCard({ leadId, bare }: { leadId: number; bare?: boolean }) {
       <div className="min-w-0">
         <span className="font-medium">{c.value}</span>
         {c.isPrimary && (
-          <span className="ml-2 text-[11px] text-accent">primary</span>
+          // NEW-BUG-6: "primary" is per-channel (one primary phone + one
+          // primary email) — both are intentional. The pill names the channel
+          // so two "Primary" tags across the two columns don't read like a bug.
+          <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-accent/10 text-accent text-[11px] px-1.5 py-0.5 align-middle">
+            <Star size={10} className="fill-current" />
+            Primary {c.kind === "phone" ? "phone" : "email"}
+          </span>
         )}
         {c.label && <span className="ml-2 text-xs text-muted-foreground">{c.label}</span>}
       </div>
       <div className="flex items-center gap-1 shrink-0">
         {!c.isPrimary && (
-          <button type="button" onClick={() => makePrimary(c)} title="Make primary" className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground">
-            <Star size={14} />
+          // EB#4: visible text affordance (not just an icon) so the rep can
+          // clearly set any phone/email as the primary for its channel.
+          <button type="button" onClick={() => makePrimary(c)} title="Make this the primary" className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs hover:bg-muted text-muted-foreground hover:text-foreground">
+            <Star size={12} />
+            Set primary
           </button>
         )}
         <button type="button" onClick={() => remove(c)} title="Delete" className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive">

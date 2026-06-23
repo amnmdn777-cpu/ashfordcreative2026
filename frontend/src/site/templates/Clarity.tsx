@@ -91,6 +91,13 @@ function Clarity(props: TemplateProps) {
     ? {}
     : { whileHover: { y: -6 }, transition: { duration: 0.25 } };
 
+  // NEW-BUG-7: the portal has no embedded office-tour video for real leads
+  // (the office-tour clip is generated only for the rep's download flow),
+  // so ClarityVideo rendered a permanent empty placeholder box to
+  // prospects. Only show the section when there's a real video URL to play.
+  const videoUrl =
+    (props.content as { videoUrl?: string | null }).videoUrl?.trim() || "";
+
   const bio = locale === "es" ? r.bio_es : r.bio_en;
   const bioParas = bio
     .split(/\n{2,}/)
@@ -343,21 +350,24 @@ function Clarity(props: TemplateProps) {
           items={approach}
         />
 
-        {/* ── Video intro ──────────────────────────────────────── */}
-        <ClarityVideo
-          heading={tt(
-            "See the space before you come in",
-            "Conoce el espacio antes de venir",
-          )}
-          subhead={tt(
-            "A short walkthrough of the practice and what a first session feels like.",
-            "Un breve recorrido por la práctica y cómo se siente una primera sesión.",
-          )}
-          caption={tt(
-            "Watch a 60-second intro",
-            "Mira una intro de 60 segundos",
-          )}
-        />
+        {/* ── Video intro (only when a real video exists) ────────── */}
+        {videoUrl && (
+          <ClarityVideo
+            videoUrl={videoUrl}
+            heading={tt(
+              "See the space before you come in",
+              "Conoce el espacio antes de venir",
+            )}
+            subhead={tt(
+              "A short walkthrough of the practice and what a first session feels like.",
+              "Un breve recorrido por la práctica y cómo se siente una primera sesión.",
+            )}
+            caption={tt(
+              "Watch a 60-second intro",
+              "Mira una intro de 60 segundos",
+            )}
+          />
+        )}
 
         {/* ── Featured testimonial ─────────────────────────────── */}
         <ClarityTestimonialSpotlight

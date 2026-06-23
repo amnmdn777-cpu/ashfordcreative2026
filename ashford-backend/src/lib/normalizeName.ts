@@ -103,5 +103,26 @@ export function normalizePersonName(input: string | null | undefined): string {
     return arr;
   };
 
-  return collapseLoop(dedupAdjacent).join(" ");
+  let result = collapseLoop(dedupAdjacent).join(" ");
+
+  // NEW-BUG-8: title-case names that arrived fully UPPER-CASE from the
+  // scrape (e.g. "CYNTHIA SANTOS", "ZACHARY REID"). We only act when there
+  // is NO lowercase letter anywhere, so intentional mixed-case ("McDonald",
+  // "DeLuca", "JoAnne") and credential suffixes on otherwise-normal names
+  // ("Kristin Sellers, LPC") are left untouched. Title-cases across spaces,
+  // hyphens and apostrophes ("PEI-CHI" → "Pei-Chi", "O'BRIEN" → "O'Brien"),
+  // and lowercases recognised name connectors ("DE LOS" → "de los").
+  if (result && !/[a-z]/.test(result)) {
+    result = result
+      .toLowerCase()
+      .replace(/[a-z][a-z'’-]*/g, (word) =>
+        isConnector(word)
+          ? word
+          : word.replace(/(^|[-'’])([a-z])/g, (_m, sep, ch) => sep + ch.toUpperCase()),
+      );
+    // A connector should never lead the name — re-capitalise a leading one.
+    result = result.replace(/^([a-z])/, (_m, ch) => ch.toUpperCase());
+  }
+
+  return result;
 }

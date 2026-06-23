@@ -58,7 +58,16 @@ export default function NotificationsPage() {
                 }`}
               />
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium">{n.title}</div>
+                {n.leadId ? (
+                  <Link
+                    href={`/leads/${n.leadId}`}
+                    className="text-sm font-medium hover:underline hover:text-accent"
+                  >
+                    {n.title}
+                  </Link>
+                ) : (
+                  <div className="text-sm font-medium">{n.title}</div>
+                )}
                 {n.body && (
                   <div className="text-sm text-foreground/80 mt-0.5 whitespace-pre-wrap">
                     {n.body}

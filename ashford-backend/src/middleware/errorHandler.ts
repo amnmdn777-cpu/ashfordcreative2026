@@ -28,6 +28,21 @@ export const errorHandler = (
       },
     });
   }
+  // Body-parser rejects an oversized request with a PayloadTooLargeError
+  // (`type: 'entity.too.large'`, statusCode 413). Without this branch it
+  // fell through to the generic 500 "Something went wrong" — exactly what
+  // Candice saw when uploading a large file/photo (Bug#2 / EB#1). Return a
+  // clear, actionable 413 instead so the UI can tell the rep the file is
+  // too big rather than implying the server is broken.
+  const maybe = err as { type?: string; statusCode?: number; status?: number };
+  if (maybe?.type === "entity.too.large" || maybe?.statusCode === 413 || maybe?.status === 413) {
+    return res.status(413).json({
+      error: {
+        code: "payload_too_large",
+        message: "That file is too large to upload. Please use a file under 10 MB.",
+      },
+    });
+  }
   logger.error({ err }, "unhandled error");
   return res.status(500).json({
     error: { code: "internal_error", message: "Something went wrong" },
