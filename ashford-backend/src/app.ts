@@ -96,8 +96,14 @@ app.use("/api", resendWebhookRouter);
 app.use("/api", dialpadWebhookRouter);
 app.use("/api", textbeltWebhookRouter);
 
-app.use(express.json({ limit: "1mb" }));
-app.use(express.urlencoded({ extended: true }));
+// EB#1 (2026-06-23): the rep file-upload + hero-image routes send the file
+// as a base64 data URL in the JSON body. The endpoints cap files at 10 MB,
+// but base64 inflates that by ~34% (~13.4 MB), so a 1 MB JSON limit rejected
+// any real upload with HTTP 413 — surfaced to Candice as "Something went
+// wrong". 16 MB covers the 10 MB file cap plus base64 overhead. The body is
+// auth-gated (rep/admin), so the larger ceiling isn't a public DoS surface.
+app.use(express.json({ limit: "16mb" }));
+app.use(express.urlencoded({ extended: true, limit: "16mb" }));
 
 // Short link redirect lives at the root path (`/s/:code`) so prospect-
 // facing URLs are clean and brand-friendly. It is intentionally NOT under

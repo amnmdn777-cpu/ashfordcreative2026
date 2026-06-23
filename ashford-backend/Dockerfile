@@ -14,6 +14,7 @@ ENV PUPPETEER_SKIP_DOWNLOAD=true \
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
       chromium \
+      ffmpeg \
       fonts-liberation \
       fonts-noto-color-emoji \
       ca-certificates \
