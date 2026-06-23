@@ -39,10 +39,12 @@ function EditableField({
   label,
   value,
   onSave,
+  multiline,
 }: {
   label: string;
   value: string | null | undefined;
   onSave: (v: string | null) => Promise<void>;
+  multiline?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value ?? "");
@@ -71,17 +73,33 @@ function EditableField({
       <dt className="text-muted-foreground w-28 shrink-0 pt-1">{label}</dt>
       <dd className="flex-1 min-w-0">
         {editing ? (
-          <input
-            autoFocus
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={commit}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") commit();
-              if (e.key === "Escape") setEditing(false);
-            }}
-            className={inputCls}
-          />
+          multiline ? (
+            <textarea
+              autoFocus
+              rows={5}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onBlur={commit}
+              onKeyDown={(e) => {
+                // Enter inserts a newline; Cmd/Ctrl+Enter or Escape commits.
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) commit();
+                if (e.key === "Escape") setEditing(false);
+              }}
+              className={`${inputCls} min-h-[7rem] resize-y leading-relaxed`}
+            />
+          ) : (
+            <input
+              autoFocus
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onBlur={commit}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commit();
+                if (e.key === "Escape") setEditing(false);
+              }}
+              className={inputCls}
+            />
+          )
         ) : (
           <button
             type="button"
@@ -133,7 +151,20 @@ function EditableFieldsCard({ leadId, lead, bare }: { leadId: number; lead: Lead
         <div className="md:col-span-2">
           <EditableField label="Current site" value={get("currentWebsite")} onSave={(v) => save({ currentWebsite: v })} />
         </div>
+        <div className="md:col-span-2">
+          <EditableField
+            label="About / Bio"
+            value={get("bioOverride")}
+            onSave={(v) => save({ bioOverride: v })}
+            multiline
+          />
+        </div>
       </dl>
+      <p className="text-xs text-muted-foreground mt-3">
+        “About / Bio” overrides the write-up shown on the prospect portal —
+        use it to fix anything the scrape got wrong. Leave blank to keep the
+        auto-generated bio.
+      </p>
     </>
   );
   if (bare) return inner;

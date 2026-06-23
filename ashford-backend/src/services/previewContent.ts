@@ -784,6 +784,22 @@ export const buildPreviewContent = async (
     }
   }
 
+  // 6. Rep-authored bio override (lead panel "About / Bio" field). Wins
+  //    over every crawled / AI bio so a rep can correct a bad scrape —
+  //    this is the manual escape hatch for cases like the Grow Therapy
+  //    booking-URL leak. When no team member surfaced at all, seed one
+  //    from the lead so the rep's words still render under their name.
+  const repBio =
+    typeof lead.bioOverride === "string" ? lead.bioOverride.trim() : "";
+  if (repBio) {
+    if (team.length > 0) {
+      team = [{ ...team[0]!, bio: repBio }, ...team.slice(1)];
+    } else {
+      team = [{ name: lead.name, credentials: null, bio: repBio, photo: null }];
+    }
+    setSource("team", "rep_override");
+  }
+
   // ---- reviews -------------------------------------------------------
   const reviews = (enrichment?.reviews ?? []).map((r) => ({
     author: r.author,

@@ -120,6 +120,9 @@ export const LeadDto = z.object({
   email: z.string().nullable(),
   currentWebsite: z.string().nullable(),
   profileBlurb: z.string().nullable(),
+  // Rep-authored override for the public About/Bio paragraph. Optional so
+  // older clients still parse responses cleanly.
+  bioOverride: z.string().nullable().optional(),
   status: LeadStatus,
   claimedByRepId: z.number().int().nullable(),
   claimedAt: z.string().nullable(),

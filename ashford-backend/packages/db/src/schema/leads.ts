@@ -96,6 +96,10 @@ export const leads = pgTable(
     currentWebsite: varchar("current_website", { length: 256 }),
     placeId: varchar("place_id", { length: 96 }),
     profileBlurb: text("profile_blurb"),
+    // Rep-authored override for the public "About / Bio" paragraph shown
+    // on the prospect portal. When set, it wins over the crawled team bio
+    // so a rep can correct a bad scrape (see previewContent team cascade).
+    bioOverride: text("bio_override"),
     status: leadStatusEnum("status").notNull().default("available"),
     claimedByRepId: integer("claimed_by_rep_id").references(() => salesReps.id, {
       onDelete: "set null",
