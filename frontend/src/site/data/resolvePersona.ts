@@ -588,9 +588,15 @@ export function resolvePersona(
   // better to render whatever heroImage was crawled (often a logo or
   // office shot) than the demo-person headshot. About primitive treats
   // an empty string as "no photo" and lays out without it.
+  // Portrait precedence. For ANY real prospect we must NEVER fall back to
+  // the persona's stock headshot — that's how Wendi Grant's preview showed
+  // a demo "woman in a plant room" instead of the real selfie the rep had
+  // uploaded as the hero photo (2026-06-23). Real leads: team photo →
+  // rep-set/crawled heroImage → empty (About lays out photo-less). The
+  // persona stub is reserved for the showcase/gallery route (isReal false).
   const portraitSrc = isLead && teamMember?.photo
     ? teamMember.photo
-    : isPracticeOnly
+    : isReal
       ? (c.heroImage || "")
       : (persona.photo_url || c.heroImage || "");
 
