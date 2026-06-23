@@ -272,7 +272,8 @@ function EditableFieldsCard({
         <EditableField label="City" value={lead.city} onSave={(v) => save({ city: v })} />
         <EditableField label="State" value={lead.state} onSave={(v) => save({ state: v })} />
         <EditableField label="Locale" type="select" options={LOCALE_OPTIONS} value={lead.locale} onSave={(v) => save({ locale: (v as "en" | "es") ?? "en" })} />
-        <EditableField label="Status" type="select" options={STATUS_OPTIONS} value={lead.status} onSave={(v) => save({ status: v ?? "available" })} />
+        {/* QA Change #1/#6 (2026-06-23): raw editable Status field removed —
+            Temperature is the single classification, matching the rep view. */}
         <EditableField label="Temperature" type="select" options={TEMP_OPTIONS} value={lead.temperature} onSave={(v) => save({ temperature: v })} />
         <EditableField label="Disqualify reason" type="select" options={DISQUALIFY_OPTIONS} value={lead.disqualifyReason} onSave={(v) => save({ disqualifyReason: v })} />
         <EditableField label="Owner (rep id)" value={lead.claimedByRepId != null ? String(lead.claimedByRepId) : null} onSave={(v) => save({ claimedByRepId: v ? Number(v) : null })} />

@@ -510,11 +510,10 @@ export default function LeadDetailPage() {
               validatedBy={(l as any).qcValidatedBy ?? null}
             />
             <HotLeadBadge lastHotAlertAt={lead.data.portal?.lastHotAlertAt ?? null} />
-            <span className="inline-flex items-center text-xs px-2 py-1 rounded-full border border-accent/30 bg-accent/10 text-accent">
-              {l.status === "nurturing" || l.status === "claimed"
-                ? "Work in progress"
-                : l.status}
-            </span>
+            {/* QA Change #1 (2026-06-23): the raw Status badge ('pending',
+                'nurturing', …) was removed from the header — Temperature is
+                the single classification now (set via the picker below). The
+                claim button stays: it's pool ownership, not workflow status. */}
             {(l.status === "available" ||
               l.status === "recycled" ||
               l.status === "claimed") && (
@@ -640,6 +639,8 @@ export default function LeadDetailPage() {
           <LeadTemperaturePicker
             leadId={id}
             current={(l as any).temperature ?? null}
+            isWon={l.status === "won"}
+            onMarkWon={() => setModal("won")}
             onError={onErr}
             onSuccess={() => onSuccess("Temperature updated.")}
           />
@@ -1726,7 +1727,10 @@ function WorkflowStepList({
         pending={enrichPending}
         disabled={!portal || enrichPending || !hasContactInfo}
       />
-      {portal ? (
+      {/* QA B#5 (2026-06-23): Download video/PDF only appear once the
+          preview is actually PREPARED — they 500'd / produced nothing when
+          clicked on a not-yet-prepared portal. */}
+      {portal && previewReady ? (
         <div className="flex flex-col sm:flex-row gap-2 -mt-1">
           <button
             type="button"
@@ -4142,13 +4146,18 @@ function RepAttachmentsPanel({
   );
 }
 
-// LeadTemperaturePicker — 4-button radio. Founder feedback 2026-05-17.
+// LeadTemperaturePicker — the single lead classification (Change #1).
+// Disqualified / Cold / Lukewarm / Hot are temperature enum values; "Won"
+// is a workflow-final state (status=won) so its button routes through the
+// existing Mark-Won flow rather than setLeadTemperature.
 type LeadTemperature = "disqualifier" | "cold" | "lukewarm" | "hot";
 function LeadTemperaturePicker({
-  leadId, current, onError, onSuccess,
+  leadId, current, isWon, onMarkWon, onError, onSuccess,
 }: {
   leadId: number;
   current: LeadTemperature | null;
+  isWon?: boolean;
+  onMarkWon?: () => void;
   onError: (err: unknown) => void;
   onSuccess?: () => void;
 }) {
@@ -4197,6 +4206,21 @@ function LeadTemperaturePicker({
             </button>
           );
         })}
+        {onMarkWon ? (
+          <button
+            type="button"
+            onClick={onMarkWon}
+            aria-pressed={!!isWon}
+            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors ${
+              isWon
+                ? "border-primary bg-primary/10 text-foreground"
+                : "border-input bg-background text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <span className="w-2 h-2 rounded-full bg-primary" />
+            Won
+          </button>
+        ) : null}
         {current ? (
           <button
             type="button"

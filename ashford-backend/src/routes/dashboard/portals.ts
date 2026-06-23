@@ -10,6 +10,7 @@ import {
   getPortalEnrichmentForLead,
 } from "../../services/portals";
 import { loadOwnedLead } from "../../services/leads";
+import { generateBriefing } from "../../services/briefing";
 // 2026-05-21 — `briefing` service stubbed (Sprint 2 streamline). The rep
 // pre-call AI briefing falls back to a static heuristic until restored.
 import {
@@ -181,13 +182,13 @@ router.post(
   asyncHandler(async (req, res) => {
     const leadId = LeadIdParam.parse(req.params.id);
     await loadOwnedLead(leadId, req.user!);
-    // 2026-05-21 — AI briefing service stubbed. Return a heuristic
-    // placeholder so the UI keeps working.
-    res.json({
-      summary: "AI briefing temporarily unavailable. Open the lead detail to review notes, timeline, and portal data manually.",
-      talkingPoints: [],
-      redFlags: [],
-    });
+    // 2026-06-23 (Bug #4): the route was stubbed on 2026-05-21 and always
+    // returned "temporarily unavailable" — it never called the briefing
+    // service. Wire it up. generateBriefing tries OpenAI → Anthropic →
+    // a deterministic heuristic, so the rep always gets a real briefing
+    // even when no AI key is configured; an AI key just upgrades the prose.
+    const result = await generateBriefing(leadId);
+    res.json(result);
   }),
 );
 
