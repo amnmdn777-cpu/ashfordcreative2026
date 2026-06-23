@@ -675,14 +675,14 @@ export const resetPortalCompletely = async (
  * work); Child/family → garden; Executive → constellation (premium
  * dark mode); Perinatal/anxiety → sunrise; everything else → atrium.
  */
-const defaultTemplateForSpecialty = (specialty: string): string => {
-  const s = specialty.toLowerCase();
-  if (/(trauma|emdr|ptsd)/.test(s)) return "polaroid";
-  if (/(couples|family|relationship)/.test(s)) return "front_porch";
-  if (/(child|teen|adolescent|family clinic)/.test(s)) return "garden";
-  if (/(executive|coaching|leadership|premium)/.test(s)) return "constellation";
-  if (/(perinatal|postpartum|anxiety|grief)/.test(s)) return "sunrise";
-  return "garden";
+// 2026-06-23 (Amine): every new portal defaults to the premium "Clarity"
+// template for now. Previous per-specialty mapping (restore to re-enable):
+//   trauma/emdr/ptsd → polaroid; couples/family/relationship → front_porch;
+//   child/teen/adolescent → garden; executive/coaching/premium →
+//   constellation; perinatal/postpartum/anxiety/grief → sunrise; else garden.
+const DEFAULT_TEMPLATE = "clarity";
+const defaultTemplateForSpecialty = (_specialty: string): string => {
+  return DEFAULT_TEMPLATE;
 };
 
 export const getPortalBySlug = async (slug: string) => {
