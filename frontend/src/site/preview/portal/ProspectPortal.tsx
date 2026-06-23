@@ -2153,23 +2153,28 @@ function PortalBody({ initialData }: { initialData: PortalPublicResponse }) {
               readingMinutes: e.readingMinutes,
             }))}
           />
-          <SourcesChips
-            eyebrow={t("portal_wow_sources_eyebrow")}
-            title={t("portal_wow_sources_title")}
-            labels={{
-              google_places: t("portal_wow_source_google_places"),
-              google: t("portal_wow_source_google_places"),
-              headway: t("portal_wow_source_headway"),
-              psychology_today: t("portal_wow_source_psychology_today"),
-              psychologytoday: t("portal_wow_source_psychology_today"),
-              zencare: t("portal_wow_source_zencare"),
-              website: t("portal_wow_source_website"),
-              website_meta: t("portal_wow_source_website_meta"),
-              site: t("portal_wow_source_website"),
-              npi: t("portal_wow_source_npi"),
-            }}
-            fieldSources={previewFieldSources}
-          />
+          {/* QA (2026-06-22): "Pulled in from" source chips hidden on the
+              Clarity template — they read as internal/dev-facing on the
+              premium portal. Other templates keep the trust band. */}
+          {activeTemplate !== "clarity" && (
+            <SourcesChips
+              eyebrow={t("portal_wow_sources_eyebrow")}
+              title={t("portal_wow_sources_title")}
+              labels={{
+                google_places: t("portal_wow_source_google_places"),
+                google: t("portal_wow_source_google_places"),
+                headway: t("portal_wow_source_headway"),
+                psychology_today: t("portal_wow_source_psychology_today"),
+                psychologytoday: t("portal_wow_source_psychology_today"),
+                zencare: t("portal_wow_source_zencare"),
+                website: t("portal_wow_source_website"),
+                website_meta: t("portal_wow_source_website_meta"),
+                site: t("portal_wow_source_website"),
+                npi: t("portal_wow_source_npi"),
+              }}
+              fieldSources={previewFieldSources}
+            />
+          )}
           {previewSocialLinks ? (
             <SocialFooter
               eyebrow={t("portal_wow_social_eyebrow")}
@@ -2208,8 +2213,12 @@ function PortalBody({ initialData }: { initialData: PortalPublicResponse }) {
         />
       )}
 
-      {/* 2026-05-21 — Self-serve "Request a change" (Sprint 2 streamline). */}
-      <ChangeRequestSection slug={data.slug} locale={locale === "es" ? "es" : "en"} />
+      {/* 2026-05-21 — Self-serve "Request a change" (Sprint 2 streamline).
+          QA (2026-06-22): hidden on Clarity so the template's footer is the
+          final element; other templates keep the inline change request. */}
+      {activeTemplate !== "clarity" && (
+        <ChangeRequestSection slug={data.slug} locale={locale === "es" ? "es" : "en"} />
+      )}
 
       {showReserve && (
         <ReserveModal

@@ -10,7 +10,6 @@ import {
 } from "@site/components/sections";
 import {
   ClarityServices,
-  ClarityStats,
   ClarityVideo,
   ClarityLocation,
   ClarityAnnouncementBar,
@@ -122,30 +121,9 @@ function Clarity(props: TemplateProps) {
     "Reserva una llamada gratis de 15 min",
   );
 
-  // Lively stats band — derive what we can from real data (years in
-  // practice, insurance plans), with sensible marketing defaults the rep
-  // can tune. Soft, credible numbers; never fabricated clinical claims.
-  const thisYear = new Date().getFullYear();
-  const yearsInPractice = props.content.yearFounded
-    ? Math.max(1, thisYear - props.content.yearFounded)
-    : 12;
-  const stats = [
-    {
-      to: yearsInPractice,
-      suffix: "+",
-      label: tt("Years in practice", "Años de experiencia"),
-    },
-    {
-      to: 500,
-      suffix: "+",
-      label: tt("Clients supported", "Pacientes atendidos"),
-    },
-    {
-      to: props.content.insurance?.length ?? 3,
-      label: tt("Insurance plans", "Planes de seguro"),
-    },
-    { to: 5, label: tt("Star-rated care", "Atención 5 estrellas") },
-  ];
+  // QA (2026-06-22): the stats band (years / clients / etc.) was removed —
+  // the numbers were marketing defaults, not real per-practice data, so
+  // they read as fabricated on a prospect's preview.
 
   const loc = props.content.locations?.[0];
 
@@ -337,9 +315,6 @@ function Clarity(props: TemplateProps) {
           )}
           items={specialties}
         />
-
-        {/* ── Stats band ───────────────────────────────────────── */}
-        <ClarityStats items={stats} />
 
         {/* ── About ────────────────────────────────────────────── */}
         <motion.div {...fadeUp()} id="about" className="scroll-mt-24">
