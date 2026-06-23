@@ -466,9 +466,38 @@ export function resolvePersona(
     "mentalhealth", "mentalhealthcare", "thementalhealthnetwork",
   ]);
   const normalizeBrand = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  // A scraped value that is actually a URL / booking link (e.g. a Grow
+  // Therapy "book-appointment?id=…&utm_source=…" link captured as the
+  // practice name) must NEVER render as the practitioner's name. These
+  // slip past the brand-token set because their normalized form is one
+  // long alphanumeric string. Treat anything URL-shaped as junk so the
+  // resolver falls through to a real name (or blanks the heading) — this
+  // is what produced "About https://growtherapy.com/book-appointment?…"
+  // as the Clarity H2 on Wendi Grant's preview (2026-06-23 audit).
+  const looksLikeUrl = (s: string): boolean => {
+    const t = s.trim();
+    if (!t) return false;
+    if (/^https?:\/\//i.test(t)) return true;
+    if (/\bwww\.[^\s]+\.[a-z]{2,}/i.test(t)) return true;
+    if (/utm_[a-z]+=|[?&]id=|book-appointment|\/providers?\//i.test(t)) return true;
+    // A bare domain-with-path ("flatlandcounseling.com/about").
+    if (/[a-z0-9-]+\.[a-z]{2,}\/[^\s]/i.test(t)) return true;
+    return false;
+  };
+  // Remove any raw URL fragments that leaked into a free-text field
+  // (bio / mission). Used so the About body renders as clean prose even
+  // when the crawler captured a booking link inside the paragraph.
+  const stripUrls = (s: string): string =>
+    s
+      .replace(/https?:\/\/[^\s)]+/gi, "")
+      .replace(/\bwww\.[^\s)]+/gi, "")
+      .replace(/[ \t]{2,}/g, " ")
+      .replace(/\s+([.,;:])/g, "$1")
+      .trim();
   const isJunkName = (n: string) => {
     const trimmed = n.trim();
     if (!trimmed) return true;
+    if (looksLikeUrl(trimmed)) return true;
     return JUNK_NAMES_NORMALIZED.has(normalizeBrand(trimmed));
   };
 
@@ -541,7 +570,11 @@ export function resolvePersona(
       : isReal && safePracticeName
         ? safePracticeName
         : isReal
-          ? (practiceName.trim() || teamName.trim() || "")
+          ? (!isJunkName(practiceName)
+              ? practiceName.trim()
+              : !isJunkName(teamName)
+                ? teamName.trim()
+                : "")
           : persona.name;
   // Practice-only previews don't have a clinician credential to honestly
   // attach; suppress it rather than fabricate one from the persona stub.
@@ -914,6 +947,14 @@ export function resolvePersona(
       primaryService: c.services?.[0]?.name ?? "",
       tagline: c.tagline ?? "",
     });
+  }
+
+  // Strip any raw URL fragments the crawler left inside the bio (e.g. a
+  // Grow Therapy "book-appointment?…" booking link captured as bio
+  // text). Keeps the About body as clean prose for every template.
+  if (isReal) {
+    bio_en = stripUrls(bio_en);
+    bio_es = stripUrls(bio_es);
   }
 
   // Booking URL: persona stubs ("https://cal.com/joanna-reyes-kim/15min")

@@ -324,7 +324,11 @@ function Clarity(props: TemplateProps) {
             name={r.name}
             credentials={r.credentials}
             body={bioParas.length > 0 ? bioParas : [bio]}
-            heading={tt(`About ${r.firstName}`, `Acerca de ${r.firstName}`)}
+            heading={
+              r.firstName
+                ? tt(`About ${r.firstName}`, `Acerca de ${r.firstName}`)
+                : tt("About", "Acerca")
+            }
             imageSide="left"
           />
         </motion.div>
