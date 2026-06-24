@@ -83,7 +83,7 @@ export default function CommissionPage() {
           <li>
             <span className="font-medium">$149 closing bonus</span> for every
             client you sign onto any plan — Boutique ($199/mo), Boutique Pro
-            ($299/mo), or Boutique Concierge ($649/mo). The bonus is the same
+            ($299/mo), or Boutique Concierge ($249/mo). The bonus is the same
             across tiers, but the higher tiers carry more add-on revenue in
             month one (below), so closing a Pro or Concierge deal pays you more.
           </li>

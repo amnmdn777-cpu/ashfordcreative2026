@@ -358,7 +358,7 @@ function UpgradeTierModal({
         >
           <option value="boutique">Boutique ($199/mo)</option>
           <option value="boutique_pro">Boutique Pro ($299/mo)</option>
-          <option value="boutique_concierge">Boutique Concierge ($649/mo)</option>
+          <option value="boutique_concierge">Boutique Concierge ($249/mo)</option>
         </select>
       </label>
       {m.error && (

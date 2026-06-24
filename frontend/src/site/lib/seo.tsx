@@ -127,13 +127,13 @@ export const serviceJsonLd = {
   provider: { "@type": "Organization", name: SITE_NAME },
   areaServed: { "@type": "AdministrativeArea", name: "Texas" },
   // AggregateOffer spans the three customer tiers (Boutique $199, Boutique
-  // Pro $299, Concierge $649). The previous "$149" was the rep-bonus number,
+  // Pro $299, Concierge $249). The previous "$149" was the rep-bonus number,
   // never a customer price — Google was indexing it as our starting price.
   offers: {
     "@type": "AggregateOffer",
     priceCurrency: "USD",
     lowPrice: "199",
-    highPrice: "649",
+    highPrice: "299",
     offerCount: 3,
   },
 };

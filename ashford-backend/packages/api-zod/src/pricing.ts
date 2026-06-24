@@ -269,7 +269,7 @@ export const TIERS: Record<TierKey, TierDef> = {
   boutique_concierge: {
     key: "boutique_concierge",
     label: "Boutique Concierge",
-    monthlyCents: 64900,
+    monthlyCents: 24900,
     setupCents: 0,
     description:
       "Everything in Pro, plus white-glove telehealth — we set up Doxy.me Pro under your brand and handle the full onboarding for you.",

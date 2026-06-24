@@ -30,9 +30,9 @@ const HOW_STEPS: Step[] = [
     titleEn: "You pick one, pay securely, and we keep going",
     titleEs: "Eliges una, pagas con seguridad y seguimos adelante",
     bodyEn:
-      "Three plans, no surprise setup fees: Boutique $199/mo, Boutique Pro $299/mo, Concierge $649/mo — billed securely at checkout. 100% tax-deductible business expense (IRS §162); we send a W-9 and itemized invoices at year-end for your CPA. Cancel anytime in the first 90 days; after that, 30 days notice.",
+      "Three plans, no surprise setup fees: Boutique $199/mo, Boutique Pro $299/mo, Concierge $249/mo — billed securely at checkout. 100% tax-deductible business expense (IRS §162); we send a W-9 and itemized invoices at year-end for your CPA. Cancel anytime in the first 90 days; after that, 30 days notice.",
     bodyEs:
-      "Tres planes, sin tarifas de setup sorpresa: Boutique $199/mes, Boutique Pro $299/mes, Concierge $649/mes — pago seguro al reservar. Gasto comercial 100% deducible (IRS §162); enviamos un W-9 y facturas detalladas a fin de año para su contador. Cancela cuando quieras en los primeros 90 días; después, 30 días de aviso.",
+      "Tres planes, sin tarifas de setup sorpresa: Boutique $199/mes, Boutique Pro $299/mes, Concierge $249/mes — pago seguro al reservar. Gasto comercial 100% deducible (IRS §162); enviamos un W-9 y facturas detalladas a fin de año para su contador. Cancela cuando quieras en los primeros 90 días; después, 30 días de aviso.",
   },
   {
     n: "04",

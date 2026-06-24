@@ -28,7 +28,7 @@ export default function LegalRefund() {
         </li>
       </ul>
 
-      <h2>Monthly subscription (Boutique $199 / Boutique Pro $299 / Concierge $649)</h2>
+      <h2>Monthly subscription (Boutique $199 / Boutique Pro $299 / Concierge $249)</h2>
       <ul>
         <li>
           <strong>Cancel anytime in the first 90 days</strong> — no notice
@@ -118,7 +118,7 @@ export default function LegalRefund() {
         </li>
       </ul>
 
-      <h2>Suscripción mensual (Boutique $199 / Boutique Pro $299 / Concierge $649)</h2>
+      <h2>Suscripción mensual (Boutique $199 / Boutique Pro $299 / Concierge $249)</h2>
       <ul>
         <li>
           <strong>Cancela en los primeros 90 días</strong> — sin aviso

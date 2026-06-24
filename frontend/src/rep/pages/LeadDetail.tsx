@@ -2343,7 +2343,7 @@ function PreviewModal({
   const PLAN_CHOICES: Array<{ key: PlanKey; label: string; priceLabel: string }> = [
     { key: "boutique", label: "Boutique", priceLabel: "$199/mo" },
     { key: "boutique_pro", label: "Boutique Pro", priceLabel: "$299/mo" },
-    { key: "boutique_concierge", label: "Boutique Concierge", priceLabel: "$649/mo" },
+    { key: "boutique_concierge", label: "Boutique Concierge", priceLabel: "$249/mo" },
   ];
   const portalQuery = useQuery({
     queryKey: ["lead-portal", leadId],
