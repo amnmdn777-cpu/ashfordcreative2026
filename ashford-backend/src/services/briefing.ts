@@ -168,10 +168,22 @@ const buildContext = ({
     "reserve_clicked",
     "reserve_succeeded",
   ]);
-  const hasProspectEngagement = events.some((e) =>
+  const rawProspectEngagement = events.some((e) =>
     PROSPECT_DRIVEN_EVENTS.has(e.eventType),
   );
-  const hasCartUpdate = events.some((e) => e.eventType === "cart_update");
+  // A prospect can only choose a template or build a cart by actually
+  // OPENING the portal we sent them. For a lead that was never invited or
+  // never opened (unclaimed pool leads; a rep-side "Prepare preview" that
+  // seeds a default template/cart), those events are rep/seed artifacts —
+  // NOT the prospect's actions. Surfacing them produced self-contradicting
+  // briefings: "Margie selected Garden and added it to her cart" alongside
+  // "No portal opens recorded". Rep previews don't bump firstOpenedAt
+  // (open-tracking skips internal traffic), so it's a reliable gate.
+  const inviteSent = portal.inviteSentAt != null;
+  const prospectOpened = portal.firstOpenedAt != null;
+  const hasProspectEngagement = rawProspectEngagement && prospectOpened;
+  const hasCartUpdate =
+    hasProspectEngagement && events.some((e) => e.eventType === "cart_update");
   // Reps see these lines verbatim (talking-points + summary), so we strip the
   // internal `[sourceKey]` prefix that used to dump source identifiers like
   // `[clearbit_autocomplete]` / `[google_places]` into the briefing copy.
@@ -214,9 +226,13 @@ const buildContext = ({
       template: hasProspectEngagement
         ? TEMPLATES[portal.selectedTemplate]?.label ?? portal.selectedTemplate
         : null,
-      openCount,
-      lastOpenedAt,
+      // Only report opens the PROSPECT made — when they never opened it,
+      // openCount reflects rep-side preview loads, so present it as 0.
+      openCount: prospectOpened ? openCount : 0,
+      lastOpenedAt: prospectOpened ? lastOpenedAt : null,
       reservedAt: portal.reservedAt,
+      inviteSent,
+      prospectOpened,
       hasProspectEngagement,
     },
     cart:
@@ -226,8 +242,8 @@ const buildContext = ({
             monthlyTotalCents: cart.monthlyTotalCents,
           }
         : null,
-    interestedAddons,
-    recentEvents,
+    interestedAddons: hasProspectEngagement ? interestedAddons : [],
+    recentEvents: hasProspectEngagement ? recentEvents : [],
     enrichmentLines,
     headway,
     repName: rep?.displayName ?? "the Ashford team",
@@ -247,6 +263,7 @@ Given the prospect snapshot below, return STRICT JSON with these fields:
 - "talkingPoints": ALWAYS return an empty array []. The rep does not want canned bullets — they run the call themselves.
 - "redFlags": 0 to 3 short cautions about the prospect (low engagement, missing data, off-market, etc). Empty array if none.
 If a "headway" block is present in the snapshot, the prospect is already listed on Headway and accepting insurance. Mention this explicitly in "summary" (cite the actual insurance names, e.g. "they accept BCBS, Aetna via Headway"), and emphasise that an Ashford site captures cash-pay clients who don't want to use insurance.
+The portal snapshot includes booleans "inviteSent" and "prospectOpened". If "prospectOpened" is false, the prospect has NOT opened their portal yet — do NOT say they viewed, selected, or added anything to a cart, and describe portal engagement as "none yet". NEVER state both that they engaged with the portal AND that there are no opens — that is a contradiction. When "prospectOpened" is false, frame the call as earning the first click.
 Do NOT include an "opener" or any greeting line — the rep handles the opener themselves. Keep tone calm and respectful. Do NOT invent facts not in the snapshot.`;
 
 // Hard timeout for the AI provider calls. Without this a slow or hung
