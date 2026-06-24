@@ -342,6 +342,14 @@ export const buildPreviewContent = async (
       setSource("mission", "ai_synthesis");
     }
   }
+  // Never end the About bio on an ellipsis / trailing dots (Amine/Maaz QA
+  // 2026-06-24: "we do not like the final 3 dots"; "show all the text").
+  // Source bios sometimes ship a trailing "…"/"..." — their own teaser
+  // styling, or a leftover from an upstream clip. Trim it so the bio ends
+  // cleanly. A single sentence-ending period is preserved.
+  if (mission) {
+    mission = mission.replace(/\s*(?:…|\.{2,})\s*$/u, "").trimEnd();
+  }
 
   // ---- heroImage -----------------------------------------------------
   // Photo policy stays unchanged (locked 2026-05): hero/portraits
