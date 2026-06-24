@@ -306,7 +306,18 @@ export const buildPreviewContent = async (
   if (candidates.length > 0) {
     const winner = candidates[0];
     if (winner) {
-      mission = winner.text.length > 600 ? `${winner.text.slice(0, 599)}…` : winner.text;
+      // Show the FULL self-written bio — never clip it mid-sentence with an
+      // ellipsis (Amine/Maaz QA 2026-06-24: "show all the text, do not cut
+      // anything"; Alberto's About ended "...Licensed Professional
+      // Counselor …"). These candidates are bounded, curated sources (site
+      // meta description, Psychology Today bio, Headway bio), not raw page
+      // dumps, so rendering them in full is safe. A high guard only trims a
+      // pathological multi-KB scrape that no real bio would hit.
+      const HARD_GUARD = 6000;
+      mission =
+        winner.text.length > HARD_GUARD
+          ? winner.text.slice(0, HARD_GUARD)
+          : winner.text;
       setSource("mission", winner.source);
     }
   }

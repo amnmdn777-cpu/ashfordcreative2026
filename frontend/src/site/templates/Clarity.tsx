@@ -134,21 +134,40 @@ function Clarity(props: TemplateProps) {
 
   const loc = props.content.locations?.[0];
 
-  // "What we treat" — prospect's real specialties when present, else a
-  // sensible default set so the section never renders empty.
-  const specialties =
-    props.content.specialties && props.content.specialties.length > 0
-      ? props.content.specialties
-      : [
-          tt("Anxiety", "Ansiedad"),
-          tt("Depression", "Depresión"),
-          tt("Trauma & PTSD", "Trauma y TEPT"),
-          tt("Grief & loss", "Duelo y pérdida"),
-          tt("Burnout", "Agotamiento"),
-          tt("Relationships", "Relaciones"),
-          tt("Life transitions", "Transiciones de vida"),
-          tt("Self-esteem", "Autoestima"),
-        ];
+  // "What we treat" — lead's real specialties FIRST, then topped up from a
+  // sensible default set until we reach ~10 chips. Amine (QA 2026-06-24:
+  // "by default please put 10 of them") never wants a thin 1-2 chip row:
+  // a single enriched specialty ("Anxiety") looked broken. The subhead
+  // ("Common reasons people reach out — though you don't need a label to
+  // begin") frames these as general, not as exhaustive clinical claims.
+  const SPECIALTY_TARGET = 10;
+  const DEFAULT_SPECIALTIES = [
+    tt("Anxiety", "Ansiedad"),
+    tt("Depression", "Depresión"),
+    tt("Trauma & PTSD", "Trauma y TEPT"),
+    tt("Grief & loss", "Duelo y pérdida"),
+    tt("Stress & burnout", "Estrés y agotamiento"),
+    tt("Relationships", "Relaciones"),
+    tt("Life transitions", "Transiciones de vida"),
+    tt("Self-esteem", "Autoestima"),
+    tt("Self-discovery", "Autoconocimiento"),
+    tt("Work & career stress", "Estrés laboral"),
+  ];
+  const specialties = (() => {
+    const real = (props.content.specialties ?? []).filter(
+      (s) => s && s.trim().length > 0,
+    );
+    const seen = new Set(real.map((s) => s.trim().toLowerCase()));
+    const out = [...real];
+    for (const d of DEFAULT_SPECIALTIES) {
+      if (out.length >= SPECIALTY_TARGET) break;
+      if (!seen.has(d.trim().toLowerCase())) {
+        out.push(d);
+        seen.add(d.trim().toLowerCase());
+      }
+    }
+    return out.slice(0, SPECIALTY_TARGET);
+  })();
 
   const approach = [
     {
