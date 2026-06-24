@@ -347,39 +347,12 @@ export const renderLeadPreviewVideo = async (
       type: "png",
     });
 
-    const first = firstNameOf(lead.name);
-    const caps = captionsFor(lead.locale, first, lead.practice);
-    const fontPath = await resolveFontFile();
-    // ffmpeg parses fontfile= with backslashes as escapes; on Windows
-    // local dev replace them with forward slashes (libavfilter accepts
-    // both).
-    const fontFileArg = fontPath.replace(/\\/g, "/");
-
-    const drawtextChain = caps
-      .map((c) => {
-        const txt = escapeDrawtext(c.text);
-        // Bottom-center caption with a translucent black border and a
-        // soft shadow box for readability over any background colour
-        // the template ships with. fontsize scales with width so the
-        // captions stay legible on mobile email previews where the
-        // video is downscaled to ~360 px wide.
-        return [
-          `drawtext=fontfile='${fontFileArg}'`,
-          `text='${txt}'`,
-          `fontcolor=white`,
-          `fontsize=52`,
-          `borderw=4`,
-          `bordercolor=0x000000aa`,
-          `box=1`,
-          `boxcolor=0x00000088`,
-          `boxborderw=24`,
-          `x=(w-text_w)/2`,
-          `y=h-180`,
-          `enable='between(t,${c.from},${c.to})'`,
-        ].join(":");
-      })
-      .join(",");
-
+    // Caption cards removed 2026-06-24 (Amine: "NO NEED for subtitles in
+    // the video"). The clip is now a clean vertical pan over the rendered
+    // site with no burned-in text — which also drops the drawtext font
+    // dependency entirely (`resolveFontFile` / `captionsFor` are no longer
+    // called here).
+    //
     // Pan filter: scale the screenshot to the video width, then crop a
     // 1280×720 window whose y-offset linearly interpolates from 0 to
     // (height-720) across the clip. `min()` clamps the pan when the
@@ -387,8 +360,7 @@ export const renderLeadPreviewVideo = async (
     // bottom.
     const filter =
       `[0:v]scale=${VIDEO_WIDTH}:-2,setsar=1[scaled];` +
-      `[scaled]crop=${VIDEO_WIDTH}:${VIDEO_HEIGHT}:0:'min((ih-${VIDEO_HEIGHT})*(t/${DURATION_SEC}),max(0,ih-${VIDEO_HEIGHT}))'[panned];` +
-      `[panned]${drawtextChain}[vout]`;
+      `[scaled]crop=${VIDEO_WIDTH}:${VIDEO_HEIGHT}:0:'min((ih-${VIDEO_HEIGHT})*(t/${DURATION_SEC}),max(0,ih-${VIDEO_HEIGHT}))'[vout]`;
 
     const outPath = path.join(tmpDir, "out.mp4");
     const ffmpegBin = await resolveFfmpeg();

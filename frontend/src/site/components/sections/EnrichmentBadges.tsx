@@ -36,6 +36,14 @@ export interface EnrichmentBadgesProps {
   acceptsSlidingScale?: boolean | null;
 }
 
+// A single lonely chip (e.g. just "Anxiety" under WHAT WE TREAT) reads as
+// broken — a one-item cluster stranded in a tall band. Require at least
+// this many items before a group renders so the band only appears when it
+// has enough substance to look intentional (Amine QA 2026-06-24: "remove
+// this anxiety like things"). Insurance lists ("Aetna, BCBS, Out of
+// Network") and real specialty sets clear this easily.
+const MIN_GROUP_ITEMS = 2;
+
 interface GroupProps {
   label: string;
   items: string[];
@@ -43,7 +51,7 @@ interface GroupProps {
 }
 
 function Group({ label, items, Icon }: GroupProps) {
-  if (!items || items.length === 0) return null;
+  if (!items || items.length < MIN_GROUP_ITEMS) return null;
   return (
     <div className="flex flex-col gap-2">
       <div
@@ -91,10 +99,10 @@ export function EnrichmentBadges(props: EnrichmentBadgesProps) {
     acceptsSlidingScale
   );
   const anyGroup =
-    specialties.length > 0 ||
-    modalities.length > 0 ||
-    languages.length > 0 ||
-    acceptedInsurances.length > 0;
+    specialties.length >= MIN_GROUP_ITEMS ||
+    modalities.length >= MIN_GROUP_ITEMS ||
+    languages.length >= MIN_GROUP_ITEMS ||
+    acceptedInsurances.length >= MIN_GROUP_ITEMS;
 
   if (!anyPill && !anyGroup) return null;
 
