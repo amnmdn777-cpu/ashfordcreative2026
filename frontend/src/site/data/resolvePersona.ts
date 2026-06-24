@@ -515,6 +515,10 @@ export function resolvePersona(
       .replace(/[ \t]{2,}/g, " ")
       .replace(/\s+([.,;:])/g, "$1")
       .trim();
+  // Trim a trailing ellipsis (… or 2+ dots) plus any space before it, so the
+  // About bio never reads as cut off. A single sentence period is preserved.
+  const stripTrailingEllipsis = (s: string): string =>
+    s.replace(/\s*(?:…|\.{2,})\s*$/u, "").trimEnd();
   const isJunkName = (n: string) => {
     const trimmed = n.trim();
     if (!trimmed) return true;
@@ -982,6 +986,13 @@ export function resolvePersona(
   if (isReal) {
     bio_en = stripUrls(bio_en);
     bio_es = stripUrls(bio_es);
+    // Never end the About bio on an ellipsis / trailing dots (Amine/Maaz QA
+    // 2026-06-24: "we do not like the final 3 dots"). The blurb that
+    // synthesizeBio appends is the lead's `profileBlurb`, which is sometimes
+    // stored with a trailing "…"/"..." that made the bio read as truncated.
+    // Strip it from the FINAL bio so it ends cleanly regardless of source.
+    bio_en = stripTrailingEllipsis(bio_en);
+    bio_es = stripTrailingEllipsis(bio_es);
   }
 
   // Booking URL: persona stubs ("https://cal.com/joanna-reyes-kim/15min")
