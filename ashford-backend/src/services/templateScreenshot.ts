@@ -114,6 +114,11 @@ const renderScreenshot = async (slug: string): Promise<Buffer> => {
   const page = await browser.newPage();
   try {
     await page.setViewport({ ...VIEWPORT, deviceScaleFactor: 2 });
+    // Reduced-motion: resolve framer-motion scroll-in animations to their
+    // visible end state so off-screen sections aren't captured at opacity:0.
+    await page.emulateMediaFeatures([
+      { name: "prefers-reduced-motion", value: "reduce" },
+    ]);
     await page.goto(url, {
       waitUntil: "networkidle2",
       timeout: 20_000,
@@ -238,6 +243,11 @@ const renderPortalScreenshot = async (
   const page = await browser.newPage();
   try {
     await page.setViewport({ ...PORTAL_VIEWPORT, deviceScaleFactor: 2 });
+    // Reduced-motion: resolve framer-motion scroll-in animations to their
+    // visible end state so off-screen sections aren't captured at opacity:0.
+    await page.emulateMediaFeatures([
+      { name: "prefers-reduced-motion", value: "reduce" },
+    ]);
     await page.goto(url, { waitUntil: "networkidle2", timeout: 25_000 });
     await new Promise((r) => setTimeout(r, 800));
     const buf = await page.screenshot({

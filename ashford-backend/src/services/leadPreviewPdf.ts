@@ -250,6 +250,13 @@ export const renderLeadPreviewPdf = async (
     // A4 portrait at 96 DPI: 794 × 1123. Use 1024 width so site's
     // mobile/tablet breakpoints behave nicely once rendered into A4.
     await page.setViewport({ width: 1024, height: 1400, deviceScaleFactor: 1 });
+    // Force reduced-motion so the templates' framer-motion `whileInView`
+    // scroll-in animations resolve to their visible state up front —
+    // otherwise below-the-fold sections render at opacity:0 (occupying
+    // height but invisible) in a non-scrolling headless capture.
+    await page.emulateMediaFeatures([
+      { name: "prefers-reduced-motion", value: "reduce" },
+    ]);
     await page.goto(previewUrl, {
       waitUntil: "networkidle2",
       timeout: 40_000,

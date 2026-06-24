@@ -272,6 +272,17 @@ export const renderLeadPreviewVideo = async (
       height: 800,
       deviceScaleFactor: 1,
     });
+    // Force `prefers-reduced-motion: reduce` so the templates' scroll-in
+    // animations resolve to their final visible state immediately. The
+    // sections use framer-motion `whileInView` + `initial:{opacity:0}`
+    // (gated on `useReducedMotion()`); in a headless full-page capture
+    // nothing scrolls, so every below-the-fold section stayed at
+    // opacity:0 while still occupying layout height — the large empty
+    // bands in the video (QA 2026-06-24). Reduced-motion makes `fadeUp`
+    // a no-op, so all content paints up front.
+    await page.emulateMediaFeatures([
+      { name: "prefers-reduced-motion", value: "reduce" },
+    ]);
     await page.goto(previewUrl, {
       waitUntil: "networkidle2",
       timeout: 35_000,
