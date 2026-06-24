@@ -19,12 +19,15 @@ import type { LeadDto } from "@workspace/api-zod";
 export function LeadAdminPanel({ leadId, lead }: { leadId: number; lead: LeadDto }) {
   return (
     <div className="space-y-6 mt-6">
-      {/* QA Change #5 Issue 3 (2026-06-23): Lead Fields and Contacts are now
-          SEPARATE cards again, matching the admin lead panel Amine verified as
-          correct. History renders separately (collapsed, below Notes) via
-          <LeadHistoryCard />. */}
-      <EditableFieldsCard leadId={leadId} lead={lead} />
-      <ContactsCard leadId={leadId} />
+      {/* QA v2 (2026-06-24): Amine's final call — Lead Fields + Contacts live
+          in ONE "Contact info" card so a rep never reads a lead as having no
+          contact info. History renders separately (collapsed, below Notes)
+          via <LeadHistoryCard />. */}
+      <section className="bg-card border border-card-border rounded-xl p-5 shadow-sm">
+        <EditableFieldsCard leadId={leadId} lead={lead} bare />
+        <div className="my-5 border-t border-border" />
+        <ContactsCard leadId={leadId} bare />
+      </section>
       <FilesCard leadId={leadId} />
     </div>
   );

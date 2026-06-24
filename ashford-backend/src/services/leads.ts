@@ -1147,12 +1147,14 @@ export const getLeadTimeline = async (
   ) {
     throw forbidden("You don't own this lead.");
   }
-  // Unclaimed leads: any rep can *preview* the row, but PII is redacted
-  // and timeline collections are empty. Reps must `claim` to see contact
-  // info. Without this gate, a session rep could enumerate all 561
-  // available leads' phone/email/notes via the detail endpoint (IDOR).
-  const redacted =
-    requestingRepId !== undefined && lead.claimedByRepId === null;
+  // 2026-06-24 (P0-5 / item #20): reps now SEE contact info on unclaimed
+  // available leads. The previous redaction (hide phone/email/website until
+  // claimed, as an anti-enumeration guard) made valid leads look empty —
+  // Candice nearly discarded leads that actually had full contact data.
+  // Product call for this small, trusted rep team: show the info so reps can
+  // qualify before claiming. Re-enable redaction here if the team grows and
+  // enumeration becomes a real concern.
+  const redacted = false;
   if (redacted) {
     const redactedLead = {
       ...lead,

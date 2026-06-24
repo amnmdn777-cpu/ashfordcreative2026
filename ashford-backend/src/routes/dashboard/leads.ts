@@ -355,18 +355,10 @@ router.get(
   "/dashboard/leads/:id/contacts",
   asyncHandler(async (req, res) => {
     const id = z.coerce.number().int().parse(req.params.id);
-    const lead = await loadOwnedLead(id, req.user!);
-    // NEW-BUG-5: keep contact visibility consistent with getLeadTimeline,
-    // which redacts phone/email for UNCLAIMED pool leads (anti-enumeration
-    // PII guard). Without this, the Contacts panel showed real data while
-    // the Lead Fields panel (fed by the redacted timeline) showed dashes —
-    // making the lead look half-empty and leaking PII the timeline hides.
-    // Reps must claim the lead to see its contacts; admins always can.
-    const isAdmin = req.user?.role === "admin" || req.user?.role === "owner";
-    if (!isAdmin && lead.claimedByRepId == null) {
-      res.json({ contacts: [] });
-      return;
-    }
+    await loadOwnedLead(id, req.user!);
+    // 2026-06-24: reps see contacts on unclaimed available leads too — the
+    // timeline redaction was removed (P0-5), so Lead Fields and Contacts now
+    // both show the real data and agree.
     const rows = await db
       .select()
       .from(leadContacts)
