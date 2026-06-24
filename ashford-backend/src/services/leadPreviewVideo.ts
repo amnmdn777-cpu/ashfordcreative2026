@@ -276,6 +276,23 @@ export const renderLeadPreviewVideo = async (
       waitUntil: "networkidle2",
       timeout: 35_000,
     });
+    // The portal is a client-rendered SPA: it shows a "LOADING YOUR
+    // PREVIEW…" shell while `portalApi.get()` resolves, THEN swaps in the
+    // template. `networkidle2` can fire on the bundle/asset traffic before
+    // that data fetch paints, so the old fixed 1.2s wait captured the
+    // loading shell — the video read "Loading your preview…" under the
+    // captions (QA 2026-06-24). Wait for the loaded template frame to
+    // exist (it only mounts once `data` arrives), with a fallback so a
+    // genuinely broken portal still yields *some* frame instead of hanging.
+    await Promise.race([
+      page
+        .waitForSelector(
+          '[data-testid="portal-template-frame"], [data-testid="portal-wow-enrichment"], section',
+          { timeout: 15_000 },
+        )
+        .catch(() => undefined),
+      new Promise((r) => setTimeout(r, 15_000)),
+    ]);
 
     // Hide rep-only overlays and floating chat / CTA bubbles. Same set
     // as leadPreviewPdf so what the prospect sees in the video matches
@@ -296,7 +313,10 @@ export const renderLeadPreviewVideo = async (
         " { display: none !important; } html { scroll-behavior: auto; }";
       document.head.appendChild(style);
     });
-    await new Promise((r) => setTimeout(r, 1200));
+    // Extra settle for fonts, lazy hero/section imagery and CSS
+    // transitions before the full-page screenshot — matches the PDF
+    // path's 2.5s so the captured frame is fully painted, not half-loaded.
+    await new Promise((r) => setTimeout(r, 2500));
 
     // Constrain the captured page height so a runaway preview (e.g.
     // an unintended infinite-scroll demo) doesn't produce a 50k-px PNG
