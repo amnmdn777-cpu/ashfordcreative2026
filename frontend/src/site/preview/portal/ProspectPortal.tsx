@@ -2144,6 +2144,17 @@ function PortalBody({ initialData }: { initialData: PortalPublicResponse }) {
                         {selectedSlugsInOrder.map((s) => {
                           const Inline = ADDON_INLINE_COMPONENTS[s];
                           if (!Inline) return null;
+                          // Item 5 (Amine QA 2026-06-24): the generic
+                          // "Insights Journal" add-on demo (blog_publishing)
+                          // and the WOW band's "Three drafts, ready to
+                          // publish" (DraftedJournal) are the same function.
+                          // When this prospect has real ghostwritten drafts,
+                          // the WOW band already shows them, so skip the
+                          // duplicate generic demo here. (No real drafts ->
+                          // keep the demo so selecting the add-on still
+                          // shows what it is.)
+                          if (s === "blog_publishing" && previewDraftedJournal.length > 0)
+                            return null;
                           // #221 follow-up — bundled-free add-ons are
                           // already represented in the "ALSO INCLUDED"
                           // band above and rendered inside the live

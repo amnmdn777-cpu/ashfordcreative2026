@@ -449,22 +449,6 @@ function Clarity(props: TemplateProps) {
           />
         </motion.div>
 
-        {/* ── Location / map ───────────────────────────────────── */}
-        {loc ? (
-          <ClarityLocation
-            heading={tt("Find us", "Encuéntranos")}
-            address={loc.address}
-            hours={loc.hours}
-            phone={r.phone}
-            labels={{
-              eyebrow: tt("Visit", "Visítanos"),
-              hours: tt("Hours", "Horario"),
-              call: tt("Call", "Llamar"),
-              directions: tt("Get directions", "Cómo llegar"),
-            }}
-          />
-        ) : null}
-
         {/* ── Newsletter ───────────────────────────────────────── */}
         <ClarityNewsletter
           heading={tt(
@@ -503,6 +487,26 @@ function Clarity(props: TemplateProps) {
             "La mayoría recibe respuesta el mismo día.",
           )}
         />
+
+        {/* ── Location / map ───────────────────────────────────── */}
+        {/* Find-us map sits directly above the footer (Amine QA 2026-06-24:
+            "this should be just before the footer, it makes sense") — the
+            address + hours + directions flow straight into the footer's
+            contact column. */}
+        {loc ? (
+          <ClarityLocation
+            heading={tt("Find us", "Encuéntranos")}
+            address={loc.address}
+            hours={loc.hours}
+            phone={r.phone}
+            labels={{
+              eyebrow: tt("Visit", "Visítanos"),
+              hours: tt("Hours", "Horario"),
+              call: tt("Call", "Llamar"),
+              directions: tt("Get directions", "Cómo llegar"),
+            }}
+          />
+        ) : null}
 
         <ClarityFooter
           name={r.name}
