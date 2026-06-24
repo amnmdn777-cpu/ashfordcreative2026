@@ -1924,7 +1924,15 @@ router.patch(
       .from(leadsTbl)
       .where(eq(leadsTbl.id, leadId))
       .limit(1);
-    await db.update(leadsTbl).set({ temperature: body.temperature }).where(eq(leadsTbl.id, leadId));
+    // P1-4: bump lastActivityAt so the lead card's "last activity" reflects
+    // that the rep just worked it (changing temperature is real activity).
+    // Previously only status/field edits touched it, so a rep could re-temp
+    // a lead and the timestamp stayed stale.
+    const now = new Date();
+    await db
+      .update(leadsTbl)
+      .set({ temperature: body.temperature, lastActivityAt: now, updatedAt: now })
+      .where(eq(leadsTbl.id, leadId));
     await writeAudit(req, {
       action: "lead.temperature_changed",
       targetType: "lead",
