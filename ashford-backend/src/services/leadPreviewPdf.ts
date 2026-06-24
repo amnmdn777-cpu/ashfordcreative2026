@@ -267,8 +267,10 @@ export const renderLeadPreviewPdf = async (
         .catch(() => undefined), // ignore timeout — snapshot whatever is there
       new Promise((r) => setTimeout(r, 10_000)),
     ]);
-    // Extra settle for fonts, lazy images, and CSS transitions.
-    await new Promise((r) => setTimeout(r, 1500));
+    // Extra settle for fonts, lazy images, and CSS transitions. The Clarity
+    // template lazy-loads section imagery; too short a wait captured a
+    // half-rendered (blank) body — give it a beat longer.
+    await new Promise((r) => setTimeout(r, 2500));
 
     // Inject the brochure as the very first element of <body>, hide
     // any rep-only overlays (`?internal=1` flips a global flag in the
@@ -289,6 +291,17 @@ export const renderLeadPreviewPdf = async (
       style.textContent = `
         ${hideSelectors.join(",")} { display: none !important; }
         html, body { background: #ffffff !important; }
+        /* P1-10: the portal SPA mounts inside fixed-height / overflow:auto
+           scroll containers. In print those clip to a single empty viewport,
+           which is why the exported PDF was just the cover + one blank page.
+           Neutralise the height/overflow constraints on every wrapper so the
+           full site flows across PDF pages. */
+        html, body, #root, #root > div, #root > div > div, [data-portal-root], .portal-root {
+          height: auto !important;
+          max-height: none !important;
+          min-height: 0 !important;
+          overflow: visible !important;
+        }
         /* page break behaviour */
         section, .section, [data-section] {
           break-inside: avoid-page;

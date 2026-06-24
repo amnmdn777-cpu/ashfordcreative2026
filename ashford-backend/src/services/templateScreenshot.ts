@@ -81,6 +81,12 @@ const getBrowser = async (): Promise<Browser> => {
   }
   const launching = puppeteer.launch({
     headless: true,
+    // Be explicit about the system Chromium the Docker image installs at
+    // /usr/bin/chromium. puppeteer normally reads PUPPETEER_EXECUTABLE_PATH
+    // itself, but passing it here removes any ambiguity (config file, npm
+    // workspace hoisting, etc.) — a silent launch failure here is what made
+    // the screenshot/PDF/video features all return errors in production.
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",

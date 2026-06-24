@@ -2212,8 +2212,12 @@ function HotLeadBadge({
       title="This prospect just reopened their preview — call now."
       data-testid="badge-hot-lead"
     >
+      {/* P1-2: label this "Active now", not "Hot" — it's a live-engagement
+          alert (prospect just reopened the portal), NOT the rep's Temperature
+          tag. The bare "Hot" read as a contradiction when the picker said
+          "Lukewarm". They're different concepts. */}
       <Flame size={12} />
-      Hot
+      Active now
     </span>
   );
 }
