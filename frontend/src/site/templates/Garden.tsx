@@ -209,6 +209,9 @@ function Garden(props: TemplateProps) {
       {/* (Pro+ tail extras still get a slot — keeps prior contract.) */}
       <TierGate min="pro" silent>{props.tail}</TierGate>
 
+      {/* Ungated portal enrichment band — above the footer. */}
+      {props.belowContent}
+
       {/* 11 — Crisis (always, baseline légale) */}
       <CrisisBanner
         prefix={es ? "¿En crisis?" : "In crisis?"}

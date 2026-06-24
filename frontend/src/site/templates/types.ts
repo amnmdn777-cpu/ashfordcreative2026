@@ -167,6 +167,20 @@ export interface TemplateProps {
    * footer is baked INSIDE each template).
    */
   tail?: ReactNode;
+  /**
+   * Like `tail`, but ALWAYS rendered (never tier-gated) immediately
+   * before the template `<footer>`. The portal injects its "WOW"
+   * enrichment band (specialty/insurance badges, real pricing,
+   * homepage testimonials, ghostwritten journal, social row) here so
+   * those sections sit ABOVE the per-template footer instead of being
+   * shoved below it. `tail` is wrapped in `<TierGate min="pro">` inside
+   * most templates (it carries Pro-only add-on demos), which would hide
+   * this real prospect content at the default Boutique tier — hence a
+   * separate, ungated slot. Footer stays the very last element. (Amine
+   * QA 2026-06-24: "the footer should be at the very bottom and nothing
+   * other in there.")
+   */
+  belowContent?: ReactNode;
 }
 
 // Zod schema for runtime validation of TemplateContent (e.g., when loading

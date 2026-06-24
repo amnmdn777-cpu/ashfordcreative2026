@@ -151,6 +151,9 @@ function Polaroid(props: TemplateProps) {
 
       <TierGate min="pro" silent>{props.tail}</TierGate>{/* CRITICAL #4 */}
 
+      {/* Ungated portal enrichment band — above the footer. */}
+      {props.belowContent}
+
       <BookingCta
         mode="external"
         href={r.bookingUrl}

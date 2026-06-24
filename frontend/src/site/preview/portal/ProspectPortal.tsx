@@ -923,6 +923,8 @@ function PortalBody({ initialData }: { initialData: PortalPublicResponse }) {
     templateKey: TemplateKey;
     /** Slot for add-on previews — see TemplateProps.tail. */
     tail?: ReactNode;
+    /** Ungated band rendered above the footer — see TemplateProps.belowContent. */
+    belowContent?: ReactNode;
   }> = TEMPLATE_COMPONENTS[resolveTemplateKey(activeTemplate) ?? "garden"];
 
   // Personalise the template content with the lead's real data so the
@@ -1402,6 +1404,155 @@ function PortalBody({ initialData }: { initialData: PortalPublicResponse }) {
     }
     return base;
   }, [palette, previewBrand]);
+
+  // === Portal WOW enrichment band ===
+  // Specialty/insurance badges, real pricing, homepage testimonials,
+  // ghostwritten journal, source chips and the social row. Injected into
+  // the active template via its ungated `belowContent` slot so the band
+  // renders ABOVE the per-template footer — NOT shoved below it (Amine QA
+  // 2026-06-24: "the footer should be at the very bottom and nothing
+  // other in there"). Each primitive returns null on empty input, so a
+  // brand-new lead with no enrichment simply skips the band. Wrapped in
+  // `paletteStyle` so every primitive reads the same per-template CSS
+  // variables the embedded template does.
+  const enrichmentBand = (
+    <div
+      data-testid="portal-wow-enrichment"
+      style={paletteStyle}
+      className="block"
+    >
+      {previewBrand?.logoUrl ? (
+        <div
+          className="w-full px-6 md:px-12 py-8 flex items-center justify-center"
+          style={{ backgroundColor: "var(--color-surface)" }}
+        >
+          <img
+            src={previewBrand.logoUrl}
+            alt={
+              personalizedContent.practiceName
+                ? `${personalizedContent.practiceName} logo`
+                : "Practice logo"
+            }
+            className="max-h-16 w-auto opacity-90"
+            style={{ objectFit: "contain" }}
+            loading="lazy"
+          />
+        </div>
+      ) : null}
+      <EnrichmentBadges
+        specialtiesLabel={t("portal_wow_specialties_label")}
+        modalitiesLabel={t("portal_wow_modalities_label")}
+        languagesLabel={t("portal_wow_languages_label")}
+        insuranceLabel={t("portal_wow_insurance_label")}
+        inPersonLabel={t("portal_wow_pill_in_person")}
+        telehealthLabel={t("portal_wow_pill_telehealth")}
+        slidingScaleLabel={t("portal_wow_pill_sliding_scale")}
+        specialties={previewSpecialties}
+        modalities={previewModalities}
+        languages={previewLanguages}
+        acceptedInsurances={previewInsurances}
+        offersInPerson={previewOffersInPerson}
+        offersTelehealth={previewOffersTelehealth}
+        acceptsSlidingScale={previewSlidingScale}
+      />
+      {(() => {
+        // Pricing tiers (or fallback range) — single source of truth
+        // for "what sessions cost". Tiers win when present; otherwise
+        // synthesize one card from `pricePerSession.{min,max}` so the
+        // band still renders for prospects whose enrichment landed
+        // a band but no labeled tiers.
+        if (previewPricingTiers.length > 0) {
+          return (
+            <PricingBandeau
+              eyebrow={t("portal_wow_pricing_eyebrow")}
+              title={t("portal_wow_pricing_title")}
+              perSessionLabel={t("portal_wow_pricing_session")}
+              tiers={previewPricingTiers}
+            />
+          );
+        }
+        const min = previewPricePerSession?.min ?? null;
+        const max = previewPricePerSession?.max ?? null;
+        if (min == null && max == null) return null;
+        const amount = min ?? max;
+        const rationale =
+          min != null && max != null && max !== min
+            ? t("portal_wow_pricing_range", {
+                min: `$${min}`,
+                max: `$${max}`,
+              })
+            : null;
+        return (
+          <PricingBandeau
+            eyebrow={t("portal_wow_pricing_eyebrow")}
+            title={t("portal_wow_pricing_title")}
+            perSessionLabel={t("portal_wow_pricing_session")}
+            tiers={[
+              {
+                label: t("portal_wow_pricing_eyebrow"),
+                amount,
+                rationale,
+              },
+            ]}
+          />
+        );
+      })()}
+      <HomepageTestimonials
+        eyebrow={t("portal_wow_testimonials_eyebrow")}
+        title={t("portal_wow_testimonials_title")}
+        anonymousLabel={t("portal_wow_anonymous_author")}
+        testimonials={previewTestimonials.map((tt) => ({
+          author: tt.author,
+          body: tt.body,
+        }))}
+      />
+      <DraftedJournal
+        eyebrow={t("portal_wow_journal_eyebrow")}
+        title={t("portal_wow_journal_title")}
+        readingLabelTemplate={t("portal_wow_journal_reading", { n: "{n}" })}
+        entries={previewDraftedJournal.map((e) => ({
+          title: e.title,
+          slug: e.slug,
+          excerpt: e.excerpt,
+          readingMinutes: e.readingMinutes,
+        }))}
+      />
+      {/* QA (2026-06-22): "Pulled in from" source chips hidden on the
+          Clarity template — they read as internal/dev-facing on the
+          premium portal. Other templates keep the trust band. */}
+      {activeTemplate !== "clarity" && (
+        <SourcesChips
+          eyebrow={t("portal_wow_sources_eyebrow")}
+          title={t("portal_wow_sources_title")}
+          labels={{
+            google_places: t("portal_wow_source_google_places"),
+            google: t("portal_wow_source_google_places"),
+            headway: t("portal_wow_source_headway"),
+            psychology_today: t("portal_wow_source_psychology_today"),
+            psychologytoday: t("portal_wow_source_psychology_today"),
+            zencare: t("portal_wow_source_zencare"),
+            website: t("portal_wow_source_website"),
+            website_meta: t("portal_wow_source_website_meta"),
+            site: t("portal_wow_source_website"),
+            npi: t("portal_wow_source_npi"),
+          }}
+          fieldSources={previewFieldSources}
+        />
+      )}
+      {previewSocialLinks ? (
+        <SocialFooter
+          eyebrow={t("portal_wow_social_eyebrow")}
+          instagram={previewSocialLinks.instagram}
+          facebook={previewSocialLinks.facebook}
+          linkedin={previewSocialLinks.linkedin}
+          tiktok={previewSocialLinks.tiktok}
+          youtube={previewSocialLinks.youtube}
+          psychologyToday={previewSocialLinks.psychologyToday}
+          headway={previewSocialLinks.headway}
+        />
+      ) : null}
+    </div>
+  );
 
   return (
     <div style={rootStyle} className="min-h-screen flex flex-col bg-cream">
@@ -2031,6 +2182,7 @@ function PortalBody({ initialData }: { initialData: PortalPublicResponse }) {
                       </div>
                     ) : null
                   }
+                  belowContent={enrichmentBand}
                 />
               );
             })()}
@@ -2039,155 +2191,11 @@ function PortalBody({ initialData }: { initialData: PortalPublicResponse }) {
           </TierProvider>
           </PortalEnrichmentProvider>
         </div>
-
-        {/* === Portal WOW enrichment band ===
-            Sits inside `<main>` so the page scroll order is:
-            [template hero] → [enrichment badges] → [pricing tiers] →
-            [homepage testimonials] → [drafted journal entries] →
-            [sources chips] → [social row]. Each primitive returns
-            null when its input is empty, so a brand-new lead with no
-            enrichment data simply skips the band entirely.
-
-            Wrapped in `paletteStyle` so every primitive reads the
-            same per-template CSS variables the embedded template
-            does — they look like part of the rendered site, not a
-            separate portal surface. */}
-        <div
-          data-testid="portal-wow-enrichment"
-          style={paletteStyle}
-          className="block"
-        >
-          {previewBrand?.logoUrl ? (
-            <div
-              className="w-full px-6 md:px-12 py-8 flex items-center justify-center"
-              style={{ backgroundColor: "var(--color-surface)" }}
-            >
-              <img
-                src={previewBrand.logoUrl}
-                alt={
-                  personalizedContent.practiceName
-                    ? `${personalizedContent.practiceName} logo`
-                    : "Practice logo"
-                }
-                className="max-h-16 w-auto opacity-90"
-                style={{ objectFit: "contain" }}
-                loading="lazy"
-              />
-            </div>
-          ) : null}
-          <EnrichmentBadges
-            specialtiesLabel={t("portal_wow_specialties_label")}
-            modalitiesLabel={t("portal_wow_modalities_label")}
-            languagesLabel={t("portal_wow_languages_label")}
-            insuranceLabel={t("portal_wow_insurance_label")}
-            inPersonLabel={t("portal_wow_pill_in_person")}
-            telehealthLabel={t("portal_wow_pill_telehealth")}
-            slidingScaleLabel={t("portal_wow_pill_sliding_scale")}
-            specialties={previewSpecialties}
-            modalities={previewModalities}
-            languages={previewLanguages}
-            acceptedInsurances={previewInsurances}
-            offersInPerson={previewOffersInPerson}
-            offersTelehealth={previewOffersTelehealth}
-            acceptsSlidingScale={previewSlidingScale}
-          />
-          {(() => {
-            // Pricing tiers (or fallback range) — single source of truth
-            // for "what sessions cost". Tiers win when present; otherwise
-            // synthesize one card from `pricePerSession.{min,max}` so the
-            // band still renders for prospects whose enrichment landed
-            // a band but no labeled tiers.
-            if (previewPricingTiers.length > 0) {
-              return (
-                <PricingBandeau
-                  eyebrow={t("portal_wow_pricing_eyebrow")}
-                  title={t("portal_wow_pricing_title")}
-                  perSessionLabel={t("portal_wow_pricing_session")}
-                  tiers={previewPricingTiers}
-                />
-              );
-            }
-            const min = previewPricePerSession?.min ?? null;
-            const max = previewPricePerSession?.max ?? null;
-            if (min == null && max == null) return null;
-            const amount = min ?? max;
-            const rationale =
-              min != null && max != null && max !== min
-                ? t("portal_wow_pricing_range", {
-                    min: `$${min}`,
-                    max: `$${max}`,
-                  })
-                : null;
-            return (
-              <PricingBandeau
-                eyebrow={t("portal_wow_pricing_eyebrow")}
-                title={t("portal_wow_pricing_title")}
-                perSessionLabel={t("portal_wow_pricing_session")}
-                tiers={[
-                  {
-                    label: t("portal_wow_pricing_eyebrow"),
-                    amount,
-                    rationale,
-                  },
-                ]}
-              />
-            );
-          })()}
-          <HomepageTestimonials
-            eyebrow={t("portal_wow_testimonials_eyebrow")}
-            title={t("portal_wow_testimonials_title")}
-            anonymousLabel={t("portal_wow_anonymous_author")}
-            testimonials={previewTestimonials.map((tt) => ({
-              author: tt.author,
-              body: tt.body,
-            }))}
-          />
-          <DraftedJournal
-            eyebrow={t("portal_wow_journal_eyebrow")}
-            title={t("portal_wow_journal_title")}
-            readingLabelTemplate={t("portal_wow_journal_reading", { n: "{n}" })}
-            entries={previewDraftedJournal.map((e) => ({
-              title: e.title,
-              slug: e.slug,
-              excerpt: e.excerpt,
-              readingMinutes: e.readingMinutes,
-            }))}
-          />
-          {/* QA (2026-06-22): "Pulled in from" source chips hidden on the
-              Clarity template — they read as internal/dev-facing on the
-              premium portal. Other templates keep the trust band. */}
-          {activeTemplate !== "clarity" && (
-            <SourcesChips
-              eyebrow={t("portal_wow_sources_eyebrow")}
-              title={t("portal_wow_sources_title")}
-              labels={{
-                google_places: t("portal_wow_source_google_places"),
-                google: t("portal_wow_source_google_places"),
-                headway: t("portal_wow_source_headway"),
-                psychology_today: t("portal_wow_source_psychology_today"),
-                psychologytoday: t("portal_wow_source_psychology_today"),
-                zencare: t("portal_wow_source_zencare"),
-                website: t("portal_wow_source_website"),
-                website_meta: t("portal_wow_source_website_meta"),
-                site: t("portal_wow_source_website"),
-                npi: t("portal_wow_source_npi"),
-              }}
-              fieldSources={previewFieldSources}
-            />
-          )}
-          {previewSocialLinks ? (
-            <SocialFooter
-              eyebrow={t("portal_wow_social_eyebrow")}
-              instagram={previewSocialLinks.instagram}
-              facebook={previewSocialLinks.facebook}
-              linkedin={previewSocialLinks.linkedin}
-              tiktok={previewSocialLinks.tiktok}
-              youtube={previewSocialLinks.youtube}
-              psychologyToday={previewSocialLinks.psychologyToday}
-              headway={previewSocialLinks.headway}
-            />
-          ) : null}
-        </div>
+        {/* The "WOW" enrichment band (badges / pricing / testimonials /
+            journal / sources / social row) is now injected INTO the active
+            template via its ungated `belowContent` slot (see `enrichmentBand`
+            above), so it renders above the per-template footer instead of
+            being shoved below it. */}
       </main>
 
       {/* "Talk to a human" floating button. Only mounted for claimed leads

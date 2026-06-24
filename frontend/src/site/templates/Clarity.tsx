@@ -483,6 +483,11 @@ function Clarity(props: TemplateProps) {
           {props.tail}
         </TierGate>
 
+        {/* Ungated portal enrichment band (specialties, pricing,
+            testimonials, journal, social) — renders ABOVE the closing
+            CTA + footer so the footer stays the very last element. */}
+        {props.belowContent}
+
         {/* ── Closing CTA ──────────────────────────────────────── */}
         <BookingCta
           mode="external"

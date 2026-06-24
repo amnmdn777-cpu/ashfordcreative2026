@@ -81,6 +81,9 @@ function Constellation(props: TemplateProps) {
 
       <TierGate min="pro" silent>{props.tail}</TierGate>{/* CRITICAL #4: tail carries Pro inline demos (booking widget, doxy bridge, onboarding hub, first-visit video) */}
 
+      {/* Ungated portal enrichment band — above the footer. */}
+      {props.belowContent}
+
       <FeatureMark featureKey="social_row">
       <Footer
         name={r.name}
