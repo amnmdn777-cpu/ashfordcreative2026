@@ -308,6 +308,25 @@ export const recycleStaleClaims = async (): Promise<number> => {
       ),
     );
 
+  // NEW-BUG-14 (QA 2026-06-24): a released lead that still had a pending
+  // callback showed up in BOTH the rep's "Callbacks / Overdue" list AND
+  // the public Available pool (the recycle nulled `claimedByRepId` but
+  // left the callback open). Resolve any open callbacks for the released
+  // leads so they drop out of the ex-owner's queue — the lead is back in
+  // the pool and no longer that rep's commitment.
+  const staleIds = stale.map((s) => s.id);
+  if (staleIds.length > 0) {
+    await db
+      .update(callbackSchedules)
+      .set({ completedAt: new Date() })
+      .where(
+        and(
+          inArray(callbackSchedules.leadId, staleIds),
+          isNull(callbackSchedules.completedAt),
+        ),
+      );
+  }
+
   for (const row of stale) {
     if (!row.repId) continue;
     await notify({
@@ -1297,6 +1316,16 @@ export const getRepCallbacks = async (repId: number) =>
     .select()
     .from(callbackSchedules)
     .where(
-      and(eq(callbackSchedules.repId, repId), isNull(callbackSchedules.completedAt)),
+      and(
+        eq(callbackSchedules.repId, repId),
+        isNull(callbackSchedules.completedAt),
+        // NEW-BUG-14 (QA 2026-06-24): only surface callbacks for leads the
+        // rep STILL owns. Without this, a lead whose claim was recycled
+        // back to the pool kept its open callback here while also showing
+        // in Available — appearing in two places at once. The EXISTS guard
+        // also covers historical orphaned rows that pre-date the recycler
+        // cleanup above, so no backfill migration is needed.
+        sql`EXISTS (SELECT 1 FROM ${leads} WHERE ${leads.id} = ${callbackSchedules.leadId} AND ${leads.claimedByRepId} = ${repId})`,
+      ),
     )
     .orderBy(callbackSchedules.scheduledFor);

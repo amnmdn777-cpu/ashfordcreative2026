@@ -45,7 +45,7 @@ import {
 } from "@workspace/db";
 import { rateLimit } from "../../middleware/rateLimit";
 import { writeAudit, snapshotKeys } from "../../services/auditLog";
-import { eq, and, desc, asc, inArray } from "drizzle-orm";
+import { eq, and, desc, asc, inArray, notInArray } from "drizzle-orm";
 import { badRequest, notFound } from "../../lib/errors";
 import {
   createPreviewLink,
@@ -314,7 +314,21 @@ router.get(
         occurredAt: adminAuditLog.occurredAt,
       })
       .from(adminAuditLog)
-      .where(and(eq(adminAuditLog.targetType, "lead"), eq(adminAuditLog.targetId, String(id))))
+      .where(
+        and(
+          eq(adminAuditLog.targetType, "lead"),
+          eq(adminAuditLog.targetId, String(id)),
+          // Bug#4 (QA 2026-06-24): `lead.read` is a security access-log
+          // entry written on EVERY lead-detail page view (LOT 1.1
+          // anti-enumeration). It carries only `{ redacted: false }`, so
+          // it rendered in the rep History as a meaningless
+          // "redacted: — → false" row — 41 page views buried every real
+          // event. These access entries stay in the table for security
+          // review but are excluded from the human-facing timeline. Add
+          // future read/access action names here as they appear.
+          notInArray(adminAuditLog.action, ["lead.read"]),
+        ),
+      )
       .orderBy(desc(adminAuditLog.occurredAt))
       .limit(200);
     const repIds = [...new Set(rows.map((r) => r.actorRepId).filter((x): x is number => x != null))];

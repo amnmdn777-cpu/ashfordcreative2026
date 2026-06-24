@@ -86,8 +86,18 @@ const captionsFor = (
 };
 
 const SYSTEM_FONT_CANDIDATES = [
+  // Liberation + Noto ship in the production Dockerfile (`fonts-liberation`,
+  // `fonts-noto-color-emoji`) — list them FIRST so the video render never
+  // depends on the GitHub font fetch below. That fetch hangs/fails on
+  // Railway (no reliable outbound to raw.githubusercontent), which threw
+  // inside the route and surfaced as the "HTTP 500, empty body" video
+  // download bug (QA Bug#5, 2026-06-24). The PDF path doesn't use drawtext
+  // fonts, which is why it worked while the video 500'd.
+  "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+  "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf",
   "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
   "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf",
+  "/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf",
   "/nix/store/*-dejavu-fonts-*/share/fonts/truetype/DejaVuSans-Bold.ttf",
   "/System/Library/Fonts/Helvetica.ttc",
   "C:\\Windows\\Fonts\\arialbd.ttf",
@@ -153,9 +163,27 @@ const resolveFontFile = async (): Promise<string> => {
   } catch {
     // fetch
   }
-  const res = await fetch(
-    "https://github.com/rsms/inter/raw/master/docs/font-files/Inter-Bold.otf",
-  );
+  // Hard 8s cap so a slow/blocked GitHub never hangs the whole video
+  // request (which would surface as a timed-out "empty body" 500). If we
+  // reach here at all the system fonts above were all missing — fail fast
+  // with an actionable message.
+  const ac = new AbortController();
+  const fetchTimer = setTimeout(() => ac.abort(), 8_000);
+  let res: Response;
+  try {
+    res = await fetch(
+      "https://github.com/rsms/inter/raw/master/docs/font-files/Inter-Bold.otf",
+      { signal: ac.signal },
+    );
+  } catch (err) {
+    throw new Error(
+      `No system font found and the fallback font fetch failed (${String(
+        err,
+      )}). Install fonts-liberation or fonts-dejavu in the runtime image.`,
+    );
+  } finally {
+    clearTimeout(fetchTimer);
+  }
   if (!res.ok) {
     throw new Error(
       `Failed to fetch fallback font (HTTP ${res.status}); install dejavu or inter system-wide.`,
