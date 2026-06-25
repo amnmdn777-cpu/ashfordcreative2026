@@ -341,6 +341,12 @@ export const regeneratePortalAccessToken = async (
     .set({
       accessToken: token,
       accessTokenExpiresAt: expiresAt,
+      // A regenerated link must be LIVE again — if the portal had been
+      // marked 'expired' (token aged out, or the 2026-06-23 batch expiry),
+      // un-expire it back to 'draft' so the prospect doesn't still hit
+      // "this preview is no longer active" with the fresh token. Leave any
+      // other lifecycle state (sent / draft) untouched.
+      lifecycleState: sql`CASE WHEN ${prospectPortals.lifecycleState} = 'expired' THEN 'draft' ELSE ${prospectPortals.lifecycleState} END`,
       updatedAt: new Date(),
     })
     .where(eq(prospectPortals.id, portalId))
@@ -651,6 +657,8 @@ export const resetPortalCompletely = async (
       selectedTemplate: keepTemplate,
       customizations: {},
       enrichmentSnapshot: null,
+      // Clean-slate reset = a live draft again (clears any 'expired' state).
+      lifecycleState: "draft",
       updatedAt: new Date(),
     })
     .where(eq(prospectPortals.id, portal.id))

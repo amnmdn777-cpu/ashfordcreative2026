@@ -5,6 +5,7 @@ import {
   ensurePortalForLead,
   markInviteSent,
   recordPortalEvent,
+  regeneratePortalAccessToken,
 } from "./portals";
 import { renderDripEmail } from "./dripEmailRenderer";
 import {
@@ -88,7 +89,16 @@ export async function renderPortalInviteDraft(params: {
   lead: InviteLead;
 }): Promise<PortalInviteDraft> {
   const { repDisplayName, lead } = params;
-  const portal = await ensurePortalForLead(lead.id);
+  let portal = await ensurePortalForLead(lead.id);
+  // Mirror the live-link refresh in `sendPortalInvite`: regenerate an
+  // aged-out / 'expired' token so the link the rep REVIEWS in the modal is
+  // the same live link that ships, not a dead one.
+  const draftTokenAgedOut =
+    portal.accessTokenExpiresAt != null &&
+    portal.accessTokenExpiresAt.getTime() <= Date.now();
+  if (draftTokenAgedOut || portal.lifecycleState === "expired") {
+    portal = await regeneratePortalAccessToken(portal.id);
+  }
   const longUrl = `${env.publicBaseUrl}/preview/${portal.slug}?t=${encodeURIComponent(portal.accessToken)}`;
   const { url: shortUrl } = await getOrCreateShortLink(longUrl, {
     leadId: lead.id,
@@ -138,7 +148,21 @@ export async function sendPortalInvite(params: {
 }): Promise<InviteResult> {
   const { repId, repDisplayName, lead } = params;
   const channels: InviteChannels = params.channels ?? { sms: true, email: true };
-  const portal = await ensurePortalForLead(lead.id);
+  let portal = await ensurePortalForLead(lead.id);
+
+  // Resending must hand the prospect a LIVE link. `ensurePortalForLead`
+  // only mints a token when there's none — it does NOT refresh one that
+  // aged out (90-day TTL) or un-expire a portal that was marked 'expired'
+  // (e.g. the 2026-06-23 batch). Without this, "Resend preview email"
+  // rebuilt the SAME dead link and the prospect saw "this preview is no
+  // longer active" (Amine QA 2026-06-25). Regenerate the token (which also
+  // un-expires the portal) whenever it's expired before building the URL.
+  const tokenAgedOut =
+    portal.accessTokenExpiresAt != null &&
+    portal.accessTokenExpiresAt.getTime() <= Date.now();
+  if (tokenAgedOut || portal.lifecycleState === "expired") {
+    portal = await regeneratePortalAccessToken(portal.id);
+  }
 
   const longUrl = `${env.publicBaseUrl}/preview/${portal.slug}?t=${encodeURIComponent(portal.accessToken)}`;
 
