@@ -95,8 +95,23 @@ export const draftJournalEntries = ({
     else if (/perinatal|postpartum|matrescence|maternal/i.test(sp) && !matchedKeys.includes("perinatal")) matchedKeys.push("perinatal");
     else if (/lgbt|queer|gay|trans|gender/i.test(sp) && !matchedKeys.includes("lgbtq")) matchedKeys.push("lgbtq");
   }
-  while (matchedKeys.length < 3) {
-    matchedKeys.push("default");
+  // Pad to 3 with DISTINCT generic hooks — never repeat one. Pushing
+  // "default" repeatedly (the old behavior) rendered three byte-identical
+  // cards when a lead matched no specific specialty (Amine QA 2026-06-25:
+  // Sierra showed the same "first ninety days" draft three times). Fill
+  // from a generic-first fallback order, skipping any key already used.
+  const FALLBACK_ORDER = [
+    "default",
+    "relationships",
+    "anxiety",
+    "trauma",
+    "couples",
+    "perinatal",
+    "lgbtq",
+  ];
+  for (const key of FALLBACK_ORDER) {
+    if (matchedKeys.length >= 3) break;
+    if (!matchedKeys.includes(key)) matchedKeys.push(key);
   }
   return matchedKeys.slice(0, 3).map((key) => {
     const hook = SPECIALTY_HOOKS[key] ?? SPECIALTY_HOOKS["default"]!;
