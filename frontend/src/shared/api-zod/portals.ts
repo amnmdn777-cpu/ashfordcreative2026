@@ -247,7 +247,7 @@ export const PortalPublicResponse = z.object({
     email: z.string().nullable(),
     avatarUrl: z.string().nullable(),
   }).nullable(),
-  baseMonthlyCents: z.number().int().default(19900),
+  baseMonthlyCents: z.number().int().default(14900),
   baseSetupCents: z.number().int().default(0),
 });
 export type PortalPublicResponse = z.infer<typeof PortalPublicResponse>;

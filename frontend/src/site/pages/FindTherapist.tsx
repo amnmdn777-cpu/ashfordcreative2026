@@ -137,8 +137,8 @@ function FindTherapistInner({ city, specialty }: Combo) {
           acceptedAnswer: {
             "@type": "Answer",
             text: es
-              ? `Tres planes: Boutique $199/mes, Boutique Pro $299/mes, Concierge $249/mes. Sin tarifa de configuración, gasto comercial 100% deducible.`
-              : `Three plans: Boutique $199/mo, Boutique Pro $299/mo, Concierge $249/mo. Zero setup fee, 100% tax-deductible business expense.`,
+              ? `Tres planes: Boutique $149/mes, Boutique Pro $199/mes, Concierge $249/mes. Sin tarifa de configuración, gasto comercial 100% deducible.`
+              : `Three plans: Boutique $149/mo, Boutique Pro $199/mo, Concierge $249/mo. Zero setup fee, 100% tax-deductible business expense.`,
           },
         },
         {

@@ -2310,8 +2310,8 @@ function PreviewModal({
   // panel so the rep makes both decisions in one place).
   type PlanKey = "boutique" | "boutique_pro" | "boutique_concierge";
   const PLAN_CHOICES: Array<{ key: PlanKey; label: string; priceLabel: string }> = [
-    { key: "boutique", label: "Boutique", priceLabel: "$199/mo" },
-    { key: "boutique_pro", label: "Boutique Pro", priceLabel: "$299/mo" },
+    { key: "boutique", label: "Boutique", priceLabel: "$149/mo" },
+    { key: "boutique_pro", label: "Boutique Pro", priceLabel: "$199/mo" },
     { key: "boutique_concierge", label: "Boutique Concierge", priceLabel: "$249/mo" },
   ];
   const portalQuery = useQuery({
@@ -2974,7 +2974,7 @@ function PaymentLinkModal({
 
         {/* Single-line quote summary surfaces the rep's current tier
             choice next to the resulting price — matches the founder's
-            "Quoted Boutique Pro · $299/mo" wording. */}
+            "Quoted Boutique Pro · $199/mo" wording. */}
         <div
           data-testid="rep-tier-summary"
           className="rounded-md border border-primary/30 bg-primary/5 p-3 flex items-baseline justify-between"

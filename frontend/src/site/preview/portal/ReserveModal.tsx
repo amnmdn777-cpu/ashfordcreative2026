@@ -243,7 +243,7 @@ const PortalReserveModal = ({
             <div className="rounded-xl bg-stone-50 border p-4 space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-stone-600">{t("reserve_base_website")}</span>
-                <span className="font-medium">{fmtUsd(19900)}{t("portal_per_month")}</span>
+                <span className="font-medium">{fmtUsd(14900)}{t("portal_per_month")}</span>
               </div>
               {chosenDomain && (
                 <div className="flex justify-between text-stone-600">
@@ -262,7 +262,7 @@ const PortalReserveModal = ({
               <div className="flex justify-between pt-2 border-t">
                 <span>{t("reserve_charged_today")}</span>
                 <span className="font-medium">
-                  {fmtUsd(19900)}{t("portal_per_month")}{setupSuffix}
+                  {fmtUsd(14900)}{t("portal_per_month")}{setupSuffix}
                 </span>
               </div>
               <div className="text-[11px] text-stone-500">{billingExplainer}</div>
@@ -476,7 +476,7 @@ const SelfServeReserveModal = ({
             <div className="flex justify-between">
               <span className="text-stone-600">{t("reserve_base_website")}</span>
               <span className="font-medium">
-                {fmtUsd(19900)}
+                {fmtUsd(14900)}
                 {t("portal_per_month")}
               </span>
             </div>
@@ -490,7 +490,7 @@ const SelfServeReserveModal = ({
                       })}
                 </span>
                 <span className="font-medium">
-                  +{fmtUsd(monthlyTotalCents - 19900)}
+                  +{fmtUsd(monthlyTotalCents - 14900)}
                   {t("portal_per_month")}
                 </span>
               </div>

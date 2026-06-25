@@ -1655,7 +1655,7 @@ export const buildPortalPublicResponse = async (
           avatarUrl: rep.avatarUrl ?? null,
         }
       : null,
-    baseMonthlyCents: 19900,
+    baseMonthlyCents: 14900,
     baseSetupCents: 0,
   };
 };
@@ -2053,7 +2053,7 @@ export const saveCart = async (
   }
   const selected = addons.filter((a) => cart.addonSlugs.includes(a.slug));
   const monthlyTotalCents =
-    19900 + selected.reduce((acc, a) => acc + a.monthlyCents, 0);
+    14900 + selected.reduce((acc, a) => acc + a.monthlyCents, 0);
   const setupTotalCents = selected.reduce((acc, a) => acc + a.setupCents, 0);
   await db.insert(portalCarts).values({
     portalId: portal.id,

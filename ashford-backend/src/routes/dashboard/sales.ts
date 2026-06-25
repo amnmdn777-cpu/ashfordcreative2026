@@ -10,7 +10,7 @@ const router: IRouter = Router();
 // Source of truth for rep comp. Keep these aligned with stripeWebhook.ts and
 // the candidate quiz answers in lib/candidateQuiz.ts.
 const CLOSING_BONUS_CENTS = 14900; // $149 per close
-const BASE_PLAN_CENTS = 19900;     // $199/mo base plan
+const BASE_PLAN_CENTS = 14900;     // $149/mo base plan (cheapest tier)
 
 router.use("/dashboard", requireAuth);
 

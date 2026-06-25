@@ -126,14 +126,13 @@ export const serviceJsonLd = {
   serviceType: "Website design and ongoing care for therapists",
   provider: { "@type": "Organization", name: SITE_NAME },
   areaServed: { "@type": "AdministrativeArea", name: "Texas" },
-  // AggregateOffer spans the three customer tiers (Boutique $199, Boutique
-  // Pro $299, Concierge $249). The previous "$149" was the rep-bonus number,
-  // never a customer price — Google was indexing it as our starting price.
+  // AggregateOffer spans the three customer tiers (Boutique $149, Boutique
+  // Pro $199, Concierge $249 — the top price).
   offers: {
     "@type": "AggregateOffer",
     priceCurrency: "USD",
-    lowPrice: "199",
-    highPrice: "299",
+    lowPrice: "149",
+    highPrice: "249",
     offerCount: 3,
   },
 };

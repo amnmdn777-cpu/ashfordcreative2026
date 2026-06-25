@@ -250,7 +250,7 @@ export const TIERS: Record<TierKey, TierDef> = {
   boutique: {
     key: "boutique",
     label: "Boutique",
-    monthlyCents: 19900,
+    monthlyCents: 14900,
     setupCents: 0,
     description:
       "The essentials, beautifully done. Bilingual site, calm Crisis Resources button, office tour, Google presence, sliding-scale badge.",
@@ -259,7 +259,7 @@ export const TIERS: Record<TierKey, TierDef> = {
   boutique_pro: {
     key: "boutique_pro",
     label: "Boutique Pro",
-    monthlyCents: 29900,
+    monthlyCents: 19900,
     setupCents: 0,
     description:
       "Everything in Boutique, plus the front-desk multipliers — online booking, first-visit video, telehealth bridge to your existing room — and a ghostwritten Insights Journal.",

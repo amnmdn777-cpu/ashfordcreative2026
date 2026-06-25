@@ -130,7 +130,7 @@ export default function CompanyPresentation() {
               { icon: Shield, title: "No annual contract", desc: "Cancel anytime in the first 90 days; after that, 30 days notice. No prorated refund. No long-term lock-in removes a major objection before it's raised." },
               { icon: Users, title: "Bilingual standard", desc: "Every site ships in English and Spanish. In Texas, this isn't a feature — it's table stakes." },
               { icon: TrendingUp, title: "Their own domain", desc: "Unlike directories, they own the URL. They build their own SEO. Their reputation is portable." },
-              { icon: Star, title: "Three tiers, no upsells", desc: "Boutique $199, Pro $299, Concierge $249 — pick one and that's the all-in price. No surprise invoices on top." },
+              { icon: Star, title: "Three tiers, no upsells", desc: "Boutique $149, Pro $199, Concierge $249 — pick one and that's the all-in price. No surprise invoices on top." },
             ].map(({ icon: Icon, title, desc }) => (
               <div key={title} className="flex gap-3">
                 <div className="shrink-0 w-8 h-8 rounded-md bg-primary/10 grid place-items-center text-primary mt-0.5">

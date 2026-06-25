@@ -26,7 +26,7 @@ export const translations = {
 
     // Footer
     footer_tagline:
-      "Boutique websites for Texas mental-health practitioners. We build it, look after it, and quietly keep it running — nothing for you to learn or maintain. Three plans: Boutique $199, Pro $299, Concierge $249 — all-in.",
+      "Boutique websites for Texas mental-health practitioners. We build it, look after it, and quietly keep it running — nothing for you to learn or maintain. Three plans: Boutique $149, Pro $199, Concierge $249 — all-in.",
     footer_col_product: "Product",
     footer_col_company: "Company",
     footer_col_legal: "Legal",
@@ -442,7 +442,7 @@ export const translations = {
     diff1_desc:
       "Your training, your modalities, the work you actually do — written in your voice, not a 280-character bio field next to fifty other names.",
     diff1_metric: "From $199/mo",
-    diff1_stat: "Three plans — Boutique $199, Pro $299, Concierge $249. All-in. Your site, the Spanish version, and everything that keeps it running — already included.",
+    diff1_stat: "Three plans — Boutique $149, Pro $199, Concierge $249. All-in. Your site, the Spanish version, and everything that keeps it running — already included.",
 
     diff2_title: "A soft place to land for someone in pain",
     diff2_desc:
@@ -467,7 +467,7 @@ export const translations = {
       "Not blank templates. {template_count_word_cap} fully built sites with your name, your work, your photos already in place. Show your partner, sit with them, sleep on it. There's no rush.",
     process_step_3_title: "Pick the one that feels right",
     process_step_3_desc:
-      "We register a web address for you, and the monthly price is all-in — no surprise charges, no upsells, ever. Three plans to fit your practice: Boutique $199, Boutique Pro $299, Concierge $249.",
+      "We register a web address for you, and the monthly price is all-in — no surprise charges, no upsells, ever. Three plans to fit your practice: Boutique $149, Boutique Pro $199, Concierge $249.",
     process_step_4_title: "We write the words — or you do",
     process_step_4_desc:
       "Five quick questions if you'd like to shape the copy yourself. Don't have time? With your okay, we draft a thoughtful first version from what's already public about your practice.",
@@ -486,7 +486,7 @@ export const translations = {
     pricing_a_desc: "Setup, a yearly renewal of your web address, Spanish translation, and quiet upkeep — bundled into one monthly price.",
     pricing_b_label: "Pick your tier",
     pricing_b_setup: "Boutique · Boutique Pro · Concierge",
-    pricing_b_desc: "Boutique $199, Boutique Pro $299, Concierge $249 — pick the one that fits your practice.",
+    pricing_b_desc: "Boutique $149, Boutique Pro $199, Concierge $249 — pick the one that fits your practice.",
     pricing_recommended: "Recommended",
     pricing_monthly: "/ month",
     pricing_see_full: "See full pricing & extras",
@@ -752,7 +752,7 @@ export const translations = {
       "Templates page is at /templates — open it in a new tab. When you spot a favorite, come back and tell us your name and we'll generate a personalized preview with your real practice info.",
     cb_see_link_cta: "Get my personalized preview",
     cb_cost_bot:
-      "Three plans, all-in: Boutique $199, Boutique Pro $299, Concierge $249. Each covers your site, the Spanish version, and everything we do to keep it running. No setup fee. No contracts — cancel anytime in the first 90 days, then just 30 days' notice.",
+      "Three plans, all-in: Boutique $149, Boutique Pro $199, Concierge $249. Each covers your site, the Spanish version, and everything we do to keep it running. No setup fee. No contracts — cancel anytime in the first 90 days, then just 30 days' notice.",
     cb_cost_addons: "What about the extras?",
     cb_cost_call: "Have a rep call me",
     cb_addons_bot:
@@ -1518,7 +1518,7 @@ export const translations = {
 
     // Footer
     footer_tagline:
-      "Sitios web boutique para terapeutas de salud mental en Texas. Lo construimos, lo cuidamos y lo mantenemos en marcha en silencio — nada que tú tengas que aprender ni mantener. Tres planes: Boutique $199, Pro $299, Concierge $249 — todo incluido.",
+      "Sitios web boutique para terapeutas de salud mental en Texas. Lo construimos, lo cuidamos y lo mantenemos en marcha en silencio — nada que tú tengas que aprender ni mantener. Tres planes: Boutique $149, Pro $199, Concierge $249 — todo incluido.",
     footer_col_product: "Producto",
     footer_col_company: "Compañía",
     footer_col_legal: "Legal",
@@ -1956,7 +1956,7 @@ export const translations = {
       "No son plantillas en blanco. {template_count_word_cap} sitios completos con tu nombre, tu trabajo y tus fotos ya en su lugar. Enséñalos a tu pareja, míralos con calma, consúltalos con la almohada. No hay prisa.",
     process_step_3_title: "Elige la que se sienta tuya",
     process_step_3_desc:
-      "Te registramos una dirección web, y el precio mensual lo cubre todo — sin cargos sorpresa, sin extras, nunca. Tres planes a la medida de tu práctica: Boutique $199, Boutique Pro $299, Concierge $249.",
+      "Te registramos una dirección web, y el precio mensual lo cubre todo — sin cargos sorpresa, sin extras, nunca. Tres planes a la medida de tu práctica: Boutique $149, Boutique Pro $199, Concierge $249.",
     process_step_4_title: "Nosotros ponemos las palabras — o tú",
     process_step_4_desc:
       "Cinco preguntas rápidas si quieres escribir el texto tú misma. ¿No tienes tiempo? Con tu permiso, redactamos un primer borrador cuidadoso a partir de lo que ya es público sobre tu práctica.",
@@ -1976,7 +1976,7 @@ export const translations = {
     pricing_b_label: "Elige tu plan",
     pricing_b_setup: "Boutique · Boutique Pro · Concierge",
     pricing_b_desc:
-      "Boutique $199, Boutique Pro $299, Concierge $249 — elige el que se ajuste a tu práctica.",
+      "Boutique $149, Boutique Pro $199, Concierge $249 — elige el que se ajuste a tu práctica.",
     pricing_recommended: "Recomendado",
     pricing_monthly: "/ mes",
     pricing_see_full: "Ver precios y extras",
@@ -2230,7 +2230,7 @@ export const translations = {
       "La página de plantillas está en /templates — ábrela en otra pestaña. Cuando veas una favorita, vuelve y dinos tu nombre — generamos una vista previa personalizada con la información real de tu práctica.",
     cb_see_link_cta: "Quiero mi vista previa personalizada",
     cb_cost_bot:
-      "Tres planes, todo incluido: Boutique $199, Boutique Pro $299, Concierge $249. Cada uno cubre tu sitio, la versión en español y todo lo que hacemos para mantenerlo en marcha. Sin cuota inicial. Sin contratos — cancela en los primeros 90 días, después solo 30 días de aviso.",
+      "Tres planes, todo incluido: Boutique $149, Boutique Pro $199, Concierge $249. Cada uno cubre tu sitio, la versión en español y todo lo que hacemos para mantenerlo en marcha. Sin cuota inicial. Sin contratos — cancela en los primeros 90 días, después solo 30 días de aviso.",
     cb_cost_addons: "¿Y los extras?",
     cb_cost_call: "Que un representante me llame",
     cb_addons_bot:

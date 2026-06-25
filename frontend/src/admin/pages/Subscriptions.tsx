@@ -356,8 +356,8 @@ function UpgradeTierModal({
           onChange={(e) => setTierKey(e.target.value)}
           className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
         >
-          <option value="boutique">Boutique ($199/mo)</option>
-          <option value="boutique_pro">Boutique Pro ($299/mo)</option>
+          <option value="boutique">Boutique ($149/mo)</option>
+          <option value="boutique_pro">Boutique Pro ($199/mo)</option>
           <option value="boutique_concierge">Boutique Concierge ($249/mo)</option>
         </select>
       </label>

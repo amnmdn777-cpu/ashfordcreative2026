@@ -7,7 +7,7 @@ import { mrrByTier } from "@rep/pages/Dashboard";
 // Comp constants — keep in sync with the API server (stripeWebhook.ts and
 // dashboard/sales.ts) and the Payment Plans page.
 const CLOSING_BONUS_CENTS = 14900; // $149 per close
-const BASE_PLAN_CENTS = 19900;     // $199/mo base — anything above is rep's first-month bonus
+const BASE_PLAN_CENTS = 14900;     // $149/mo base (cheapest plan) — anything above is rep's first-month bonus
 
 const fmtBonus = (cents: number) => `$${(cents / 100).toFixed(0)}`;
 
@@ -82,8 +82,8 @@ export default function CommissionPage() {
         <ul className="text-sm text-foreground/80 space-y-2">
           <li>
             <span className="font-medium">$149 closing bonus</span> for every
-            client you sign onto any plan — Boutique ($199/mo), Boutique Pro
-            ($299/mo), or Boutique Concierge ($249/mo). The bonus is the same
+            client you sign onto any plan — Boutique ($149/mo), Boutique Pro
+            ($199/mo), or Boutique Concierge ($249/mo). The bonus is the same
             across tiers, but the higher tiers carry more add-on revenue in
             month one (below), so closing a Pro or Concierge deal pays you more.
           </li>

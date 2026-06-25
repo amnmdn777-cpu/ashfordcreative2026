@@ -13,8 +13,8 @@ export default function LegalTerms() {
       <h2>The service</h2>
       <p>
         We design, build, and quietly keep websites running for mental health
-        practitioners across three monthly plans (Boutique $199, Boutique Pro
-        $299, Concierge $249). Each plan includes a yearly renewal of a web
+        practitioners across three monthly plans (Boutique $149, Boutique Pro
+        $199, Concierge $249). Each plan includes a yearly renewal of a web
         address, a Google-friendly site structure, Spanish translation, and a
         HIPAA-aware contact form. Boutique Pro and Concierge additionally
         include the telehealth /visit landing page, online booking, and the
@@ -116,8 +116,8 @@ export default function LegalTerms() {
       <h2>El servicio</h2>
       <p>
         Diseñamos, construimos y mantenemos en silencio sitios web para
-        terapeutas de salud mental con tres planes mensuales (Boutique $199,
-        Boutique Pro $299, Concierge $249). Cada plan incluye la renovación
+        terapeutas de salud mental con tres planes mensuales (Boutique $149,
+        Boutique Pro $199, Concierge $249). Cada plan incluye la renovación
         anual de una dirección web, una estructura amigable con Google,
         traducción al español y un formulario consciente de HIPAA. Boutique
         Pro y Concierge incluyen además la página de telesalud /visit, reserva
