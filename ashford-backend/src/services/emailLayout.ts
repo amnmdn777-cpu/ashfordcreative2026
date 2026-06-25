@@ -1,4 +1,4 @@
-import { env } from "../lib/env";
+import { PUBLIC_CONTACT_PHONE_DISPLAY } from "../lib/contact";
 
 /**
  * Branded HTML wrapper for all customer-facing emails.
@@ -50,31 +50,12 @@ const linkifyUrls = (escaped: string): string =>
       `<a href="${m}" style="color:#3F6657;text-decoration:underline;">${m}</a>`,
   );
 
-/**
- * Format the configured Twilio voice number into a US-style display
- * (e.g. "(512) 555-0100") so the email footer reads as a real phone
- * line instead of an opaque E.164 string. Returns the raw value if
- * formatting can't be inferred (international, short codes, etc).
- */
-const formatVoiceNumber = (raw: string | undefined): string | null => {
-  if (!raw) return null;
-  const trimmed = raw.trim();
-  const digits = trimmed.replace(/\D/g, "");
-  if (digits.length === 11 && digits.startsWith("1")) {
-    return `(${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
-  }
-  if (digits.length === 10) {
-    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-  }
-  return trimmed;
-};
-
 const buildFooterCopy = (
   locale: EmailLocale,
 ): { line1: string; line2: string } => {
-  // Resolved at call time (not module load) so a live env update flows
-  // through without the API server having to restart all email senders.
-  const voice = formatVoiceNumber(env.twilioVoiceNumber);
+  // Public business line shown in the email footer (display only — rep
+  // call/SMS routing is unaffected). Set 2026-06-25 per Amine.
+  const voice = PUBLIC_CONTACT_PHONE_DISPLAY;
   if (locale === "es") {
     return {
       line1:
