@@ -751,10 +751,34 @@ router.get(
 // portal data — photo, bio, tagline, niche, fees/approach, links — outside
 // the app). `profileBlurb` + `notes` carry the Psychology Today dump
 // (qualifications, approach, fees, insurance, languages) for scraped leads.
+// Export columns as { header, key } pairs. The FIRST nine are exactly the
+// import template's columns, in the same order and snake_case naming
+// (`current_website`, not `currentWebsite`), so an Export CSV round-trips
+// straight back through "Download template" / the importer (it matches by
+// lowercased header name and updates by email→phone). The remaining columns
+// are read-only reference fields the importer ignores. (Amine 2026-06-25:
+// "shouldn't these two be the same columns?")
 const EXPORT_COLS = [
-  "id", "name", "practice", "specialty", "city", "state", "phone", "email",
-  "locale", "currentWebsite", "status", "temperature", "disqualifyReason",
-  "claimedByRepId", "leadScore", "profileBlurb", "notes", "createdAt", "updatedAt",
+  { header: "name", key: "name" },
+  { header: "practice", key: "practice" },
+  { header: "specialty", key: "specialty" },
+  { header: "city", key: "city" },
+  { header: "state", key: "state" },
+  { header: "phone", key: "phone" },
+  { header: "email", key: "email" },
+  { header: "current_website", key: "currentWebsite" },
+  { header: "locale", key: "locale" },
+  // ── reference only (ignored on re-import) ──
+  { header: "id", key: "id" },
+  { header: "status", key: "status" },
+  { header: "temperature", key: "temperature" },
+  { header: "disqualifyReason", key: "disqualifyReason" },
+  { header: "claimedByRepId", key: "claimedByRepId" },
+  { header: "leadScore", key: "leadScore" },
+  { header: "profileBlurb", key: "profileBlurb" },
+  { header: "notes", key: "notes" },
+  { header: "createdAt", key: "createdAt" },
+  { header: "updatedAt", key: "updatedAt" },
 ] as const;
 
 // Portal content columns assembled from prospect_portals.customizations.
@@ -809,10 +833,10 @@ router.get(
       const s = v instanceof Date ? v.toISOString() : String(v);
       return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
-    const header = [...EXPORT_COLS, ...PORTAL_COLS].join(",");
+    const header = [...EXPORT_COLS.map((c) => c.header), ...PORTAL_COLS].join(",");
     const out: string[] = [header];
     for (const r of rows) {
-      const cells = EXPORT_COLS.map((c) => esc((r as Record<string, unknown>)[c]));
+      const cells = EXPORT_COLS.map((c) => esc((r as Record<string, unknown>)[c.key]));
       const pm = portalMap.get((r as { id: number }).id) ?? {};
       for (const pc of PORTAL_COLS) cells.push(esc(pm[pc] ?? ""));
       out.push(cells.join(","));
