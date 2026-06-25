@@ -1448,7 +1448,11 @@ function PortalBody({ initialData }: { initialData: PortalPublicResponse }) {
         inPersonLabel={t("portal_wow_pill_in_person")}
         telehealthLabel={t("portal_wow_pill_telehealth")}
         slidingScaleLabel={t("portal_wow_pill_sliding_scale")}
-        specialties={previewSpecialties}
+        // The WOW band's "WHAT WE TREAT" specialty pills duplicated the
+        // template's own "What we treat" section, so drop them here (Amine
+        // QA 2026-06-25: "remove this in the theme"). The band still shows
+        // modalities / languages / insurance / availability pills.
+        specialties={[]}
         modalities={previewModalities}
         languages={previewLanguages}
         acceptedInsurances={previewInsurances}
