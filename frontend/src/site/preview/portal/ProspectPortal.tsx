@@ -966,8 +966,12 @@ function PortalBody({ initialData }: { initialData: PortalPublicResponse }) {
   const previewTeam = previewContent?.team ?? [];
   const previewReviews = previewContent?.reviews ?? [];
   const previewHero = previewContent?.heroImage ?? null;
-  const previewMission = nonEmpty(previewContent?.mission ?? null);
-  const previewTagline = nonEmpty(previewContent?.tagline ?? null);
+  // Strip therapist-added political / complaint-board boilerplate from every
+  // bio-derived field — the hero tagline falls back to `previewTagline`
+  // (the backend's copy of profileBlurb), so stripping only `blurb` left a
+  // hole where the statement reappeared (Amine QA 2026-06-25).
+  const previewMission = nonEmpty(stripBioBoilerplate(previewContent?.mission ?? null));
+  const previewTagline = nonEmpty(stripBioBoilerplate(previewContent?.tagline ?? null));
   // Portal "WOW" enrichment fields — surfaced under the template hero as
   // badges / pills / pricing / testimonials / social / sources. Each is
   // defensively null-guarded so a portal with no enrichment data still
@@ -1085,7 +1089,7 @@ function PortalBody({ initialData }: { initialData: PortalPublicResponse }) {
   const personalisedTeam = teamSource.length > 0 && baseLead
     ? teamSource.map((entry, idx) => {
         const scaffold = baseContent.team[idx % baseContent.team.length] ?? baseLead;
-        const bioOverride = nonEmpty(entry.bio);
+        const bioOverride = nonEmpty(stripBioBoilerplate(entry.bio));
         const realPhoto = nonEmpty(entry.photo);
         return {
           ...scaffold,
