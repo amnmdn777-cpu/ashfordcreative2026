@@ -316,6 +316,27 @@ function ContactsCard({ leadId, bare }: { leadId: number; bare?: boolean }) {
 const fmtBytes = (n: number): string =>
   n < 1024 ? `${n} B` : n < 1024 * 1024 ? `${(n / 1024).toFixed(0)} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`;
 
+// Inline thumbnail for image attachments. Fetches the bytes with the rep's
+// session cookie (works cross-origin, unlike a bare <img src>) and shows
+// them via an object URL.
+function AttachmentThumb({ leadId, attId }: { leadId: number; attId: number }) {
+  const [src, setSrc] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    let objectUrl: string | null = null;
+    fetch(apiUrl(`/dashboard/leads/${leadId}/attachments/${attId}/download?inline=1`), { credentials: "include" })
+      .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))))
+      .then((b) => { if (!cancelled) { objectUrl = URL.createObjectURL(b); setSrc(objectUrl); } })
+      .catch(() => {});
+    return () => { cancelled = true; if (objectUrl) URL.revokeObjectURL(objectUrl); };
+  }, [leadId, attId]);
+  return src ? (
+    <img src={src} alt="" className="w-12 h-12 rounded object-cover border border-border shrink-0" />
+  ) : (
+    <div className="w-12 h-12 rounded bg-muted shrink-0" />
+  );
+}
+
 function FilesCard({ leadId }: { leadId: number }) {
   const qc = useQueryClient();
   const key = ["rep", "lead", leadId, "attachments"];
@@ -325,6 +346,30 @@ function FilesCard({ leadId }: { leadId: number }) {
   const [err, setErr] = useState<string | null>(null);
   // FR#1: optional note typed before choosing a file; sent with the upload.
   const [note, setNote] = useState("");
+  // Attach-by-URL: rep pastes an image/file link and we fetch + store it
+  // server-side (the browser can't read cross-origin bytes).
+  const [url, setUrl] = useState("");
+  const [addingUrl, setAddingUrl] = useState(false);
+
+  const addFromUrl = async () => {
+    const u = url.trim();
+    if (!u) return;
+    setErr(null);
+    setAddingUrl(true);
+    try {
+      await api.attachLeadAttachmentFromUrl(leadId, {
+        url: u,
+        note: note.trim() || undefined,
+      });
+      setUrl("");
+      setNote("");
+      qc.invalidateQueries({ queryKey: key });
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't attach that URL");
+    } finally {
+      setAddingUrl(false);
+    }
+  };
 
   const upload = async (file: File | undefined) => {
     if (!file) return;
@@ -386,6 +431,25 @@ function FilesCard({ leadId }: { leadId: number }) {
         maxLength={500}
         className={inputCls + " mb-2"}
       />
+      <div className="flex gap-2 mb-2">
+        <input
+          type="url"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void addFromUrl(); } }}
+          placeholder="…or paste an image / file URL"
+          className={inputCls + " flex-1"}
+          disabled={addingUrl}
+        />
+        <button
+          type="button"
+          onClick={() => void addFromUrl()}
+          disabled={addingUrl || !url.trim()}
+          className="shrink-0 px-3 py-2 rounded-md border border-input bg-background hover:bg-muted text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {addingUrl ? "Adding…" : "Add"}
+        </button>
+      </div>
       <label className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-input hover:bg-muted/40 px-4 py-6 text-sm cursor-pointer"
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => { e.preventDefault(); upload(e.dataTransfer.files?.[0]); }}>
@@ -404,12 +468,17 @@ function FilesCard({ leadId }: { leadId: number }) {
           <ul className="divide-y divide-border/60">
             {files.map((f) => (
               <li key={f.id} className="flex items-center justify-between gap-3 py-2">
-                <div className="min-w-0">
+                <div className="flex items-center gap-3 min-w-0">
+                  {f.contentType?.startsWith("image/") ? (
+                    <AttachmentThumb leadId={leadId} attId={f.id} />
+                  ) : null}
+                  <div className="min-w-0">
                   <div className="font-medium truncate text-sm">{f.filename}</div>
                   {f.note ? (
                     <div className="text-xs text-foreground/70 truncate">{f.note}</div>
                   ) : null}
                   <div className="text-xs text-muted-foreground">{fmtBytes(f.sizeBytes)}</div>
+                  </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <button type="button" onClick={() => download(f)} title="Download" className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"><FileDown size={16} /></button>

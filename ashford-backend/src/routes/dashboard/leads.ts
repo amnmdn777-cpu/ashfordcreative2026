@@ -552,6 +552,121 @@ router.post(
   }),
 );
 
+// Attach a file straight from a URL the rep pastes (e.g. an image link) —
+// the browser can't fetch cross-origin and read the bytes, so we fetch it
+// server-side, validate type + size, and store it like a normal upload.
+const RepAttachFromUrl = z.object({
+  url: z.string().url().max(2048),
+  note: z.string().max(500).optional(),
+});
+const EXT_BY_TYPE: Record<string, string> = {
+  "application/pdf": "pdf",
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+  "image/gif": "gif",
+  "text/plain": "txt",
+  "text/csv": "csv",
+};
+// Best-effort SSRF guard: reject obvious internal / metadata hosts.
+const isBlockedHost = (host: string): boolean => {
+  const h = host.toLowerCase();
+  if (h === "localhost" || h.endsWith(".local") || h.endsWith(".internal")) return true;
+  if (h.includes("metadata")) return true;
+  if (h === "::1" || h.startsWith("fc") || h.startsWith("fd")) return true;
+  if (/^(127\.|10\.|192\.168\.|169\.254\.|0\.)/.test(h)) return true;
+  if (/^172\.(1[6-9]|2\d|3[01])\./.test(h)) return true;
+  return false;
+};
+router.post(
+  "/dashboard/leads/:id/attachments/from-url",
+  asyncHandler(async (req, res) => {
+    const id = z.coerce.number().int().parse(req.params.id);
+    await loadOwnedLead(id, req.user!);
+    const body = RepAttachFromUrl.parse(req.body);
+    let parsed: URL;
+    try {
+      parsed = new URL(body.url);
+    } catch {
+      throw badRequest("That doesn't look like a valid URL.");
+    }
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:")
+      throw badRequest("Only http/https URLs are allowed.");
+    if (isBlockedHost(parsed.hostname))
+      throw badRequest("That host isn't allowed.");
+
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 15_000);
+    let resp: Response;
+    try {
+      resp = await fetch(parsed.toString(), {
+        signal: ac.signal,
+        redirect: "follow",
+        headers: { "User-Agent": "AshfordCreativeBot/1.0", Accept: "*/*" },
+      });
+    } catch (e) {
+      throw badRequest(
+        `Couldn't fetch that URL (${e instanceof Error ? e.message : "error"}).`,
+      );
+    } finally {
+      clearTimeout(timer);
+    }
+    if (!resp.ok) throw badRequest(`That URL returned HTTP ${resp.status}.`);
+    let contentType = (resp.headers.get("content-type") ?? "")
+      .split(";")[0]
+      .trim()
+      .toLowerCase();
+    if (contentType === "image/jpg") contentType = "image/jpeg";
+    if (!REP_ATTACH_TYPES.has(contentType))
+      throw badRequest(
+        `File type not allowed: ${contentType || "unknown"}`,
+        { code: "type_not_allowed" },
+      );
+    const buffer = Buffer.from(await resp.arrayBuffer());
+    if (buffer.length === 0) throw badRequest("That URL returned no data.");
+    if (buffer.length > REP_ATTACH_MAX)
+      throw badRequest("File too large (max 10 MB).");
+
+    // Derive a friendly filename from the URL path; add an extension when
+    // the path doesn't already carry one.
+    let fname =
+      decodeURIComponent((parsed.pathname.split("/").pop() ?? "").trim()) ||
+      "download";
+    if (!/\.[a-z0-9]{2,5}$/i.test(fname)) {
+      fname = `${fname}.${EXT_BY_TYPE[contentType] ?? "bin"}`;
+    }
+    const safeName = fname.replace(/[^\w.\-]+/g, "_").slice(0, 200) || "download";
+    const key = `lead-attachments/${id}/${Date.now()}-${safeName}`;
+    const stored = await uploadObject(key, buffer, contentType);
+    if (!stored) throw badRequest("File storage is not available right now.");
+    const [row] = await db
+      .insert(leadAttachments)
+      .values({
+        leadId: id,
+        storageKey: key,
+        filename: safeName.slice(0, 256),
+        note: body.note?.trim() ? body.note.trim().slice(0, 500) : null,
+        contentType,
+        sizeBytes: buffer.length,
+        uploadedByRepId: req.user?.id ?? null,
+      })
+      .returning();
+    await writeAudit(req, {
+      action: "lead.attachment_added",
+      targetType: "lead",
+      targetId: id,
+      before: null,
+      after: {
+        attachmentId: row.id,
+        filename: row.filename,
+        sizeBytes: row.sizeBytes,
+        fromUrl: true,
+      },
+    });
+    res.json({ attachment: dateToIso(row) });
+  }),
+);
+
 router.get(
   "/dashboard/leads/:id/attachments/:attId/download",
   asyncHandler(async (req, res) => {
@@ -566,9 +681,16 @@ router.get(
     if (!row) throw notFound("Attachment not found");
     const obj = await streamAudioObject(row.storageKey);
     if (!obj) throw notFound("File is no longer available in storage.");
+    // `?inline=1` serves the bytes inline (used by the Files list to render
+    // an image thumbnail); default still forces a download.
+    const disposition = req.query.inline === "1" ? "inline" : "attachment";
     res
       .type(row.contentType || obj.contentType || "application/octet-stream")
-      .header("Content-Disposition", `attachment; filename="${row.filename.replace(/"/g, "")}"`)
+      .header(
+        "Content-Disposition",
+        `${disposition}; filename="${row.filename.replace(/"/g, "")}"`,
+      )
+      .header("Cache-Control", "private, max-age=300")
       .send(obj.buffer);
   }),
 );

@@ -558,6 +558,11 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  attachLeadAttachmentFromUrl: (id: number, body: { url: string; note?: string }) =>
+    request<{ attachment: RepLeadAttachment }>(`/dashboard/leads/${id}/attachments/from-url`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   deleteLeadAttachment: (id: number, attId: number) =>
     request<{ deleted: boolean }>(`/dashboard/leads/${id}/attachments/${attId}`, {
       method: "DELETE",
