@@ -1157,10 +1157,13 @@ function PortalBody({ initialData }: { initialData: PortalPublicResponse }) {
     : baseContent.locations;
   // Map Google reviews into the template's `Review[]` shape. Prefer the
   // rich previewContent.reviews (already in {author, body, rating, source}
-  // shape) and fall back to the legacy enrichment shape. When the prospect
-  // has a real practice but ZERO real reviews, render an empty array rather
-  // than the SAMPLE testimonials — fake reviews next to a real practice
-  // name is the single biggest "looks broken" failure the founder flagged.
+  // shape), then the legacy enrichment shape. A prospect portal NEVER falls
+  // back to the SAMPLE testimonials: showing generic reviews next to a real
+  // practitioner's name reads as fake/misleading (Amine QA 2026-06-25:
+  // "this portal shows 3 generic reviews ... don't tell them these are real
+  // reviews — remove this"). With zero real reviews we return an empty
+  // array and the Reviews section hides itself (Reviews returns null on
+  // empty) until the prospect connects their Google profile.
   const personalisedReviews = previewReviews.length > 0
     ? previewReviews
     : enrichmentReviews.length > 0
@@ -1170,9 +1173,7 @@ function PortalBody({ initialData }: { initialData: PortalPublicResponse }) {
           rating: r.rating,
           source: r.source,
         }))
-      : hasRealLeadData
-        ? []
-        : baseContent.reviews;
+      : [];
   // Lowercase, alphanumeric handle derived from the practice name. Used
   // as a default for social/directory slugs (Instagram, Facebook,
   // YouTube, Psychology Today, Headway) when the prospect has not yet

@@ -74,10 +74,6 @@ type Briefing = Awaited<ReturnType<typeof api.generateBriefing>>;
 // Mirror de la liste canonique dans:
 //   api-server/src/migrations/curatedReviews20260520.gen.ts
 // Maintenu manuellement en sync (assez petit pour ne pas justifier un fetch).
-const SAMPLE_REVIEW_LEAD_IDS_2026_05_20 = new Set<number>([
-  300, 469, 474, 476, 502, 504, 520, 521, 522, 530, 538, 541, 545, 555, 566,
-  569, 573,
-]);
 
 export default function LeadDetailPage() {
   const params = useParams<{ id: string }>();
@@ -647,25 +643,10 @@ export default function LeadDetailPage() {
           {/* M8 — admin lead-dashboard capabilities (inline edit, contacts,
               files, history), owner-gated. Purely additive. */}
           <LeadAdminPanel leadId={id} lead={l} />
-          {/* 2026-05-20 — "Preview reviews" badge on the 17 leads with
-              generic reviews. The portal already shows a banner to the
-              prospect; this badge warns the REP not to pitch "here are
-              your real Google reviews". */}
-          {SAMPLE_REVIEW_LEAD_IDS_2026_05_20.has(id) && (
-            <div
-              className="mb-3 rounded-lg border border-sky-500/40 bg-sky-50/60 dark:bg-sky-950/20 px-4 py-2.5 text-xs text-sky-900 dark:text-sky-200 flex items-start gap-2"
-              data-testid="sample-reviews-badge"
-            >
-              <Sparkles size={14} className="shrink-0 mt-0.5" />
-              <div>
-                <span className="font-medium">Preview reviews</span> — this portal
-                shows 3 generic reviews (Google not yet connected). The
-                prospect sees the banner "Preview — your real Google reviews
-                will appear here once your profile is connected." Don't tell
-                them these are real reviews.
-              </div>
-            </div>
-          )}
+          {/* 2026-06-25 — the prospect portal no longer renders SAMPLE
+              reviews for real leads (ProspectPortal: zero real reviews ->
+              the Reviews section hides itself). The old "Preview reviews"
+              rep warning badge is therefore obsolete and was removed. */}
           {/* 2026-05-21 — Sprint 2 streamline: post-launch change requests
               from the client. Silent when none exist. */}
           <ChangeRequestsPanel leadId={id} onError={onErr} />
