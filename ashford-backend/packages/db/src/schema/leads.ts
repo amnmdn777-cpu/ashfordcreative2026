@@ -100,6 +100,10 @@ export const leads = pgTable(
     // on the prospect portal. When set, it wins over the crawled team bio
     // so a rep can correct a bad scrape (see previewContent team cascade).
     bioOverride: text("bio_override"),
+    // Rep-authored override for the portal "What we treat" specialties.
+    // Comma-separated list; when set it seeds previewContent.specialties so
+    // a rep can type the exact specialties shown (Amine 2026-06-25).
+    specialtiesOverride: text("specialties_override"),
     status: leadStatusEnum("status").notNull().default("available"),
     claimedByRepId: integer("claimed_by_rep_id").references(() => salesReps.id, {
       onDelete: "set null",

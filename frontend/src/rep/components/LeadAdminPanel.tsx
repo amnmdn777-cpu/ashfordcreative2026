@@ -160,11 +160,20 @@ function EditableFieldsCard({ leadId, lead, bare }: { leadId: number; lead: Lead
             multiline
           />
         </div>
+        <div className="md:col-span-2">
+          <EditableField
+            label="Specialties (What we treat)"
+            value={get("specialtiesOverride")}
+            onSave={(v) => save({ specialtiesOverride: v })}
+          />
+        </div>
       </dl>
       <p className="text-xs text-muted-foreground mt-3">
         “About / Bio” overrides the write-up shown on the prospect portal —
         use it to fix anything the scrape got wrong. Leave blank to keep the
-        auto-generated bio.
+        auto-generated bio. “Specialties” is a comma-separated list (e.g.
+        “Anxiety, Trauma, Couples”) that drives the portal’s “What we treat”
+        section; leave blank to use what we found.
       </p>
     </>
   );

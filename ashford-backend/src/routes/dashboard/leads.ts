@@ -247,6 +247,7 @@ const RepPatchLeadFields = z
     currentWebsite: z.string().max(256).nullable().optional(),
     profileBlurb: z.string().max(5000).nullable().optional(),
     bioOverride: z.string().max(5000).nullable().optional(),
+    specialtiesOverride: z.string().max(2000).nullable().optional(),
     disqualifyNote: z.string().max(2000).nullable().optional(),
     calendlyUrl: z.string().max(256).nullable().optional(),
     doxyUrl: z.string().max(256).nullable().optional(),

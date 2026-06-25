@@ -123,6 +123,7 @@ export const LeadDto = z.object({
   // Rep-authored override for the public About/Bio paragraph. Optional so
   // older clients still parse responses cleanly.
   bioOverride: z.string().nullable().optional(),
+  specialtiesOverride: z.string().nullable().optional(),
   status: LeadStatus,
   claimedByRepId: z.number().int().nullable(),
   claimedAt: z.string().nullable(),

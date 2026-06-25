@@ -553,7 +553,21 @@ export const buildPreviewContent = async (
 
   // ---- specialties ---------------------------------------------------
   let specialties: string[] = [];
-  if (
+  // Rep override wins (Amine 2026-06-25): the "What we treat" specialties a
+  // rep typed on the lead page, stored comma-separated in
+  // `lead.specialtiesOverride`. Beats every enrichment source so a rep can
+  // fix a bad/empty scrape.
+  const specialtiesOverride =
+    typeof lead.specialtiesOverride === "string"
+      ? lead.specialtiesOverride
+          .split(",")
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0)
+      : [];
+  if (specialtiesOverride.length > 0) {
+    specialties = specialtiesOverride;
+    setSource("specialties", "rep_override");
+  } else if (
     headwayPayload &&
     Array.isArray(headwayPayload.specialties) &&
     (headwayPayload.specialties as unknown[]).length > 0
