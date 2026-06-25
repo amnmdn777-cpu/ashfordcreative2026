@@ -270,6 +270,46 @@ export function deterministicInitials(fullName: string | null | undefined): stri
   return `${first}${last}`;
 }
 
+/**
+ * Strip therapist-added boilerplate that doesn't belong on a marketing
+ * site: political "if you support … do not contact me" disclaimers and
+ * licensing-board complaint notices ("send a complaint to … License
+ * number …"). Scraped verbatim from Psychology Today personal statements.
+ * Cuts from the start of the sentence containing the first such marker,
+ * keeping the genuine bio before it. (Amine QA 2026-06-25.)
+ */
+export function stripBioBoilerplate(text: string | null | undefined): string {
+  const s = (text ?? "").trim();
+  if (!s) return "";
+  const markers: RegExp[] = [
+    /\bif you (?:support|voted for|are a supporter)\b/i,
+    /\bdo not contact me\b/i,
+    /\bplease do not (?:reach out|contact me)\b/i,
+    /\b(?:send|file|submit)(?:ing)? (?:me )?a complaint\b/i,
+    /\bBehavioral Health Executive Council\b/i,
+    /\bBoard of Professional Counselors\b/i,
+    /\bLicense (?:number|#|no\.)\b/i,
+  ];
+  let cut = -1;
+  for (const re of markers) {
+    const m = s.match(re);
+    if (m && m.index != null && (cut < 0 || m.index < cut)) cut = m.index;
+  }
+  if (cut < 0) return s;
+  // Back up to the previous sentence boundary so the whole offending
+  // sentence is dropped, not just its tail.
+  const head = s.slice(0, cut);
+  const boundary = Math.max(
+    head.lastIndexOf(". "),
+    head.lastIndexOf(".\n"),
+    head.lastIndexOf("! "),
+    head.lastIndexOf("? "),
+    head.lastIndexOf("\n\n"),
+  );
+  const end = boundary >= 0 ? boundary + 1 : 0;
+  return s.slice(0, end).trim();
+}
+
 function firstSentence(text: string, cap: number): string {
   const trimmed = text.trim();
   if (!trimmed) return "";
@@ -991,8 +1031,8 @@ export function resolvePersona(
     // synthesizeBio appends is the lead's `profileBlurb`, which is sometimes
     // stored with a trailing "…"/"..." that made the bio read as truncated.
     // Strip it from the FINAL bio so it ends cleanly regardless of source.
-    bio_en = stripTrailingEllipsis(bio_en);
-    bio_es = stripTrailingEllipsis(bio_es);
+    bio_en = stripTrailingEllipsis(stripBioBoilerplate(bio_en));
+    bio_es = stripTrailingEllipsis(stripBioBoilerplate(bio_es));
   }
 
   // Booking URL: persona stubs ("https://cal.com/joanna-reyes-kim/15min")

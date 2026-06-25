@@ -27,6 +27,7 @@ import { SAMPLES, pickSample } from "@site/templates/sampleContent";
 import type { CSSProperties } from "react";
 import { cssVarsForPalette } from "@site/lib/palette";
 import { fmtUsdFromCents } from "@site/lib/utils";
+import { stripBioBoilerplate } from "@site/data/resolvePersona";
 import { Seo } from "@site/lib/seo";
 import { I18nProvider, useI18n } from "@site/lib/i18n";
 import type { StringKey } from "@site/lib/strings";
@@ -996,7 +997,7 @@ function PortalBody({ initialData }: { initialData: PortalPublicResponse }) {
   // overrides on PortalCustomizations have been retired alongside
   // CustomizePanel — no UI surface ever set them, and accepting raw URLs
   // from a public endpoint without sanitization was a footgun.
-  const blurb = nonEmpty(data.profileBlurb ?? null);
+  const blurb = nonEmpty(stripBioBoilerplate(data.profileBlurb));
   const leadCity = nonEmpty(data.city);
   const leadState = nonEmpty(data.state);
   const leadLocationLabel =
