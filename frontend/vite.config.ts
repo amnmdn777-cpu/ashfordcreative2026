@@ -5,6 +5,12 @@ import path from "node:path";
 
 const root = import.meta.dirname;
 
+// Production (`vite preview` on Railway) must proxy /api to the standalone
+// api-server service, not the old co-located localhost:3001 (Replit-era).
+const PREVIEW_API_TARGET =
+  process.env.API_PROXY_TARGET ||
+  "https://backend-production-b774.up.railway.app";
+
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
@@ -39,5 +45,14 @@ export default defineConfig({
   preview: {
     host: "0.0.0.0",
     allowedHosts: true,
+    // `vite preview` does not inherit server.proxy — declare it here so the
+    // deployed SPA forwards /api/* to the live api-server.
+    proxy: {
+      "/api": {
+        target: PREVIEW_API_TARGET,
+        changeOrigin: true,
+        secure: true,
+      },
+    },
   },
 });
