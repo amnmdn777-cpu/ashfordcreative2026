@@ -877,9 +877,6 @@ export default function LeadDetailPage() {
               const first = stripped.split(/\s+/)[0]?.replace(/[,.]+$/, "");
               return first && first.length > 0 ? first : null;
             })()}
-            hasContactInfo={
-              !!(l.phone && l.phone.trim()) && !!(l.email && l.email.trim())
-            }
           />
 
           <div className="space-y-2 pt-4 border-t border-border">
@@ -1551,7 +1548,6 @@ function WorkflowStepList({
   linkEvents,
   needsFollowUpCall: showFollowUpCue,
   leadFirstName,
-  hasContactInfo,
 }: {
   briefing: Briefing | null;
   briefingPending: boolean;
@@ -1582,10 +1578,6 @@ function WorkflowStepList({
   // quick call …"). Falls back to a generic phrasing when missing so we
   // never render an empty pronoun.
   leadFirstName: string | null;
-  // Founder gate (Amine, 2026-06-18): don't let the rep prepare a preview /
-  // portal for a prospect we can't reach. Requires BOTH a phone AND an email
-  // on the lead — she adds the missing one (inline edit) to unlock.
-  hasContactInfo: boolean;
 }) {
   const briefingStatus: StepStatus = briefing
     ? { tone: "done", label: "Generated" }
@@ -1692,25 +1684,21 @@ function WorkflowStepList({
         label={
           enrichPending
             ? "Preparing…"
-            : !hasContactInfo
-              ? "Add phone + email to unlock"
-              : previewReady
-                ? "✓ Preview ready — open"
-                : "Prepare preview"
+            : previewReady
+              ? "✓ Preview ready — open"
+              : "Prepare preview"
         }
         subtitle={
-          !hasContactInfo
-            ? "This lead is missing a phone or email. Add both above before preparing a preview — we don't build portals for prospects we can't reach."
-            : enrichPending
-              ? "Fetching data — give it ~30 s, keep this tab open."
-              : previewReady
-                ? "Click to open the prospect portal (new tab)."
-                : "Runs enrichment in the background. We'll ping you when it's ready."
+          enrichPending
+            ? "Fetching data — give it ~30 s, keep this tab open."
+            : previewReady
+              ? "Click to open the prospect portal (new tab)."
+              : "Runs enrichment in the background. We'll ping you when it's ready."
         }
         status={previewStatus}
         onClick={onOpenPreview}
         pending={enrichPending}
-        disabled={!portal || enrichPending || !hasContactInfo}
+        disabled={!portal || enrichPending}
       />
       {/* QA B#5 (2026-06-23): Download video/PDF only appear once the
           preview is actually PREPARED — they 500'd / produced nothing when
