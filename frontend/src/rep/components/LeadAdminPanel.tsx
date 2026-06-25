@@ -123,6 +123,74 @@ function EditableField({
   );
 }
 
+// Paste an image URL to set the lead's hero/portrait photo when enrichment
+// found none. Stored on the portal customizations and used as the portal
+// hero fallback. Write-with-preview (https only).
+function HeroImageField({ leadId }: { leadId: number }) {
+  const [url, setUrl] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [imgOk, setImgOk] = useState(true);
+  const trimmed = url.trim();
+  const looksUrl = /^https:\/\/\S+/i.test(trimmed);
+  const save = async (value: string | null) => {
+    setMsg(null);
+    setSaving(true);
+    try {
+      await api.setLeadHeroImage(leadId, value);
+      setMsg(value ? "Image set — it'll show on the next preview." : "Image cleared.");
+      if (!value) setUrl("");
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Couldn't set image");
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <div className="md:col-span-2">
+      <div className="text-muted-foreground mb-1">Lead image (URL)</div>
+      <div className="flex gap-2 items-start">
+        {looksUrl && imgOk ? (
+          <img
+            src={trimmed}
+            alt=""
+            className="w-12 h-12 rounded object-cover border border-border shrink-0"
+            onError={() => setImgOk(false)}
+          />
+        ) : (
+          <div className="w-12 h-12 rounded bg-muted shrink-0" />
+        )}
+        <input
+          type="url"
+          value={url}
+          onChange={(e) => { setUrl(e.target.value); setImgOk(true); setMsg(null); }}
+          onKeyDown={(e) => { if (e.key === "Enter" && looksUrl) { e.preventDefault(); void save(trimmed); } }}
+          placeholder="https://… paste an image URL"
+          className={inputCls + " flex-1"}
+          disabled={saving}
+        />
+        <button
+          type="button"
+          onClick={() => void save(trimmed)}
+          disabled={saving || !looksUrl}
+          className="shrink-0 px-3 py-2 rounded-md border border-input bg-background hover:bg-muted text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {saving ? "Saving…" : "Set"}
+        </button>
+        <button
+          type="button"
+          onClick={() => void save(null)}
+          disabled={saving}
+          className="shrink-0 px-3 py-2 rounded-md border border-input bg-background hover:bg-muted text-sm text-muted-foreground disabled:opacity-50"
+        >
+          Clear
+        </button>
+      </div>
+      {msg && <div className="text-xs text-muted-foreground mt-1">{msg}</div>}
+    </div>
+  );
+}
+
 function EditableFieldsCard({ leadId, lead, bare }: { leadId: number; lead: LeadDto; bare?: boolean }) {
   const qc = useQueryClient();
   const [local, setLocal] = useState<Record<string, string | null>>({});
@@ -167,13 +235,16 @@ function EditableFieldsCard({ leadId, lead, bare }: { leadId: number; lead: Lead
             onSave={(v) => save({ specialtiesOverride: v })}
           />
         </div>
+        <HeroImageField leadId={leadId} />
       </dl>
       <p className="text-xs text-muted-foreground mt-3">
         “About / Bio” overrides the write-up shown on the prospect portal —
         use it to fix anything the scrape got wrong. Leave blank to keep the
         auto-generated bio. “Specialties” is a comma-separated list (e.g.
         “Anxiety, Trauma, Couples”) that drives the portal’s “What we treat”
-        section; leave blank to use what we found.
+        section; leave blank to use what we found. “Lead image” lets you
+        paste an https image URL to use as the portal hero photo when we
+        couldn’t find one — Clear reverts to the auto-detected image.
       </p>
     </>
   );

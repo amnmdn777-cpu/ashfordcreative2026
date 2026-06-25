@@ -497,6 +497,13 @@ export const api = {
       `/dashboard/leads/${id}/template`,
       { method: "PATCH", body: JSON.stringify({ templateKey }) },
     ),
+  // Set (or clear with null) the lead's hero/portrait image by URL. Must be
+  // an https URL. Drives the portal hero photo when enrichment found none.
+  setLeadHeroImage: (id: number, heroImageUrl: string | null) =>
+    request<{ heroImageUrl: string | null }>(
+      `/dashboard/leads/${id}/hero-image`,
+      { method: "PATCH", body: JSON.stringify({ heroImageUrl }) },
+    ),
   // Routes through `request()` so it hits API_BASE (the backend) like every
   // other call — a previous raw `fetch("/api/...")` went same-origin and
   // never reached the backend in production (ASH-9).
