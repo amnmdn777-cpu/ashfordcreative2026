@@ -27,7 +27,7 @@ import { and, asc, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { asyncHandler } from "../../middleware/asyncHandler";
 import { requireAdmin, requireAuth } from "../../middleware/requireAuth";
 import { badRequest, notFound } from "../../lib/errors";
-import { ensurePortalForLead, resetPortalCompletely } from "../../services/portals";
+import { ensurePortalForLead, resetPortalCompletely, patchPortalCustomizations } from "../../services/portals";
 import { generateBriefing } from "../../services/briefing";
 import { runEnrichmentForLead } from "../../integrations/enrichment/orchestrator";
 import {
@@ -605,6 +605,32 @@ router.post(
     const leadId = LeadIdParam.parse(req.params.leadId);
     const result = await runHarmonization(leadId);
     res.json(result);
+  }),
+);
+
+/**
+ * PATCH /admin/leads/:id/portal-content
+ *
+ * Batch-inject PT enrichment data (bio, photo, specialties, insurance, etc.)
+ * into a portal's customizations. Admin-only. Merges into existing
+ * customizations without touching field-locked QC-validated fields.
+ * Added 2026-06-26 for PT enrichment batch injection.
+ */
+router.patch(
+  "/admin/leads/:id/portal-content",
+  asyncHandler(async (req, res) => {
+    const leadId = z.coerce.number().int().parse(req.params.id);
+    const body = z.object({
+      customizations: z.record(z.unknown()),
+    }).parse(req.body);
+
+    const [lead] = await db.select().from(leads).where(eq(leads.id, leadId)).limit(1);
+    if (!lead) throw notFound("Lead not found");
+
+    const portal = await ensurePortalForLead(leadId);
+    await patchPortalCustomizations(portal.slug, { customizations: body.customizations });
+
+    res.json({ ok: true, leadId, slug: portal.slug });
   }),
 );
 
