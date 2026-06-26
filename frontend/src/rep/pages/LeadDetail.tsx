@@ -4127,7 +4127,7 @@ function RepAttachmentsPanel({
 // Disqualified / Cold / Lukewarm / Hot are temperature enum values; "Won"
 // is a workflow-final state (status=won) so its button routes through the
 // existing Mark-Won flow rather than setLeadTemperature.
-type LeadTemperature = "disqualifier" | "cold" | "lukewarm" | "hot";
+type LeadTemperature = "new" | "disqualifier" | "cold" | "lukewarm" | "hot";
 function LeadTemperaturePicker({
   leadId, current, isWon, onMarkWon, onError, onSuccess,
 }: {
@@ -4149,6 +4149,7 @@ function LeadTemperaturePicker({
     onError,
   });
   const OPTIONS: Array<{ key: LeadTemperature; label: string; dot: string }> = [
+    { key: "new",          label: "New",          dot: "bg-violet-500" },
     { key: "disqualifier", label: "Disqualified", dot: "bg-red-500" },
     { key: "cold",         label: "Cold",         dot: "bg-blue-400" },
     { key: "lukewarm",     label: "Lukewarm",     dot: "bg-amber-400" },
