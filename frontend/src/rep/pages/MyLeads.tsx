@@ -11,10 +11,11 @@ import { PageHeader } from "@rep/components/RepLayout";
 // legacy status + temperature columns so no DB migration is required:
 // workflow-final states (won / disqualified) win, then the rep's
 // temperature read, then "unset".
-export type TempValue = "won" | "disqualified" | "hot" | "lukewarm" | "cold" | "unset";
+export type TempValue = "won" | "disqualified" | "new" | "hot" | "lukewarm" | "cold" | "unset";
 
 export const TEMP_ORDER: { key: Exclude<TempValue, "unset">; label: string }[] = [
   { key: "won", label: "Won" },
+  { key: "new", label: "New" },
   { key: "hot", label: "Hot" },
   { key: "lukewarm", label: "Lukewarm" },
   { key: "cold", label: "Cold" },
@@ -23,6 +24,7 @@ export const TEMP_ORDER: { key: Exclude<TempValue, "unset">; label: string }[] =
 
 export const TEMP_LABELS: Record<TempValue, string> = {
   won: "Won",
+  new: "New",
   disqualified: "Disqualified",
   hot: "Hot",
   lukewarm: "Lukewarm",
@@ -32,6 +34,7 @@ export const TEMP_LABELS: Record<TempValue, string> = {
 
 export const TEMP_STYLES: Record<TempValue, string> = {
   won: "bg-primary/10 text-primary border-primary/30",
+  new: "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-200 dark:border-emerald-900",
   disqualified: "bg-muted text-muted-foreground border-border",
   hot: "bg-red-100 text-red-800 border-red-200 dark:bg-red-950/30 dark:text-red-200 dark:border-red-900",
   lukewarm: "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/30 dark:text-amber-200 dark:border-amber-900",
@@ -47,6 +50,7 @@ export function deriveTemperature(lead: {
   const temp = lead.temperature ?? undefined;
   if (status === "won") return "won";
   if (status === "disqualified" || temp === "disqualifier") return "disqualified";
+  if (temp === "new") return "new";
   if (temp === "hot" || temp === "lukewarm" || temp === "cold") return temp;
   if (status === "cold") return "cold";
   return "unset";
@@ -118,7 +122,7 @@ export default function MyLeadsPage() {
       return next;
     });
   };
-  const TEMP_RANK: Record<string, number> = { won: 5, hot: 4, lukewarm: 3, cold: 2, disqualified: 1, unset: 0 };
+  const TEMP_RANK: Record<string, number> = { won: 5, hot: 4, new: 3.5, lukewarm: 3, cold: 2, disqualified: 1, unset: 0 };
   const sortedData = [...filteredData].sort((a: any, b: any) => {
     const dir = sort.dir === "asc" ? 1 : -1;
     let av: number | string;

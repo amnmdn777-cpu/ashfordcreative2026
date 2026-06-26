@@ -103,6 +103,9 @@ router.get(
           .enum(["score", "name", "city", "practice", "specialty"])
           .optional(),
         sortDir: z.enum(["asc", "desc"]).optional(),
+        temperature: z
+          .enum(["new", "hot", "lukewarm", "cold", "disqualifier", "won"])
+          .optional(),
       })
       .parse(req.query);
     const result = await getAvailableLeads(filters);

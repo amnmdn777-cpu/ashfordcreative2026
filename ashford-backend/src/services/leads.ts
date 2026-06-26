@@ -1007,6 +1007,9 @@ export const getAvailableLeads = async (filters: {
    *  DESC (preserves the historical "best-quality first" ordering). */
   sortBy?: "score" | "name" | "city" | "practice" | "specialty";
   sortDir?: "asc" | "desc";
+  /** Temperature filter — narrows to leads with the given temperature
+   *  value. Undefined = all. */
+  temperature?: "new" | "hot" | "lukewarm" | "cold" | "disqualifier" | "won";
 }) => {
   // Available pool = any UNCLAIMED lead that isn't workflow-final
   // (disqualified / won). 2026-06-22 (Bug #2): the pool used to require
@@ -1039,6 +1042,13 @@ export const getAvailableLeads = async (filters: {
     conds.push(
       sql`(${leads.currentWebsite} IS NULL OR ${leads.currentWebsite} = '')`,
     );
+  }
+  // Temperature filter — "won" maps to the lead status field since it's
+  // a terminal state; the rest map to the temperature column.
+  if (filters.temperature === "won") {
+    conds.push(sql`${leads.status} = 'won'`);
+  } else if (filters.temperature) {
+    conds.push(sql`${leads.temperature} = ${filters.temperature}`);
   }
   // Free-text name search: typo-tolerant. We match either by case-insensitive
   // substring (catches partial words / multi-token queries) OR — when

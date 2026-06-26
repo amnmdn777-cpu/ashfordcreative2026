@@ -341,6 +341,7 @@ export const api = {
     hasWebsite?: "yes" | "no";
     sortBy?: "score" | "name" | "city" | "practice" | "specialty";
     sortDir?: "asc" | "desc";
+    temperature?: "new" | "hot" | "lukewarm" | "cold" | "disqualifier" | "won";
   }) => {
     const qs = new URLSearchParams();
     if (filters.city) qs.set("city", filters.city);
@@ -352,6 +353,7 @@ export const api = {
     if (filters.hasWebsite) qs.set("hasWebsite", filters.hasWebsite);
     if (filters.sortBy) qs.set("sortBy", filters.sortBy);
     if (filters.sortDir) qs.set("sortDir", filters.sortDir);
+    if (filters.temperature) qs.set("temperature", filters.temperature);
     const s = qs.toString();
     return request<AvailableLeadsResponse>(
       `/dashboard/leads/available${s ? `?${s}` : ""}`,
