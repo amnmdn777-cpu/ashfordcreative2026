@@ -4166,8 +4166,8 @@ function RepAttachmentsPanel({
   );
 }
 
-// LeadTemperaturePicker — 4-button radio. Founder feedback 2026-05-17.
-type LeadTemperature = "disqualifier" | "cold" | "lukewarm" | "hot";
+// LeadTemperaturePicker — 5-button radio. Founder feedback 2026-05-17. 'new' added 2026-06-25.
+type LeadTemperature = "new" | "disqualifier" | "cold" | "lukewarm" | "hot";
 function LeadTemperaturePicker({
   leadId, current, onError, onSuccess,
 }: {
@@ -4195,6 +4195,7 @@ function LeadTemperaturePicker({
     onError,
   });
   const OPTIONS: Array<{ key: LeadTemperature; label: string; dot: string }> = [
+    { key: "new",          label: "New",          dot: "bg-violet-500" },
     { key: "disqualifier", label: "Disqualified", dot: "bg-red-500" },
     { key: "cold",         label: "Cold",         dot: "bg-blue-400" },
     { key: "lukewarm",     label: "Lukewarm",     dot: "bg-amber-400" },
