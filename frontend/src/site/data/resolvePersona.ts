@@ -282,12 +282,21 @@ export function stripBioBoilerplate(text: string | null | undefined): string {
   const s = (text ?? "").trim();
   if (!s) return "";
   const markers: RegExp[] = [
-    /\bif you (?:support|voted for|are a supporter)\b/i,
+    // Political disclaimers. The "if you …" opener varies a lot between
+    // therapists, so we ALSO match the loaded nouns these statements
+    // always contain — a marketing bio has no other reason to name a
+    // sitting administration or a political movement. (Amine QA: the
+    // matcher kept missing leads whose wording differed slightly.)
+    /\bif you (?:support|voted|vote|are voting|are a supporter|align|stand)\b/i,
+    /\bTrump\b/i,
+    /\bMAGA\b/i,
+    /\b(?:current|present|this) administration\b/i,
     /\bdo not contact me\b/i,
     /\bplease do not (?:reach out|contact me)\b/i,
     /\b(?:send|file|submit)(?:ing)? (?:me )?a complaint\b/i,
     /\bBehavioral Health Executive Council\b/i,
     /\bBoard of Professional Counselors\b/i,
+    /\bTexas State Board\b/i,
     /\bLicense (?:number|#|no\.)\b/i,
   ];
   let cut = -1;
@@ -858,7 +867,10 @@ export function resolvePersona(
   ];
   const rawMission = (c.mission ?? "").trim();
   const missionIsJunk = JUNK_MISSION_PATTERNS.some((re) => re.test(rawMission));
-  const cleanMission = missionIsJunk ? "" : rawMission;
+  // Strip political / complaint-board boilerplate here too: `cleanMission`
+  // feeds the hero HEADLINE and SUBHEAD (not just the About bio), so the
+  // disclaimer was leaking into the hero even though the bio was clean.
+  const cleanMission = missionIsJunk ? "" : stripBioBoilerplate(rawMission);
   if (missionIsJunk && bio_en === rawMission) bio_en = "";
   if (missionIsJunk && bio_es === rawMission) bio_es = "";
 
@@ -927,7 +939,7 @@ export function resolvePersona(
         : "Terapia que te encuentra donde est\u00e1s.");
     heroHeadline = { en: headlineEn, es: headlineEs };
 
-    const subText = cleanMission || (c.tagline ?? "").trim();
+    const subText = cleanMission || stripBioBoilerplate((c.tagline ?? "").trim());
     if (subText) {
       heroSubhead = {
         en: subText,
